@@ -1,6 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
+import pytest
 from trader.store.journal import Journal
 from trader.models.evidence import Direction
 
@@ -17,3 +18,11 @@ def test_appends_not_overwrites(tmp_path):
     j = Journal(tmp_path)
     j.log("a", {}); j.log("b", {})
     assert [r["kind"] for r in j.read(date.today())] == ["a", "b"]
+
+def test_reserved_keys_rejected(tmp_path):
+    j = Journal(tmp_path)
+    with pytest.raises(ValueError):
+        j.log("skip", {"ts": "sneaky"})
+    with pytest.raises(ValueError):
+        j.log("skip", {"kind": "sneaky"})
+    assert j.read(date.today()) == []

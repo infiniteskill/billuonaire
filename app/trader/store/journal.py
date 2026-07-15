@@ -30,12 +30,23 @@ class Journal:
             kind: Log entry kind (e.g., "trade_open", "skip", "verdict")
             payload: Dictionary of data to log
             day: Date for the file; defaults to today
+
+        Raises:
+            ValueError: If payload contains reserved keys "ts" or "kind"
         """
         if day is None:
             day = date.today()
 
-        # Prepare entry with timestamp and kind
-        entry = {"ts": datetime.now(ZoneInfo("UTC")).isoformat(), "kind": kind, **payload}
+        # Metadata keys are authoritative; reject any payload attempt to shadow them
+        reserved = {"ts", "kind"} & payload.keys()
+        if reserved:
+            raise ValueError(
+                f"payload may not contain reserved keys {sorted(reserved)}; "
+                "rename them (e.g. use 'at' instead of 'ts')"
+            )
+
+        # Prepare entry; metadata written last so it always wins
+        entry = {**payload, "ts": datetime.now(ZoneInfo("UTC")).isoformat(), "kind": kind}
 
         # Determine file path
         file_path = self.root / f"{day.isoformat()}.jsonl"
