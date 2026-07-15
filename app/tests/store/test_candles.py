@@ -1,0 +1,92 @@
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+import pytest
+
+from trader.models.candle import Candle, Timeframe, tick
+from trader.store.candles import CandleStore
+
+IST = ZoneInfo("Asia/Kolkata")
+D = datetime(2026, 7, 15, tzinfo=IST)
+
+def m1(minute_offset, o, h, l, c, v=100):
+    ts = D.replace(hour=9, minute=15) + timedelta(minutes=minute_offset)
+    return Candle("X", Timeframe.M1, ts, tick(o), tick(h), tick(l), tick(c), v)
+
+def fill(store, n):
+    for i in range(n):
+        store.add(m1(i, 100 + i, 101 + i, 99 + i, 100.5 + i))
+
+def test_m5_aggregation(tmp_path):
+    s = CandleStore(tmp_path)
+    fill(s, 5)                                # 09:15..09:19 → one closed M5
+    v = s.view("X", D.replace(hour=9, minute=20))
+    [agg] = v.last(1, Timeframe.M5)
+    assert agg.open == tick(100) and agg.close == tick("104.5")
+    assert agg.high == tick(105) and agg.low == tick(99) and agg.volume == 500
+
+def test_no_lookahead(tmp_path):
+    s = CandleStore(tmp_path)
+    fill(s, 10)                               # data to 09:24
+    v = s.view("X", D.replace(hour=9, minute=18))   # but now = 09:18
+    assert v.last(100, Timeframe.M1)[-1].ts.minute == 17   # 09:17 last CLOSED
+    assert v.last(1, Timeframe.M5) == []      # first M5 closes 09:20
+
+def test_partial_bucket_hidden(tmp_path):
+    s = CandleStore(tmp_path)
+    fill(s, 7)                                # 09:15..09:21
+    v = s.view("X", D.replace(hour=9, minute=22))
+    assert len(v.last(10, Timeframe.M5)) == 1  # second M5 incomplete → hidden
+
+def test_persistence_roundtrip(tmp_path):
+    s = CandleStore(tmp_path); fill(s, 5); s.save("X")
+    s2 = CandleStore(tmp_path); s2.load("X")
+    v = s2.view("X", D.replace(hour=9, minute=20))
+    assert len(v.last(5, Timeframe.M1)) == 5
+
+
+# --- extra edge-case tests (beyond the brief) ---
+
+def test_add_rejects_non_m1(tmp_path):
+    s = CandleStore(tmp_path)
+    c5 = Candle("X", Timeframe.M5, D.replace(hour=9, minute=15),
+                tick(100), tick(101), tick(99), tick(100), 100)
+    with pytest.raises(ValueError):
+        s.add(c5)
+
+
+def test_duplicate_and_out_of_order_adds(tmp_path):
+    s = CandleStore(tmp_path)
+    s.add(m1(1, 101, 102, 100, 101.5))     # out of order: 09:16 before 09:15
+    s.add(m1(0, 100, 101, 99, 100.5))
+    for i in range(2, 5):
+        s.add(m1(i, 100 + i, 101 + i, 99 + i, 100.5 + i))
+    s.add(m1(0, 50, 120, 40, 60))          # duplicate 09:15 -> replaces
+    v = s.view("X", D.replace(hour=9, minute=20))
+    m1s = v.last(10, Timeframe.M1)
+    assert [c.ts.minute for c in m1s] == [15, 16, 17, 18, 19]  # sorted
+    assert m1s[0].open == tick(50)                             # last write won
+    [agg] = v.last(1, Timeframe.M5)                            # bucket recomputed
+    assert agg.open == tick(50) and agg.high == tick(120) and agg.low == tick(40)
+    assert agg.close == tick("104.5") and agg.volume == 500
+    # parquet roundtrip preserves derived TFs and exact Decimals/tz
+    s.save("X")
+    s2 = CandleStore(tmp_path); s2.load("X")
+    [agg2] = s2.view("X", D.replace(hour=9, minute=20)).last(1, Timeframe.M5)
+    assert agg2 == agg
+
+
+def test_d1_visible_only_after_session_close(tmp_path):
+    s = CandleStore(tmp_path)
+    fill(s, 375)                            # full session 09:15..15:29
+    before = s.view("X", D.replace(hour=15, minute=29, second=59))
+    assert before.last(1, Timeframe.D1) == []          # 15:30 not reached
+    assert before.today(Timeframe.D1) == []
+    at_close = s.view("X", D.replace(hour=15, minute=30))
+    [d1] = at_close.last(1, Timeframe.D1)              # visible at exactly 15:30
+    assert d1.ts == D.replace(hour=9, minute=15)
+    assert d1.open == tick(100) and d1.close == tick(100.5 + 374)
+    assert d1.high == tick(101 + 374) and d1.low == tick(99)
+    assert d1.volume == 375 * 100
+    assert at_close.today(Timeframe.D1) == [d1]
+    assert at_close.prev_day(Timeframe.D1) == []       # no earlier session
