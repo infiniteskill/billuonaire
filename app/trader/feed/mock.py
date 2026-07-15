@@ -129,18 +129,30 @@ class ScenarioFeed(DataFeed):
             yield FeedEvent(candle)
 
     def historical(
-        self, symbol: str, tf: Timeframe, start: datetime, end: datetime
+        self,
+        symbol: str,
+        tf: Timeframe,
+        start: date_type | datetime,
+        end: date_type | datetime,
     ) -> list[Candle]:
-        """M1 candles for symbol with start <= ts <= end. Other timeframes
-        are not synthesized here (aggregate via CandleStore instead)."""
+        """M1 candles for symbol within [start, end] inclusive, by calendar
+        day. ``start``/``end`` are ``datetime.date``; a ``datetime`` is
+        accepted too and normalized via ``.date()`` (time-of-day ignored).
+        Internally this builds tz-aware IST day bounds: 00:00:00 of
+        ``start`` to 23:59:59.999999 of ``end``. Other timeframes are not
+        synthesized here (aggregate via CandleStore instead)."""
         if tf is not Timeframe.M1:
             raise NotImplementedError("ScenarioFeed serves M1 history only")
+        start_date = start.date() if isinstance(start, datetime) else start
+        end_date = end.date() if isinstance(end, datetime) else end
+        start_dt = datetime.combine(start_date, time.min, tzinfo=IST)
+        end_dt = datetime.combine(end_date, time.max, tzinfo=IST)
         out = [
             c
             for sc in self._scenarios
             if sc.symbol == symbol
             for c in sc.candles()
-            if start <= c.ts <= end
+            if start_dt <= c.ts <= end_dt
         ]
         out.sort(key=lambda c: c.ts)
         return out

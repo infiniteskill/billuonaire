@@ -173,12 +173,22 @@ class CandleStore:
 
     def load(self, symbol: str) -> None:
         """Load all timeframes for symbol from parquet, replacing any
-        in-memory series for that symbol."""
+        in-memory series for that symbol.
+
+        A derived timeframe (M5/M15/H1/D1) may be absent from disk (e.g. an
+        M1-only parquet set). When that happens and M1 data was loaded, the
+        missing timeframe's buckets are re-derived from the loaded M1
+        candles by reusing ``_recompute_bucket`` (the same logic ``add()``
+        uses) -- never left empty, which would make detectors silently see
+        empty views.
+        """
         sym_dir = self.root / symbol
         series = {tf: [] for tf in Timeframe}
+        missing: set[Timeframe] = set()
         for tf in Timeframe:
             path = sym_dir / f"{tf.value}.parquet"
             if not path.exists():
+                missing.add(tf)
                 continue
             df = pd.read_parquet(path)
             series[tf] = sorted(
@@ -198,3 +208,9 @@ class CandleStore:
                 key=_TS,
             )
         self._data[symbol] = series
+        m1 = series[Timeframe.M1]
+        if m1:
+            for tf in _DERIVED:
+                if tf in missing:
+                    for candle in m1:
+                        self._recompute_bucket(symbol, tf, candle.ts)

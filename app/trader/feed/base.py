@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import Iterator
 
 from trader.models.candle import Candle, Timeframe
@@ -35,6 +35,13 @@ class DataFeed(ABC):
 
     @abstractmethod
     def historical(
-        self, symbol: str, tf: Timeframe, start: datetime, end: datetime
+        self, symbol: str, tf: Timeframe, start: date, end: date
     ) -> list[Candle]:
-        """Closed candles of ``tf`` for symbol with start <= ts <= end."""
+        """Closed candles of ``tf`` for symbol within [start, end] inclusive.
+
+        ``start``/``end`` are calendar days (``datetime.date``), not
+        timestamps. Implementations build tz-aware IST day bounds from them
+        internally. A ``datetime`` is tolerated too: it is normalized via
+        ``.date()`` before use (its time-of-day is discarded), so feeds stay
+        interchangeable regardless of which concrete type a caller passes.
+        """

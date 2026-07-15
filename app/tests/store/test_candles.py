@@ -45,6 +45,36 @@ def test_persistence_roundtrip(tmp_path):
     assert len(v.last(5, Timeframe.M1)) == 5
 
 
+def test_load_rederives_missing_derived_timeframes_from_m1(tmp_path):
+    """An M1-only parquet set (derived TF files absent/deleted) must not
+    leave M5/M15/H1/D1 empty on load -- detectors would silently see empty
+    views. load() re-derives them from the loaded M1 candles."""
+    s = CandleStore(tmp_path)
+    fill(s, 375)                                # full session -> D1 exists too
+    s.save("X")
+
+    # Simulate an M1-only parquet set: delete every derived TF file.
+    sym_dir = tmp_path / "X"
+    for tf in (Timeframe.M5, Timeframe.M15, Timeframe.H1, Timeframe.D1):
+        path = sym_dir / f"{tf.value}.parquet"
+        assert path.exists()
+        path.unlink()
+
+    s2 = CandleStore(tmp_path)
+    s2.load("X")
+
+    now = D.replace(hour=15, minute=30)         # session close -> D1 visible too
+    v = s2.view("X", now)
+    expected = CandleStore(tmp_path)
+    fill(expected, 375)
+    ev = expected.view("X", now)
+
+    assert v.last(5, Timeframe.M5) == ev.last(5, Timeframe.M5)
+    assert v.last(1, Timeframe.D1) == ev.last(1, Timeframe.D1)
+    assert v.last(500, Timeframe.M15) == ev.last(500, Timeframe.M15)
+    assert v.last(500, Timeframe.H1) == ev.last(500, Timeframe.H1)
+
+
 # --- extra edge-case tests (beyond the brief) ---
 
 def test_add_rejects_non_m1(tmp_path):

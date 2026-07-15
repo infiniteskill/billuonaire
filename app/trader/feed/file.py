@@ -4,14 +4,17 @@ from __future__ import annotations
 
 import heapq
 from datetime import date as date_type
-from datetime import datetime
+from datetime import datetime, time
 from pathlib import Path
 from typing import Iterator
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
 from trader.feed.base import DataFeed, FeedEvent
 from trader.models.candle import Candle, Timeframe, tick
+
+IST = ZoneInfo("Asia/Kolkata")
 
 
 class FileFeed(DataFeed):
@@ -91,15 +94,24 @@ class FileFeed(DataFeed):
             yield event
 
     def historical(
-        self, symbol: str, tf: Timeframe, start: date_type, end: date_type
+        self,
+        symbol: str,
+        tf: Timeframe,
+        start: date_type | datetime,
+        end: date_type | datetime,
     ) -> list[Candle]:
-        """Return closed candles of timeframe for symbol with start <= date <= end.
+        """Return closed candles of timeframe for symbol within [start, end]
+        inclusive, by calendar day.
 
         Args:
             symbol: Symbol to query
             tf: Timeframe (M1 only)
-            start: Start date (inclusive)
-            end: End date (inclusive)
+            start: Start date (inclusive). A ``datetime`` is accepted too
+                and normalized via ``.date()`` (time-of-day ignored).
+            end: End date (inclusive), same normalization as ``start``.
+
+        Internally this builds tz-aware IST day bounds: 00:00:00 of
+        ``start`` to 23:59:59.999999 of ``end``.
 
         Returns:
             List of Candle objects
@@ -113,13 +125,10 @@ class FileFeed(DataFeed):
 
         candles = self._load_candles(symbol)
 
-        # Filter by date range (inclusive)
-        start_dt = datetime.combine(start, datetime.min.time()).replace(
-            tzinfo=candles[0].ts.tzinfo if candles else None
-        )
-        end_dt = datetime.combine(end, datetime.max.time()).replace(
-            tzinfo=candles[0].ts.tzinfo if candles else None
-        )
+        start_date = start.date() if isinstance(start, datetime) else start
+        end_date = end.date() if isinstance(end, datetime) else end
+        start_dt = datetime.combine(start_date, time.min, tzinfo=IST)
+        end_dt = datetime.combine(end_date, time.max, tzinfo=IST)
 
         result = [
             c for c in candles

@@ -97,8 +97,7 @@ def test_subscribe_filters_and_merges_time_order():
 
 def test_historical_m1_range_and_other_tf_rejected():
     feed = ScenarioFeed(_both_scenarios())
-    start = datetime.combine(D, time(9, 15), tzinfo=IST)
-    got = feed.historical("X", Timeframe.M1, start, start + timedelta(minutes=9))
-    assert len(got) == 10 and all(c.symbol == "X" for c in got)
+    got = feed.historical("X", Timeframe.M1, D, D)          # date, per contract
+    assert len(got) == 375 and all(c.symbol == "X" for c in got)
     with pytest.raises(NotImplementedError):
-        feed.historical("X", Timeframe.M5, start, start + timedelta(minutes=60))
+        feed.historical("X", Timeframe.M5, D, D)
