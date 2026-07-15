@@ -55,6 +55,33 @@ def test_add_rejects_non_m1(tmp_path):
         s.add(c5)
 
 
+def test_add_rejects_out_of_session_ts(tmp_path):
+    s = CandleStore(tmp_path)
+    with pytest.raises(ValueError):
+        s.add(m1(-1, 100, 101, 99, 100.5))      # 09:14 pre-open
+    with pytest.raises(ValueError):
+        s.add(m1(375, 100, 101, 99, 100.5))     # 15:30 post-close
+    s.add(m1(0, 100, 101, 99, 100.5))           # 09:15 first session minute OK
+    s.add(m1(374, 100, 101, 99, 100.5))         # 15:29 last session minute OK
+
+
+def test_h1_buckets_anchor_to_session_open(tmp_path):
+    s = CandleStore(tmp_path)
+    fill(s, 120)                                # 09:15..11:14
+    v = s.view("X", D.replace(hour=11, minute=15))
+    h1 = v.last(2, Timeframe.H1)
+    assert [(c.ts.hour, c.ts.minute) for c in h1] == [(9, 15), (10, 15)]  # not 10:00
+    assert h1[0].open == tick(100) and h1[0].close == tick(100.5 + 59)
+    assert h1[1].open == tick(100 + 60) and h1[1].close == tick(100.5 + 119)
+    assert all(c.volume == 60 * 100 for c in h1)
+    # M15 anchors the same way: 09:15, 09:30, 09:45, 10:00, ... (offset from
+    # 09:15 is always a whole multiple of 15 minutes)
+    m15 = v.last(8, Timeframe.M15)
+    assert m15[0].ts == D.replace(hour=9, minute=15)
+    assert all((c.ts - D.replace(hour=9, minute=15)).total_seconds() % (15 * 60) == 0
+               for c in m15)
+
+
 def test_duplicate_and_out_of_order_adds(tmp_path):
     s = CandleStore(tmp_path)
     s.add(m1(1, 101, 102, 100, 101.5))     # out of order: 09:16 before 09:15

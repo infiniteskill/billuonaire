@@ -116,10 +116,17 @@ class CandleStore:
 
     def add(self, candle: Candle) -> None:
         """Add an M1 candle (raise ValueError otherwise) and recompute the
-        M5/M15/H1/D1 buckets that contain it. Duplicates replace; see module
-        docstring."""
+        M5/M15/H1/D1 buckets that contain it. The timestamp must lie within
+        the NSE session of its day: 09:15 <= ts < 15:30 (else ValueError).
+        Duplicates replace; see module docstring."""
         if candle.tf is not Timeframe.M1:
             raise ValueError(f"CandleStore.add accepts M1 only, got {candle.tf}")
+        session_open = candle.ts.replace(hour=9, minute=15, second=0, microsecond=0)
+        session_close = session_open + timedelta(minutes=Timeframe.D1.minutes)
+        if not (session_open <= candle.ts < session_close):
+            raise ValueError(
+                f"M1 ts {candle.ts} outside session 09:15-15:30 of its day"
+            )
         series = self._series(candle.symbol)
         _insert_sorted(series[Timeframe.M1], candle)
         for tf in _DERIVED:
