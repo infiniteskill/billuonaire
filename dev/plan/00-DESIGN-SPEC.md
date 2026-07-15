@@ -38,11 +38,11 @@ trades/day, trails structure-based, squares off before close. Dry-run first
   Edges = OI walls (max CE OI = ceiling, max PE OI = floor), max pain,
   ATM straddle width, PDH/PDL, PWH/PWL, round numbers. Without options data
   the cage degrades gracefully to price-levels only.
-- **TRAP** (observation, roughly 09:15–10:45): morning move treated as suspect.
+- **TRAP** (observation, 09:15–11:00): morning move treated as suspect.
   Trap confirmed by chain: cage-edge/liquidity **sweep** → LTF **CHoCH** →
   **breaker / inversion-FVG** forms → consequent encroachment holds,
   with Wyckoff volume confirmation (climax + absorption = spring/upthrust).
-- **RELEASE** (trade window, ~10:45–14:30): direction = opposite of trap,
+- **RELEASE** (trade window, ~11:00–14:30, axiom 8/27): direction = opposite of trap,
   aligned with HTF phase veto (no longs inside HTF markdown — the
   "3-months-underwater" defense). Entry at breaker/iFVG/OB retrace in OTE.
   SL beyond trap extreme + ATR buffer, off round numbers. Targets: internal
@@ -117,6 +117,13 @@ trader report --month                # metrics: WR, PF, DD, per-template, per-ga
 Options/futures as tradeable instruments (context only), web dashboard,
 real order placement, L2 order-flow, news calendar, Markov/Monte Carlo
 prediction (rejected — reactive precision, not forecasting).
+
+## Companion Docs
+
+- `05-AXIOMS-TO-MECHANICS.md` — user's 31 axioms → enforcement matrix (traceability; binding).
+- `06-CONFLUENCE-ENGINE-DEEP.md` — decision core: 4-layer spatial confluence, TF roles,
+  PO3 FSM, compression detector, 3-stage entry FSM, target/trail/obviousness/scanner/autonomy.
+  Where this file and 06 differ in detail, 06 wins.
 
 ## Layout
 

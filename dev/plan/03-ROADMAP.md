@@ -20,16 +20,20 @@ DetectorRegistry with enable/disable + weight renormalization proof-test
 (exact indexes asserted); disabling any detector changes no other detector's output.
 
 ## Phase 3 — Zones, Wyckoff, Templates
-orderblock, breaker, fvg (FVG/iFVG/BPR/CE), volume/VSA, wyckoff phase classifier,
+orderblock (with birth_time/hunt-born flag), breaker, fvg (FVG/iFVG/BPR/CE), volume/VSA,
+wyckoff phase classifier, **compression + PO3 FSM**, **index context detector**,
 timestats (priors + persistence), template classifier + TemplateGate.
 **Exit criteria:** full scenario matrix (02-DETECTOR-SPECS table) passes —
 each scenario fires required detectors, fires none of the forbidden ones.
 
 ## Phase 4 — Decision, Risk, Paper Execution
-Confluence engine, gates (time/risk/regime/psychology/template), sizing, limits,
-TradePlan builder (entry zone/stealth stop/targets), PaperBroker (fills + costs),
-PositionManager (breakeven 1R, partials 1R/2R, structure trail, wick tolerance,
-squareoff), `trader watch` live loop with rich table, `trader status`, `trader journal`.
+Confluence engine (4-layer spatial, 06 §1–2), gates (time/risk/regime/psychology/template
++ **ChaseGate, EventCooldownGate**), 3-stage entry FSM (06 §4), sizing (+max_stop_atr skip),
+limits (+daily_profit_lock_R, portfolio heat, correlation cap), opposing-map targets (06 §6),
+PaperBroker (fills + costs), PositionManager (TF-promotion ratchet trail 06 §7, wick
+tolerance, time-stop, early-exit on counter-zone, squareoff), obviousness multiplier (06 §8),
+**pre-market scanner + fit score + --auto** (06 §9), session state machine (06 §10),
+`trader watch` rich live table, `trader status`, `trader journal`.
 **Exit criteria:** stop_hunt_survive scenario: position survives wick, exits at
 target; grind_markdown: zero longs; full trade lifecycle journaled with evidence
 snapshot; costs visible in PnL.
@@ -38,7 +42,8 @@ snapshot; costs visible in PnL.
 Replay engine (FileFeed bar-by-bar, same pipeline), metrics (WR/PF/DD/expectancy,
 per-template, per-gate skip analysis, hunt-survival stats, day-clustered CIs),
 `trader replay`, `trader report`, skipped-setup outcome scoring,
-learn/calibrate.py (weight + timestats recalibration, walk-forward split).
+learn/calibrate.py (nightly self-audit 06 §10: per-detector precision, capped weight
+nudges ±10%/wk, auto-bench flag — human kills, walk-forward split, all changes journaled).
 **Exit criteria:** replay over 30 stocks × N days of file data produces report;
 replay of MockFeed scenarios reproduces Phase 4 outcomes exactly (single-pipeline proof).
 

@@ -77,6 +77,17 @@ where they existed; contradictions resolved here — this file is authoritative.
   - Straddle-implied range consumed >90% ⇒ exhaustion Evidence 0.5.
 - Writes OI_WALL Levels so sweep/breaker detectors compose with them automatically.
 
+## compression — Compression Boxes / Coiled Energy (spec: 06 §5)
+- Range contraction <0.6, body overlap, negative volume slope, NR7/inside clusters ⇒ box.
+- Box registers as PO3 ACCUMULATION (06 §3). Never trade its breakout directly — trade
+  failure (sweep-reclaim) or post-BOS retrace. Energy = box_height × 2.5 caps targets.
+- Location on hunt-born OB/HTF FVG ⇒ Evidence 0.75 post-DISTRIBUTION, else 0.3 context.
+
+## index — Index Context (spec: 05 axiom 11)
+- Runs full structure/wyckoff stack on NIFTY (+BANKNIFTY for financials).
+- Emits per-stock context Evidence: index phase + direction; confluence applies ×0.5
+  haircut on entries against strong index move. D1 index markdown reinforces RegimeVetoGate.
+
 ## timestats — Learned Time Probabilities
 - 5-min buckets (75/day). Counts per bucket: sweeps, reversals, fake-BOS, trap outcomes.
 - Cold start priors from docs: 09:15–10:30 danger 0.8; 11:00–13:00 safe 0.3; 13:30–14:00 0.6; 14:45+ 0.8.
