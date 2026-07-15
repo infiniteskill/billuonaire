@@ -83,7 +83,7 @@ class LevelState(Enum): ACTIVE; TESTED; SWEPT; RECLAIMED; INVERTED; MITIGATED; D
 @dataclass
 class Level:
     id: str; symbol: str; kind: LevelKind
-    zone: tuple[Decimal, Decimal]; born: datetime; tf: Timeframe
+    zone: tuple[Decimal, Decimal]; born: datetime; tf: Timeframe | None  # None = TF-less levels (PDH, rounds)
     state: LevelState; touches: int; state_history: list[tuple[datetime, LevelState]]
     def transition(self, candle: Candle) -> LevelState | None   # pure rules, unit-tested
 

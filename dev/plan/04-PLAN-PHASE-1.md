@@ -126,7 +126,9 @@ from enum import Enum
 TICK = Decimal("0.05")
 
 def tick(value) -> Decimal:
-    return Decimal(str(value)).quantize(TICK, rounding=ROUND_HALF_UP)
+    # NOTE: plain .quantize(TICK) only pins the exponent (2dp) — it does NOT
+    # round to multiples of 0.05. Divide-round-multiply is required:
+    return (Decimal(str(value)) / TICK).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * TICK
 
 class Timeframe(Enum):
     M1 = "1m"; M5 = "5m"; M15 = "15m"; H1 = "1h"; D1 = "1d"
