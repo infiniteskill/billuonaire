@@ -429,3 +429,103 @@ def double_trap(symbol: str, date: date_type, open_price: float,
         "day_high": candles[_DT_SWEEP_HIGH_MINUTE].high,
     }
     return sc
+
+
+# --------------------------------------------------- stop_hunt_survive script
+#
+# Judas morning (minutes 0-79 reused verbatim: ORL swept m37, CHoCH ~10:20 =>
+# TRAP_REVERSAL locks 11:30), then a scripted post-11:00 LONG setup at a
+# fresh pivot; all ticks from base = tick(open_price):
+# m80-99   chop wave 16..20T; period-4 wave + exact clamps tie every M5
+#          high/low => no swings, no sweeps, no M5 gap up into the ramp
+# m100-109 ramp to 25T, lows floored 21T so the 20T pivot stays a strict low
+# b22      peak doji, forced high 29T => SWING_H "TH1" (28,30)
+# b23      full-body drop 25->22T clamped to (22,25): a high-quality demand
+#          OB once b25-b26 displace up (marubozu => body_pct 1.0)
+# b24      the PIVOT: forced low 20T, M5 close 21 => SWING_L (19,21); its
+#          high is pinned 22T = FVG c1
+# b25-b26  rally to 30T; b26 low pinned 26T => FVG_BULL (22,26) by
+#          construction; close 30 > TH1 mid 29 => BOS LONG; forced high 33
+# b27      forced high 31 sweeps TH1 (close 25 < 28): the opposing sweep
+#          that deepens the LONG sweep's trap chain; close 25 also holds the
+#          FVG CE (24) => CE_HOLD evidence, ttl into the arm
+# b28-b30  pullback sits on the pivot: forced lows 21T x3 => touches>=3;
+#          M5 closes 22 inside the OB => OB retest evidence each candle
+# b31      PIVOT SWEEP m157: forced low 18T under the (19,21) zone with 4x
+#          volume, M5 closes 22 back above => sweep (pool+touches+chain
+#          ~0.82) + orderblock + fvg cluster around (18,26)T arms the FSM
+#          and the 80% lower wick triggers; fill at the m160 open (11:55).
+#          Arming before minute 200 matters: wyckoff PHASE (needs 40 closed
+#          M5) would otherwise tile candle-range zones over the whole
+#          descent and sprawl the cluster (stop_too_wide)
+# b32      HUNT m162: ONE M5 wicks to 14T, through the stop (cluster lo 18T
+#          minus 0.25xATR => quantized 16-17T), but closes 21T above it =>
+#          manager flags hunt_survived, position lives
+# b33+     recovery, then a +1T/min stair rally into the close: 1R/2R
+#          partials + EOD squareoff realize well over 1R.
+
+_SHS_WAVE = [16, 18, 20, 18]
+_SHS_PIVOT_SWEEP_MINUTE, _SHS_HUNT_MINUTE = 157, 162
+_SHS_BUCKETS: list[tuple[list[int], int, int, int]] = [
+    ([25, 26, 26, 25, 25], 23, 27, 900),   # b22 TH1 peak (forced high 29)
+    ([24, 24, 23, 23, 22], 22, 25, 900),   # b23 marubozu drop = the OB (22,25)
+    ([21, 20, 20, 20, 21], 20, 22, 900),   # b24 pivot low 20, high pinned 22
+    ([23, 24, 25, 26, 26], 21, 27, 1100),  # b25 bounce
+    ([28, 29, 30, 30, 30], 26, 31, 1100),  # b26 BOS>29; FVG c3 low pinned 26
+    ([27, 26, 26, 25, 25], 24, 30, 900),   # b27 CE hold; forced 31 sweeps TH1
+    ([24, 23, 22, 22, 22], 21, 25, 900),   # b28 OB retest, pivot touch 1
+    ([23, 22, 23, 22, 22], 21, 25, 900),   # b29 pivot touch 2
+    ([23, 22, 22, 22, 22], 21, 25, 900),   # b30 pivot touch 3
+    ([21, 20, 22, 22, 22], 18, 23, 1000),  # b31 SWEEP (forced low 18, boosted)
+    ([21, 20, 20, 21, 21], 14, 23, 900),   # b32 HUNT (forced low 14)
+    ([22, 23, 24, 25, 26], 21, 27, 1000),  # b33 recovery
+]
+_SHS_FORCED = {112: ("high", 29), 122: ("low", 20), 132: ("high", 33),
+               137: ("high", 31), 143: ("low", 21), 147: ("low", 21),
+               152: ("low", 21), _SHS_PIVOT_SWEEP_MINUTE: ("low", 18),
+               _SHS_HUNT_MINUTE: ("low", 14)}
+
+
+def _shs_candles(sc: Scenario) -> list[Candle]:
+    rng = sc.rng()
+    plan: list[tuple[int, int, int, int]] = []
+    for i, (closes, lo, hi) in enumerate(_JUDAS_MORNING):         # m0-79
+        plan += [(c, lo, hi, 1000 if i < 8 else 1200) for c in closes]
+    plan += [(_SHS_WAVE[m % 4], 16, 20, 800) for m in range(20)]  # m80-99
+    plan += [(c, c - 3, c + 3, 1000) for c in range(17, 22)]      # m100-104
+    plan += [(c, 21, c + 3, 1000) for c in (22, 23, 24, 25, 25)]  # m105-109
+    for closes, lo, hi, vol in _SHS_BUCKETS:                      # m110-169
+        plan += [(c, lo, hi, vol) for c in closes]
+    c = 26
+    for step, n in ((1, 30), (-1, 5)) * 5 + ((1, 30),):           # m170-374
+        for _ in range(n):
+            c += step
+            plan.append((c, c - 3, c + 3, 1100))
+    return _plan_candles(sc, rng, plan, {**_JUDAS_FORCED, **_SHS_FORCED},
+                         boosted=frozenset({_SWEEP_MINUTE,
+                                            _SHS_PIVOT_SWEEP_MINUTE}))
+
+
+def stop_hunt_survive(symbol: str, date: date_type, open_price: float,
+                      spec: MarketSpec = NSE) -> Scenario:
+    """Judas-style trap-reversal day whose post-11:00 LONG entry is stop-hunted
+    ONCE -- a single M5 wicks through the position's stop without closing
+    beyond -- then rallies to well over 1R. See the script commentary above.
+    """
+    sc = Scenario("stop_hunt_survive", symbol, date, [], open_price,
+                  script=_shs_candles, spec=spec)
+    candles = sc.candles()  # deterministic: read ground truth back
+    base, T = spec.quantize(open_price), spec.tick_size
+    or_low = min(c.low for c in candles[:15])
+    pivot = base + 20 * T
+    sc.truth = {
+        "template": "TRAP_REVERSAL",
+        "sweep_low_minute": _SWEEP_MINUTE,               # morning ORL sweep
+        "swept_zone": (or_low - T, or_low + T),
+        "afternoon_direction": "LONG",
+        "pivot_zone": (pivot - T, pivot + T),            # hunted swing low
+        "pivot_sweep_minute": _SHS_PIVOT_SWEEP_MINUTE,
+        "hunt_minute": _SHS_HUNT_MINUTE,
+        "stop_zone": (base + 16 * T, base + 17 * T),     # engine stop lands here
+    }
+    return sc

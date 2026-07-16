@@ -218,13 +218,13 @@ def test_short_ladder_and_trail_mirror(mgr):
 
 def test_counter_zone_exit_at_threshold(mgr):
     acts = mgr.on_candle(pos(), one_candle_ctx(101, 102.2, 100.8, 102),
-                         counter_zone_score=65)
+                         counter_zone_score=20)
     assert kinds(acts) == ["EXIT_COUNTER"]
 
 
 def test_counter_below_threshold_ignored(mgr):
     acts = mgr.on_candle(pos(), one_candle_ctx(101, 102.2, 100.8, 102),
-                         counter_zone_score=64.9)
+                         counter_zone_score=19.9)
     assert acts == []
 
 
