@@ -372,6 +372,24 @@ class TestLevelStore:
     def test_load_missing_symbol_returns_empty(self, tmp_path):
         assert LevelStore(tmp_path).load("BANKNIFTY") == []
 
+    def test_load_corrupt_json_logs_warning_and_returns_empty(self, tmp_path, caplog):
+        path = tmp_path / "NIFTY" / "levels.json"
+        path.parent.mkdir(parents=True)
+        path.write_text("{not valid json")
+        with caplog.at_level("WARNING"):
+            result = LevelStore(tmp_path).load("NIFTY")
+        assert result == []
+        assert any("NIFTY" in r.message for r in caplog.records)
+
+    def test_load_empty_file_logs_warning_and_returns_empty(self, tmp_path, caplog):
+        path = tmp_path / "NIFTY" / "levels.json"
+        path.parent.mkdir(parents=True)
+        path.write_text("")
+        with caplog.at_level("WARNING"):
+            result = LevelStore(tmp_path).load("NIFTY")
+        assert result == []
+        assert any("NIFTY" in r.message for r in caplog.records)
+
     def test_save_overwrites(self, tmp_path):
         store = LevelStore(tmp_path)
         levels = self.make_levels()

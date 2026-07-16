@@ -63,6 +63,7 @@ DEAD, MITIGATED and INVERTED are terminal for this engine.
 from __future__ import annotations
 
 import json
+import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime
@@ -71,6 +72,8 @@ from pathlib import Path
 
 from trader.models.candle import Candle, Timeframe
 from trader.models.level import Level, LevelKind, LevelState
+
+logger = logging.getLogger("trader.engine.levels")
 
 # Explicit side table -- keep in sync with LevelKind. ROUND is intentionally
 # absent (side-less, resolved per level from the reference close).
@@ -255,7 +258,15 @@ class LevelStore:
         path = self._path(symbol)
         if not path.exists():
             return []
-        return [self._decode(d) for d in json.loads(path.read_text())]
+        try:
+            raw = json.loads(path.read_text())
+        except json.JSONDecodeError:
+            logger.warning(
+                "corrupt or empty levels.json for %s at %s; treating as no levels",
+                symbol, path,
+            )
+            return []
+        return [self._decode(d) for d in raw]
 
     @staticmethod
     def _encode(level: Level) -> dict:

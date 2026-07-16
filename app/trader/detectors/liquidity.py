@@ -140,7 +140,9 @@ class LiquidityDetector(Detector):
                     existing.born = born
                 continue
             ctx.levels.append(Level(
-                id=f"{ctx.symbol}-{target.name}-{born.isoformat()}",
+                # zone-mid disambiguates two distinct groups whose max-born
+                # timestamp collides (e.g. formed from the same closing candle).
+                id=f"{ctx.symbol}-{target.name}-{born.isoformat()}-{_mid(zone)}",
                 symbol=ctx.symbol, kind=target, zone=zone, born=born,
                 tf=None, state=LevelState.ACTIVE, touches=touches,
             ))

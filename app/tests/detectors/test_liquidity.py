@@ -226,6 +226,78 @@ def test_eqh_not_created_when_swings_too_far_apart():
     assert not any(lv.kind is LevelKind.EQH for lv in ctx.levels)
 
 
+def test_eqh_group_ids_differ_when_max_born_collides():
+    """Two distinct 2-swing clusters at different prices whose younger swing
+    shares the same born ts must not collide on level id (zone-mid disambiguates)."""
+    det = LiquidityDetector(DEFAULT_PARAMS)
+    store = CandleStore("/nonexistent")
+    now = SESSION_START + timedelta(minutes=1)
+    shared_born = now
+
+    a1 = Level(id="X-SWING_H-A1", symbol="X", kind=LevelKind.SWING_H,
+               zone=(tick(100) - TICK, tick(100) + TICK),
+               born=now - timedelta(hours=1), tf=Timeframe.M5, state=LevelState.ACTIVE)
+    a2 = Level(id="X-SWING_H-A2", symbol="X", kind=LevelKind.SWING_H,
+               zone=(tick("100.05") - TICK, tick("100.05") + TICK),
+               born=shared_born, tf=Timeframe.M5, state=LevelState.ACTIVE)
+    b1 = Level(id="X-SWING_H-B1", symbol="X", kind=LevelKind.SWING_H,
+               zone=(tick(200) - TICK, tick(200) + TICK),
+               born=now - timedelta(hours=1), tf=Timeframe.M5, state=LevelState.ACTIVE)
+    b2 = Level(id="X-SWING_H-B2", symbol="X", kind=LevelKind.SWING_H,
+               zone=(tick("200.10") - TICK, tick("200.10") + TICK),
+               born=shared_born, tf=Timeframe.M5, state=LevelState.ACTIVE)
+    ctx = ctx_at(store, now, levels=[a1, a2, b1, b2])
+
+    det.detect(ctx)
+
+    eqh_levels = [lv for lv in ctx.levels if lv.kind is LevelKind.EQH]
+    assert len(eqh_levels) == 2
+    ids = {lv.id for lv in eqh_levels}
+    assert len(ids) == 2  # unique despite identical max-born ts
+
+
+def test_eqh_growth_mutate_third_swing_joins_group():
+    """A 3rd swing arriving within tolerance of an existing 2-swing EQH group
+    grows it in place: touches 2->3, zone widens to span all three, id stable."""
+    det = LiquidityDetector(DEFAULT_PARAMS)
+    store = CandleStore("/nonexistent")
+    now = SESSION_START + timedelta(minutes=1)
+    swing1 = Level(
+        id="X-SWING_H-1", symbol="X", kind=LevelKind.SWING_H,
+        zone=(tick(100) - TICK, tick(100) + TICK),
+        born=now - timedelta(hours=1), tf=Timeframe.M5, state=LevelState.ACTIVE,
+    )
+    swing2 = Level(
+        id="X-SWING_H-2", symbol="X", kind=LevelKind.SWING_H,
+        zone=(tick("100.05") - TICK, tick("100.05") + TICK),
+        born=now, tf=Timeframe.M5, state=LevelState.ACTIVE,
+    )
+    ctx = ctx_at(store, now, levels=[swing1, swing2])
+    det.detect(ctx)
+
+    eqh = next(lv for lv in ctx.levels if lv.kind is LevelKind.EQH)
+    eqh_id, old_zone = eqh.id, eqh.zone
+    assert eqh.touches == 2
+
+    later = now + timedelta(minutes=5)
+    swing3 = Level(
+        id="X-SWING_H-3", symbol="X", kind=LevelKind.SWING_H,
+        zone=(tick("100.08") - TICK, tick("100.08") + TICK),
+        born=later, tf=Timeframe.M5, state=LevelState.ACTIVE,
+    )
+    ctx.levels.append(swing3)
+
+    det.detect(ctx)
+
+    eqh_levels = [lv for lv in ctx.levels if lv.kind is LevelKind.EQH]
+    assert len(eqh_levels) == 1
+    updated = eqh_levels[0]
+    assert updated.id == eqh_id  # same level, mutated in place
+    assert updated.touches == 3
+    assert updated.zone == (old_zone[0], swing3.zone[1])  # widened to span
+    assert updated.born == later
+
+
 # ---- Proximity evidence --------------------------------------------------
 
 def _ctx_with_atr(store_extra_levels=None):
