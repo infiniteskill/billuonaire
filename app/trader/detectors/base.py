@@ -61,17 +61,17 @@ class Detector(ABC):
         ...
 
 
+_REQUIRES = {
+    "options_chain": lambda ctx: ctx.options is not None,
+    "index": lambda ctx: ctx.index is not None,
+}
+
+
 def _requires_met(detector: Detector, ctx: StockContext) -> bool:
-    """A requirement is met iff the context provides it. This phase only
-    knows ``options_chain`` (met iff ctx.options is not None); an unknown
-    requirement is never met, so the detector is skipped, not crashed."""
-    for req in detector.requires:
-        if req == "options_chain":
-            if ctx.options is None:
-                return False
-        else:
-            return False
-    return True
+    """A requirement is met iff the context provides it (table-driven via
+    ``_REQUIRES``); an unknown requirement is never met, so the detector is
+    skipped, not crashed."""
+    return all(_REQUIRES.get(req, lambda ctx: False)(ctx) for req in detector.requires)
 
 
 class DetectorRegistry:

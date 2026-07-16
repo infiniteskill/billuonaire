@@ -124,3 +124,8 @@ def test_day_state_defaults():
 def test_context_options_defaults_none():
     ctx = ctx_with([], D.replace(hour=9, minute=30))
     assert ctx.options is None
+
+
+def test_context_index_defaults_none():
+    ctx = ctx_with([], D.replace(hour=9, minute=30))
+    assert ctx.index is None

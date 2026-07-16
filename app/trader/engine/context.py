@@ -10,10 +10,20 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from trader.models.candle import Timeframe
-from trader.models.evidence import Evidence
+from trader.models.evidence import Direction, Evidence
 from trader.models.level import Level
 from trader.models.market import NSE, MarketSpec
 from trader.store.candles import CandleView
+
+
+@dataclass(frozen=True)
+class IndexView:
+    """Index-symbol read (structure+wyckoff run upstream by the orchestrator
+    on the index; wired in Phase 4)."""
+
+    trend: Direction
+    phase: str
+    strength: float
 
 
 @dataclass
@@ -35,6 +45,7 @@ class StockContext:
     evidence_history: list[Evidence]
     day: DayState
     options: object | None = None        # options chain snapshot; None if absent
+    index: IndexView | None = None       # index-context read; None if absent
     spec: MarketSpec = NSE               # market calendar + tick grid
 
     def atr(self, tf: Timeframe, period: int = 14) -> Decimal | None:
