@@ -1,8 +1,19 @@
 import json
+from datetime import date, datetime, timedelta
+from decimal import Decimal as D
+from zoneinfo import ZoneInfo
+
 from typer.testing import CliRunner
+
 from trader.cli import app
+from trader.engine.scanner import fit
+from trader.models.candle import Candle, Timeframe
+from trader.models.market import NSE
+from trader.store.candles import CandleStore
+from trader.store.journal import Journal
 
 runner = CliRunner()
+IST = ZoneInfo("Asia/Kolkata")
 
 def test_init_scaffolds(tmp_path):
     r = runner.invoke(app, ["init", "--dir", str(tmp_path)])
@@ -19,3 +30,114 @@ def test_list_numbers_stocks(tmp_path):
     (tmp_path / "stocks.json").write_text(json.dumps({"stocks": ["RELIANCE", "TCS"]}))
     r = runner.invoke(app, ["list", "--dir", str(tmp_path)])
     assert r.exit_code == 0 and "1" in r.output and "RELIANCE" in r.output and "TCS" in r.output
+
+
+def _init(tmp_path, stocks):
+    runner.invoke(app, ["init", "--dir", str(tmp_path)])
+    (tmp_path / "stocks.json").write_text(json.dumps({"stocks": stocks}))
+
+
+def _d1(sym, i, o, h, l, c, v=100_000):
+    ts = datetime(2026, 6, 1, 9, 15, tzinfo=IST) + timedelta(days=i)
+    return Candle(sym, Timeframe.D1, ts, D(str(o)), D(str(h)), D(str(l)), D(str(c)), v)
+
+
+def _m5(sym, i, o, h, l, c, v=1_000):
+    ts = datetime(2026, 6, 1, 9, 15, tzinfo=IST) + timedelta(minutes=5 * i)
+    return Candle(sym, Timeframe.M5, ts, D(str(o)), D(str(h)), D(str(l)), D(str(c)), v)
+
+
+# -------------------------------------------------------------------- watch
+
+def test_watch_mock_runs_end_to_end(tmp_path):
+    _init(tmp_path, ["ACME"])
+    r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--capital", "100000",
+                            "--max-qty", "10", "--feed", "mock"])
+    assert r.exit_code == 0
+    assert "Session Summary" in r.output and "ACME" in r.output
+
+
+def test_watch_file_feed(tmp_path):
+    _init(tmp_path, ["ACME"])
+    csv = ("ts,open,high,low,close,volume\n"
+          "2026-07-15T09:15:00+05:30,100,101,99,100.5,1000\n"
+          "2026-07-15T09:16:00+05:30,100.5,102,100,101.5,1200\n")
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "ACME.csv").write_text(csv)
+    r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path),
+                            "--feed", "file", "--data", str(data_dir)])
+    assert r.exit_code == 0 and "ACME" in r.output
+
+
+def test_watch_requires_symbols(tmp_path):
+    _init(tmp_path, ["ACME"])
+    r = runner.invoke(app, ["watch", "--dir", str(tmp_path)])
+    assert r.exit_code != 0
+
+
+def test_watch_unknown_feed(tmp_path):
+    _init(tmp_path, ["ACME"])
+    r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--feed", "bogus"])
+    assert r.exit_code != 0
+
+
+def test_watch_auto_picks_top_fit(tmp_path):
+    _init(tmp_path, ["GOOD", "BAD"])
+    store = CandleStore(tmp_path / "journal" / "candles", NSE)
+
+    good_d1 = [_d1("GOOD", i, 100, 102.5, 97.5, 100) for i in range(6)]
+    good_d1[-1] = _d1("GOOD", 5, 100, 130, 97.5, 100)             # new 5-day high
+    store._data["GOOD"] = {tf: [] for tf in Timeframe}
+    store._data["GOOD"][Timeframe.D1] = good_d1
+    store._data["GOOD"][Timeframe.M5] = [_m5("GOOD", i, 10, 10.5, 9.5, 10) for i in range(6)]
+
+    bad_d1 = [_d1("BAD", i, 100 * (i % 2 + 1), 100 * (i % 2 + 1) + 1,
+                  100 * (i % 2 + 1) - 1, 100 * (i % 2 + 1)) for i in range(6)]  # alternating gaps
+    store._data["BAD"] = {tf: [] for tf in Timeframe}
+    store._data["BAD"][Timeframe.D1] = bad_d1
+    store._data["BAD"][Timeframe.M5] = [_m5("BAD", i, 10, 10.05, 9.95, 10) for i in range(6)]
+
+    store.save("GOOD")
+    store.save("BAD")
+
+    good_score, bad_score = (fit("GOOD", store, NSE)["score"], fit("BAD", store, NSE)["score"])
+    assert good_score != bad_score
+    winner, loser = ("GOOD", "BAD") if good_score > bad_score else ("BAD", "GOOD")
+
+    r = runner.invoke(app, ["watch", "--dir", str(tmp_path), "--auto", "1", "--feed", "mock"])
+    assert r.exit_code == 0
+    assert winner in r.output and loser not in r.output
+
+
+# ------------------------------------------------------------------ journal
+
+def test_journal_command_reads_fixture(tmp_path):
+    j = Journal(tmp_path / "journal")
+    d = date(2026, 7, 15)
+    j.log("verdict", {"symbol": "ACME", "template": "TREND", "final": 72.5,
+                      "at": datetime(2026, 7, 15, 10, 0, tzinfo=IST)}, day=d)
+    j.log("trade_open", {"symbol": "ACME", "qty": 10, "price": D("100.5"),
+                         "at": datetime(2026, 7, 15, 10, 5, tzinfo=IST)}, day=d)
+    r = runner.invoke(app, ["journal", "--day", "2026-07-15", "--dir", str(tmp_path)])
+    assert r.exit_code == 0
+    assert "verdict" in r.output and "ACME" in r.output and "trade_open" in r.output
+
+
+# ------------------------------------------------------------------- status
+
+def test_status_command_summarizes_latest_day(tmp_path):
+    j = Journal(tmp_path / "journal")
+    d = date(2026, 7, 15)
+    j.log("trade_open", {"symbol": "ACME"}, day=d)
+    j.log("trade_close", {"symbol": "ACME", "pnl": D("150.25")}, day=d)
+    j.log("skip", {"symbol": "ACME", "gate": "risk_budget", "reason": "x"}, day=d)
+    r = runner.invoke(app, ["status", "--dir", str(tmp_path)])
+    assert r.exit_code == 0
+    assert "trades" in r.output and "150.25" in r.output and "skips" in r.output
+
+
+def test_status_no_journal(tmp_path):
+    r = runner.invoke(app, ["status", "--dir", str(tmp_path)])
+    assert r.exit_code == 0
+    assert "no journal entries" in r.output
