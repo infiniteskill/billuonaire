@@ -36,6 +36,7 @@ from trader.execution.manager import PositionManager
 from trader.execution.paper import PaperBroker
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction
+from trader.models.market import _minutes
 from trader.models.position import Position, PositionStatus
 from trader.store.candles import CandleStore, _bucket_start
 from trader.store.journal import Journal
@@ -71,14 +72,27 @@ class SymbolPipeline:
         self.n_trades = self.n_skips = 0
         self._last_bucket = self._pending_plan = None
         self._pending_exits, self._hunt_logged = [], False
+        self._cutoff = _minutes(settings.time.no_entry_after)
 
     def on_m1(self, candle: Candle, index: IndexView | None = None) -> None:
         bucket = _bucket_start(candle.ts, Timeframe.M5, self.spec)
         if self._last_bucket is not None and bucket != self._last_bucket:
             self._on_m5_close(self._last_bucket + _M5, index)
+        if self.day is not None and candle.ts.date() != self.day.session_date:
+            self._end_session(candle.ts)    # no stale intent across the gap
         self._fill_pending(candle)          # fills at this M1's open
         self.store.add(candle)
         self._last_bucket = bucket
+
+    def _end_session(self, ts) -> None:
+        """New session: a pending plan or armed FSM carries day-old stops
+        and targets across the overnight gap -- drop both, journal skips."""
+        if self._pending_plan is not None:
+            self._pending_plan = None
+            self._skip(ts, "fill", "session_end")
+        if self.fsm.state is not EntryState.IDLE:
+            self.fsm._disarm("session_end")
+            self._skip(ts, "fsm_disarm", "session_end")
 
     # -------------------------------------------------------- closed-M5 flow
 
@@ -123,16 +137,16 @@ class SymbolPipeline:
             verdict = self.gates.check(ctx, top.direction, top.zone, htf[0],
                                        self.risk)
             if not verdict.allow:
-                self._skip(ctx, verdict.gate, verdict.reason)
+                self._skip(ctx.now, verdict.gate, verdict.reason)
             else:
                 opps = [z for z in zones
                         if z.direction.value == -top.direction.value]
                 res = self.fsm.arm(top, ctx, self.max_qty, opps)
                 if not res.armed:
-                    self._skip(ctx, "fsm_arm", res.reason)
+                    self._skip(ctx.now, "fsm_arm", res.reason)
         step = self.fsm.step(ctx, evidence)      # this-candle evidence
         if step.action == "disarm":
-            self._skip(ctx, "fsm_disarm", step.reason)
+            self._skip(ctx.now, "fsm_disarm", step.reason)
         elif step.action == "fill":
             self._pending_plan = step.plan       # fills at next M1 open
 
@@ -151,15 +165,18 @@ class SymbolPipeline:
     def _fill_pending(self, candle: Candle) -> None:
         if self._pending_plan is not None:
             plan, self._pending_plan = self._pending_plan, None
-            fill = self.broker.entry_fill(plan, candle)
-            self.position = Position(plan, fill, plan.qty, plan.stop,
-                                     realized=-fill.costs)
-            self._hunt_logged = False
-            self.risk.record_open(self.symbol)
-            self.n_trades += 1
-            self._log("trade_open", at=fill.ts, direction=plan.direction,
-                      qty=plan.qty, price=fill.price, stop=plan.stop,
-                      targets=plan.targets, costs=fill.costs, plan=plan.meta)
+            if candle.ts.hour * 60 + candle.ts.minute >= self._cutoff:
+                self._skip(candle.ts, "fill", "too_late")  # past no_entry_after
+            else:
+                fill = self.broker.entry_fill(plan, candle)
+                self.position = Position(plan, fill, plan.qty, plan.stop,
+                                         realized=-fill.costs)
+                self._hunt_logged = False
+                self.risk.record_open(self.symbol)
+                self.n_trades += 1
+                self._log("trade_open", at=fill.ts, direction=plan.direction,
+                          qty=plan.qty, price=fill.price, stop=plan.stop,
+                          targets=plan.targets, costs=fill.costs, plan=plan.meta)
         pos = self.position
         for a in self._pending_exits:
             if pos is None:
@@ -193,9 +210,9 @@ class SymbolPipeline:
                 return e.direction
         return Direction.NEUTRAL
 
-    def _skip(self, ctx, gate: str, reason: str) -> None:
+    def _skip(self, at, gate: str, reason: str) -> None:
         self.n_skips += 1
-        self._log("skip", at=ctx.now, gate=gate, reason=reason)
+        self._log("skip", at=at, gate=gate, reason=reason)
 
     def _log(self, kind: str, **payload) -> None:
         self.journal.log(kind, {"symbol": self.symbol, **payload},

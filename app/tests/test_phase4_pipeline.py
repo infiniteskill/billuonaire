@@ -15,6 +15,7 @@ import pytest
 
 from trader.config import Settings
 from trader.engine.context import DayState, IndexView, StockContext
+from trader.engine.entry import EntryState
 from trader.engine.gates import RiskState
 from trader.engine.pipeline import Orchestrator, SymbolPipeline
 from trader.execution.manager import Action, PositionManager
@@ -112,6 +113,47 @@ def test_partials_and_eod_exact_accounting(tmp_path):
     assert risk.daily_pnl_R == pytest.approx(float(expected / (D("5.05") * 50)))
     kinds = [e["kind"] for e in pipe.journal.read(t0.date())]
     assert "trade_open" in kinds and "trade_close" in kinds
+
+
+# --------------------------------------------- 2b. stale/late pending plans
+
+def test_pending_plan_dropped_on_new_session(tmp_path):
+    """A plan queued on day-1's last evaluated bucket must NOT fill at
+    day-2's open (day-old stop/targets across the gap); an armed FSM must
+    not survive the session change either."""
+    pipe, _ = make_pipeline(tmp_path)
+    t = datetime(2026, 7, 14, 15, 20, tzinfo=IST)
+    pipe.on_m1(m1("X", t, 100, 100, 100, 100))
+    pipe.on_m1(m1("X", t + timedelta(minutes=5), 100, 100, 100, 100))  # day set
+    plan = TradePlan("X", Direction.LONG, (D("99"), D("101")), D("95"),
+                     [D("107")], 10, 70.0, t + timedelta(minutes=5), {})
+    pipe._pending_plan = plan
+    pipe.fsm.state, pipe.fsm.plan = EntryState.ARMED, plan
+    pipe.fsm._armed_ts = plan.created
+    pipe.on_m1(m1("X", datetime(2026, 7, 15, 9, 15, tzinfo=IST),
+                  102, 102, 102, 102))
+    assert pipe.position is None and pipe._pending_plan is None
+    assert pipe.fsm.state is EntryState.IDLE and pipe.fsm.plan is None
+    skips = [e for e in pipe.journal.read(date(2026, 7, 14))
+             if e["kind"] == "skip" and e["reason"] == "session_end"]
+    assert len(skips) == 2                       # dropped plan + disarmed FSM
+
+
+def test_fill_after_no_entry_cutoff_dropped(tmp_path):
+    """A pending entry whose fill M1 lands at/after no_entry_after (14:30)
+    is dropped, journaled as skip 'too_late', and opens nothing."""
+    pipe, risk = make_pipeline(tmp_path)
+    t = datetime(2026, 7, 14, 14, 25, tzinfo=IST)
+    pipe.on_m1(m1("X", t, 100, 100, 100, 100))
+    pipe.on_m1(m1("X", t + timedelta(minutes=5), 100, 100, 100, 100))  # day set
+    pipe._pending_plan = TradePlan("X", Direction.LONG, (D("99"), D("101")),
+                                   D("95"), [D("107")], 10, 70.0,
+                                   t + timedelta(minutes=5), {})
+    pipe.on_m1(m1("X", t + timedelta(minutes=10), 100, 100, 100, 100))  # 14:35
+    assert pipe.position is None and pipe._pending_plan is None
+    assert risk.trades_today == 0
+    skips = [e for e in pipe.journal.read(t.date()) if e["kind"] == "skip"]
+    assert any(e["reason"] == "too_late" for e in skips)
 
 
 # ------------------------------------------------------ 3. shared RiskState
