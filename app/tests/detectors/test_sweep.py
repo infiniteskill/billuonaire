@@ -58,7 +58,8 @@ def test_pdl_sweep_exact_score_and_evidence_fields():
     assert ev.strength == pytest.approx(0.70)
     assert ev.zone == ctx.levels[0].zone
     assert ev.ttl_candles == 18
-    assert ev.meta == {"level_id": "X-PDL-1", "kind": "PDL", "chain_depth": 1}
+    assert ev.meta == {"level_id": "X-PDL-1", "kind": "PDL", "chain_depth": 1,
+                        "event": "SWEEP"}
 
 
 def test_fast_reclaim_adds_bonus():
@@ -77,6 +78,7 @@ def test_fast_reclaim_adds_bonus():
     [ev2] = det.detect(ctx2)
     assert ev2.strength == pytest.approx(0.80)
     assert ev2.meta["upgrade"] is True
+    assert ev2.meta["event"] == "SWEEP"
     assert ev2.meta["level_id"] == "X-PDL-1"
 
 

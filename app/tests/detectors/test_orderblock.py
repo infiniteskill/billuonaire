@@ -110,7 +110,7 @@ def test_evidence_inside_zone_hunt_born():
     assert ev.strength == pytest.approx(0.70)
     assert ev.zone == (tick(99), tick(101))
     assert ev.ttl_candles == 6
-    assert ev.meta == {"level_id": levels[0].id, "hunt_born": True}
+    assert ev.meta == {"level_id": levels[0].id, "hunt_born": True, "event": "OB_RETEST"}
 
 
 def test_no_hunt_bonus_after_105_minutes():

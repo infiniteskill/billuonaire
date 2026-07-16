@@ -83,7 +83,7 @@ def test_evidence_long_trend_strength_and_meta():
     assert ev.direction is Direction.NEUTRAL
     assert ev.strength == pytest.approx(0.4)
     assert ev.ttl_candles == 1
-    assert ev.meta == {"trend": "LONG", "phase": "markup"}
+    assert ev.meta == {"trend": "LONG", "phase": "markup", "event": "INDEX"}
 
 
 def test_evidence_zone_is_latest_closed_candle():
@@ -93,7 +93,7 @@ def test_evidence_zone_is_latest_closed_candle():
     assert ev.zone == (tick(99), tick(101))
 
 
-def test_no_candles_zone_is_empty_list():
+def test_no_candles_emits_no_evidence():
     det = IndexDetector({})
     store = CandleStore("/nonexistent")
     now = SESSION_START + timedelta(minutes=10)
@@ -101,8 +101,7 @@ def test_no_candles_zone_is_empty_list():
                        levels=[], evidence_history=[],
                        day=DayState(session_date=now.date()),
                        index=IndexView(trend=Direction.LONG, phase="markup", strength=0.8))
-    [ev] = det.detect(ctx)
-    assert ev.zone == []
+    assert det.detect(ctx) == []
 
 
 def test_neutral_trend_is_silent():

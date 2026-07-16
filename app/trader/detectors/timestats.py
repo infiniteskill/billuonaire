@@ -7,16 +7,18 @@ spec.session_minutes // bucket_min. NSE-shaped sessions (session_minutes
 == 375) use the empirical intraday danger table; any other session (e.g.
 24h crypto) gets a flat 0.5 prior until learned.
 
-Learning (wired by a later phase): record(bucket, swept) accumulates
-(sweeps, total) per bucket; danger(bucket) blends prior with observed
-counts Laplace-style: (prior*prior_weight + sweeps) / (prior_weight +
-total). save()/load() persist counts as JSON at
-"{path}/timestats-{symbol}.json" when params.path is set; path=None ->
-in-memory only, no disk IO.
+Learning (wired by a later phase): record(symbol, bucket, swept)
+accumulates (sweeps, total) per bucket, per symbol; danger(symbol, bucket)
+blends prior with observed counts Laplace-style: (prior*prior_weight +
+sweeps) / (prior_weight + total). Counts are keyed by symbol so
+save(B)/load(B) never clobbers symbol A's learned counts. save()/load()
+persist one symbol's counts as JSON at "{path}/timestats-{symbol}.json"
+when params.path is set; path=None -> in-memory only, no disk IO.
 
 detect() emits one NEUTRAL Evidence per new closed M5 candle: strength =
-1 - danger(bucket of ctx.now), zone = candle's (low, high) ([] if none),
-ttl 1, meta {"bucket", "danger"}."""
+1 - danger(ctx.symbol, bucket of ctx.now); [] (no evidence) when no
+closed M5 candle exists yet. ttl 1, meta {"bucket", "danger", "event":
+"TIME"}."""
 
 from __future__ import annotations
 
@@ -54,7 +56,8 @@ class TimestatsDetector(Detector):
 
     def __init__(self, params: dict):
         super().__init__({**_DEFAULTS, **params})
-        self._counts: dict[int, tuple[int, int]] = {}  # bucket -> (sweeps, total)
+        # symbol -> {bucket: (sweeps, total)}
+        self._counts: dict[str, dict[int, tuple[int, int]]] = {}
         self._seen: set = set()
 
     def prior(self, bucket: int, spec: MarketSpec) -> float:
@@ -62,12 +65,13 @@ class TimestatsDetector(Detector):
             return 0.5
         return nse_prior(bucket * self.params["bucket_min"])
 
-    def record(self, bucket: int, swept: bool) -> None:
-        sweeps, total = self._counts.get(bucket, (0, 0))
-        self._counts[bucket] = (sweeps + int(swept), total + 1)
+    def record(self, symbol: str, bucket: int, swept: bool) -> None:
+        counts = self._counts.setdefault(symbol, {})
+        sweeps, total = counts.get(bucket, (0, 0))
+        counts[bucket] = (sweeps + int(swept), total + 1)
 
-    def danger(self, bucket: int, spec: MarketSpec) -> float:
-        sweeps, total = self._counts.get(bucket, (0, 0))
+    def danger(self, symbol: str, bucket: int, spec: MarketSpec) -> float:
+        sweeps, total = self._counts.get(symbol, {}).get(bucket, (0, 0))
         w = self.params["prior_weight"]
         return (self.prior(bucket, spec) * w + sweeps) / (w + total)
 
@@ -80,25 +84,27 @@ class TimestatsDetector(Detector):
         if p is None:
             return
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps({str(k): list(v) for k, v in self._counts.items()}))
+        counts = self._counts.get(symbol, {})
+        p.write_text(json.dumps({str(k): list(v) for k, v in counts.items()}))
 
     def load(self, symbol: str) -> None:
         p = self._path_for(symbol)
         if p is None or not p.exists():
             return
-        self._counts = {int(k): tuple(v) for k, v in json.loads(p.read_text()).items()}
+        self._counts[symbol] = {int(k): tuple(v) for k, v in json.loads(p.read_text()).items()}
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         window = ctx.candles.last(1, Timeframe.M5)
-        zone = (window[-1].low, window[-1].high) if window else []
-        key = window[-1].ts if window else ctx.now
+        if not window:
+            return []
+        key = window[-1].ts
         if key in self._seen:
             return []
         self._seen.add(key)
         bucket = bucket_index(ctx.now, ctx.spec, self.params["bucket_min"])
-        danger = self.danger(bucket, ctx.spec)
+        danger = self.danger(ctx.symbol, bucket, ctx.spec)
         return [Evidence(
             detector=self.name, direction=Direction.NEUTRAL, strength=1 - danger,
-            zone=zone, ts=ctx.now, ttl_candles=1,
-            meta={"bucket": bucket, "danger": danger},
+            zone=(window[-1].low, window[-1].high), ts=ctx.now, ttl_candles=1,
+            meta={"bucket": bucket, "danger": danger, "event": "TIME"},
         )]

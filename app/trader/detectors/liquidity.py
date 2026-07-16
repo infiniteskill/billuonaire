@@ -187,6 +187,7 @@ class LiquidityDetector(Detector):
                     "kind": lv.kind.name,
                     "level_id": lv.id,
                     "distance_atr": float(distance / atr),
+                    "event": "POOL_NEAR",
                 },
             ))
         return evidence

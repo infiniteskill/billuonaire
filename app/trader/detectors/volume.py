@@ -56,7 +56,7 @@ class VolumeDetector(Detector):
         return [Evidence(
             detector=self.name, direction=confirmed.direction, strength=0.3,
             zone=confirmed.zone, ts=ctx.now, ttl_candles=6,
-            meta={"vsa": classification, "confirms": confirmed.detector},
+            meta={"vsa": classification, "confirms": confirmed.detector, "event": "VSA"},
         )]
 
     def _classify(self, latest: Candle, sma: float, stddev: float, atr) -> str | None:

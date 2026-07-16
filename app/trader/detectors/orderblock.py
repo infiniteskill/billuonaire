@@ -97,7 +97,8 @@ class OrderblockDetector(Detector):
                 direction=Direction.LONG if lv.kind is LevelKind.OB_BULL
                 else Direction.SHORT,
                 strength=self._strength(ctx, lv), zone=lv.zone, ts=ctx.now,
-                ttl_candles=6, meta={"level_id": lv.id, "hunt_born": hunt},
+                ttl_candles=6,
+                meta={"level_id": lv.id, "hunt_born": hunt, "event": "OB_RETEST"},
             ))
         return out
 

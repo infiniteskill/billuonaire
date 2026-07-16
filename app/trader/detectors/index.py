@@ -5,8 +5,9 @@ counter-index haircut; this detector just reports).
 requires {"index"} -> skipped while ``ctx.index`` is None (Phase 4 wires the
 orchestrator that populates it). trend NEUTRAL -> no evidence. Otherwise one
 NEUTRAL Evidence per new closed M5 candle: strength = index.strength * 0.5,
-zone = candle's (low, high) ([] if none), ttl 1,
-meta {"trend": index.trend.name, "phase": index.phase}."""
+zone = candle's (low, high); [] (no evidence) when no closed M5 candle
+exists yet. ttl 1, meta {"trend": index.trend.name, "phase": index.phase,
+"event": "INDEX"}."""
 
 from __future__ import annotations
 
@@ -29,13 +30,15 @@ class IndexDetector(Detector):
         if ctx.index.trend is Direction.NEUTRAL:
             return []
         window = ctx.candles.last(1, Timeframe.M5)
-        key = window[-1].ts if window else ctx.now
+        if not window:
+            return []
+        key = window[-1].ts
         if key in self._seen:
             return []
         self._seen.add(key)
-        zone = (window[-1].low, window[-1].high) if window else []
+        zone = (window[-1].low, window[-1].high)
         return [Evidence(
             detector=self.name, direction=Direction.NEUTRAL,
             strength=ctx.index.strength * 0.5, zone=zone, ts=ctx.now, ttl_candles=1,
-            meta={"trend": ctx.index.trend.name, "phase": ctx.index.phase},
+            meta={"trend": ctx.index.trend.name, "phase": ctx.index.phase, "event": "INDEX"},
         )]

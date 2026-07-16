@@ -69,7 +69,8 @@ class SweepDetector(Detector):
             ev = Evidence(
                 detector=self.name, direction=direction, strength=min(q, 1.0),
                 zone=lv.zone, ts=ctx.now, ttl_candles=18,
-                meta={"level_id": lv.id, "kind": lv.kind.name, "chain_depth": depth},
+                meta={"level_id": lv.id, "kind": lv.kind.name, "chain_depth": depth,
+                      "event": "SWEEP"},
             )
             self._base[(lv.id, swept_ts)] = ev
             out.append(ev)

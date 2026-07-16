@@ -92,20 +92,28 @@ def test_nse_session_prior_uses_table():
 
 def test_danger_blend_exact_arithmetic():
     det = TimestatsDetector({"prior_weight": 20})
-    det._counts[21] = (10, 10)  # bucket 21 -> NSE prior 0.3
-    assert det.danger(21, NSE) == pytest.approx((0.3 * 20 + 10) / (20 + 10))
+    det._counts["X"] = {21: (10, 10)}  # bucket 21 -> NSE prior 0.3
+    assert det.danger("X", 21, NSE) == pytest.approx((0.3 * 20 + 10) / (20 + 10))
 
 
 def test_danger_cold_start_equals_prior():
     det = TimestatsDetector({"prior_weight": 20})
-    assert det.danger(21, NSE) == pytest.approx(0.3)
+    assert det.danger("X", 21, NSE) == pytest.approx(0.3)
 
 
 def test_record_accumulates_counts():
     det = TimestatsDetector({})
-    det.record(5, swept=True)
-    det.record(5, swept=False)
-    assert det._counts[5] == (1, 2)
+    det.record("X", 5, swept=True)
+    det.record("X", 5, swept=False)
+    assert det._counts["X"][5] == (1, 2)
+
+
+def test_record_is_per_symbol():
+    det = TimestatsDetector({})
+    det.record("A", 5, swept=True)
+    det.record("B", 5, swept=False)
+    assert det._counts["A"][5] == (1, 1)
+    assert det._counts["B"][5] == (0, 1)
 
 
 # ---- evidence ----
@@ -115,12 +123,12 @@ def test_evidence_neutral_strength_inverts_danger():
     ctx = make_ctx(3)
     [ev] = det.detect(ctx)
     bucket = bucket_index(ctx.now, ctx.spec, det.params["bucket_min"])
-    expected_danger = det.danger(bucket, ctx.spec)
+    expected_danger = det.danger(ctx.symbol, bucket, ctx.spec)
     assert ev.detector == "timestats"
     assert ev.direction is Direction.NEUTRAL
     assert ev.strength == pytest.approx(1 - expected_danger)
     assert ev.ttl_candles == 1
-    assert ev.meta == {"bucket": bucket, "danger": expected_danger}
+    assert ev.meta == {"bucket": bucket, "danger": expected_danger, "event": "TIME"}
 
 
 def test_evidence_zone_is_latest_closed_candle():
@@ -130,11 +138,10 @@ def test_evidence_zone_is_latest_closed_candle():
     assert ev.zone == (tick(99), tick(101))
 
 
-def test_no_candles_zone_is_empty_list():
+def test_no_candles_emits_no_evidence():
     det = TimestatsDetector({})
     ctx = empty_ctx(SESSION_START + timedelta(minutes=10))
-    [ev] = det.detect(ctx)
-    assert ev.zone == []
+    assert det.detect(ctx) == []
 
 
 def test_dedupe_same_candle_silent_second_call():
@@ -157,9 +164,9 @@ def test_new_candle_fires_again():
 
 def test_save_load_roundtrip(tmp_path):
     det = TimestatsDetector({"path": str(tmp_path)})
-    det.record(3, swept=True)
-    det.record(3, swept=False)
-    det.record(10, swept=True)
+    det.record("X", 3, swept=True)
+    det.record("X", 3, swept=False)
+    det.record("X", 10, swept=True)
     det.save("X")
 
     loaded = TimestatsDetector({"path": str(tmp_path)})
@@ -168,9 +175,27 @@ def test_save_load_roundtrip(tmp_path):
     assert (tmp_path / "timestats-X.json").exists()
 
 
+def test_load_other_symbol_does_not_clobber(tmp_path):
+    # Regression: save/load are per-symbol, so loading B must not wipe A's
+    # already-loaded counts on the same instance.
+    a = TimestatsDetector({"path": str(tmp_path)})
+    a.record("A", 3, swept=True)
+    a.save("A")
+
+    b = TimestatsDetector({"path": str(tmp_path)})
+    b.record("B", 7, swept=False)
+    b.save("B")
+
+    det = TimestatsDetector({"path": str(tmp_path)})
+    det.load("A")
+    det.load("B")
+    assert det._counts["A"][3] == (1, 1)
+    assert det._counts["B"][7] == (0, 1)
+
+
 def test_no_path_skips_disk_io(tmp_path):
     det = TimestatsDetector({"path": None})
-    det.record(3, swept=True)
+    det.record("X", 3, swept=True)
     det.save("X")
     assert list(tmp_path.iterdir()) == []
 

@@ -330,6 +330,7 @@ def test_proximity_evidence_for_untapped_pool_within_atr():
     assert ev.strength == 0.6 * 0.5
     assert ev.ttl_candles == 12
     assert ev.zone == pool.zone
+    assert ev.meta["event"] == "POOL_NEAR"
 
 
 def test_eq_proximity_evidence_strength_value():

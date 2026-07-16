@@ -71,7 +71,7 @@ def test_stopping_volume_classification_emits_with_colocated_evidence():
     assert out.strength == 0.3
     assert out.zone == ev.zone
     assert out.ttl_candles == 6
-    assert out.meta == {"vsa": "stopping_volume", "confirms": "orderblock"}
+    assert out.meta == {"vsa": "stopping_volume", "confirms": "orderblock", "event": "VSA"}
 
 
 def test_no_demand_classification_emits_with_colocated_evidence():
