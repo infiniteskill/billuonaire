@@ -1,26 +1,10 @@
 """Tests for the liquidity detector (trader/detectors/liquidity.py).
-
-Design recap (task-4 brief + binding decisions):
-- name = "liquidity"; params {"eq_tolerance": 0.001,
-  "round_steps": [50, 100, 500], "round_within_pct": 2.0,
-  "proximity_atr": 1.0}.
-- Once-per-session level creation (idempotent by id):
-  - PDH/PDL from ctx.candles.prev_day(M1) extremes; skipped w/o prev day.
-  - OPEN_RANGE_H/L from today's first 15 M1 candles (09:15-09:29); only
-    creatable once all 15 have closed (now >= 09:30).
-  - ROUND: nearest multiple of each configured step to the latest closed
-    M1 close, created iff within round_within_pct%.
-- EQH/EQL: 2+ SWING_H/SWING_L levels (ACTIVE/TESTED) whose zone midpoints
-  are within eq_tolerance (relative) of each other -> EQH/EQL Level
-  spanning the group's zones, touches = group size.
-- Proximity Evidence: nearest pool above/below current close among
-  {PDH,PDL,EQH,EQL,OPEN_RANGE_H,OPEN_RANGE_L,ROUND} in state ACTIVE/TESTED,
-  within proximity_atr * ATR(M5) -> NEUTRAL Evidence, strength = pool
-  strength * 0.5. No ATR -> no evidence. SWEPT/DEAD pools never draw.
-"""
+Binding design: see the module docstring and the task-4 brief."""
 
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+
+import pytest
 
 from trader.detectors.liquidity import LiquidityDetector
 from trader.engine.context import DayState, StockContext
@@ -273,6 +257,25 @@ def test_proximity_evidence_for_untapped_pool_within_atr():
     assert ev.strength == 0.6 * 0.5
     assert ev.ttl_candles == 12
     assert ev.zone == pool.zone
+
+
+def test_eq_proximity_evidence_strength_value():
+    # Two SWING_H born exactly at ctx.now -> recency = 1.0, touches = 2:
+    # strength = (min(2/5, 1)*0.7 + 1.0*0.3) * 0.5 = 0.29
+    det = LiquidityDetector(DEFAULT_PARAMS)
+    now = bar_close(Timeframe.M5, 14)  # the "now" _ctx_with_atr uses
+    swings = [
+        Level(id=f"X-SWING_H-{i}", symbol="X", kind=LevelKind.SWING_H,
+              zone=(tick(p) - TICK, tick(p) + TICK), born=now,
+              tf=Timeframe.M5, state=LevelState.ACTIVE)
+        for i, p in enumerate((116, "116.05"))
+    ]
+    ctx = _ctx_with_atr(swings)
+
+    result = det.detect(ctx)
+
+    [ev] = [e for e in result if e.meta["kind"] == "EQH"]
+    assert ev.strength == pytest.approx(0.29)
 
 
 def test_proximity_evidence_absent_when_pool_swept():

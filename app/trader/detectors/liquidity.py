@@ -1,53 +1,8 @@
-"""Liquidity detector: creates draw-on-liquidity Levels (PDH/PDL, opening
-range, round numbers, equal highs/lows) and emits proximity Evidence when
-price trades near an untapped pool.
-
-Design recap (task-4 brief + binding decisions):
-- name = "liquidity"; params {"eq_tolerance": 0.001, "round_steps":
-  [50, 100, 500], "round_within_pct": 2.0, "proximity_atr": 1.0}.
-- Level creation is a documented side channel (see swings.py): this
-  detector mutates ``ctx.levels`` in place, in addition to returning
-  Evidence.
-
-Level creation:
-- PDH/PDL: extremes of ``ctx.candles.prev_day(M1)``; skipped when there is
-  no prior session. id ``f"{symbol}-PDH-{session_date}"`` where
-  ``session_date`` is the *current* session's date, so a fresh pair is
-  created (and only once, by id) each trading day.
-- OPEN_RANGE_H/L: extremes of the first 15 M1 candles of today's session
-  (09:15-09:29); only creatable once all 15 have closed (now >= 09:30).
-- ROUND: for each configured step, the nearest multiple of step to the
-  latest closed M1 close; created iff within ``round_within_pct`` % of
-  that close. Side-less (no H/L distinction) -- LevelEngine assigns
-  significance via prev_close. id includes the step and the rounded price
-  so distinct round levels can coexist and re-detection is idempotent.
-- EQH/EQL: clusters of 2+ ACTIVE/TESTED SWING_H (or SWING_L) levels whose
-  zone midpoints are all within ``eq_tolerance`` (relative) of the
-  cluster's anchor (its first, lowest-mid member -- clustering is a
-  single left-to-right sweep over midpoint-sorted candidates, not a full
-  pairwise search). A new EQH/EQL Level spans the min..max of the
-  cluster's zones; ``touches`` = cluster size, ``born`` = the newest
-  member's ``born`` (so recency below is measured from the freshest
-  swing). An existing EQH/EQL whose zone overlaps a newly computed
-  cluster is *updated in place* (touches/zone/born) instead of
-  duplicated -- this is how a pool's ``touches`` grows over time as more
-  swings cluster in, without ever emitting a second Level for it.
-
-Proximity Evidence (the only Evidence this detector emits):
-- Candidate pools: PDH/PDL/EQH/EQL/OPEN_RANGE_H/OPEN_RANGE_L/ROUND levels
-  in state ACTIVE or TESTED (SWEPT/DEAD pools are exhausted -- never a
-  draw).
-- The nearest pool at/above and the nearest pool strictly below the
-  latest closed M1 close are each considered; a pool enters if within
-  ``proximity_atr * ATR(M5)`` of price. ATR(M5) is None -> no evidence at
-  all (no way to measure "close").
-- ``strength = pool_strength * 0.5``, where ``pool_strength`` is the EQ
-  cluster's strength (touches/recency blend, recomputed every call from
-  the level's current ``touches``/``born`` -- Level carries no separate
-  meta field for it) for EQH/EQL, 0.6 for PDH/PDL, else 0.4.
-- ``Evidence(direction=NEUTRAL, zone=level.zone, ttl_candles=12,
-  meta={kind, level_id, distance_atr})``; at most 2 (one above, one
-  below) per call.
+"""Liquidity detector ("liquidity"): creates PDH/PDL, OPEN_RANGE_H/L, ROUND
+and EQH/EQL Levels on ctx.levels (side channel, like swings.py) and emits at
+most 2 NEUTRAL proximity Evidence (nearest untapped ACTIVE/TESTED pool above
+and below price, within proximity_atr * ATR(M5); strength = pool * 0.5).
+Params: eq_tolerance, round_steps, round_within_pct, proximity_atr.
 """
 
 from __future__ import annotations
@@ -67,12 +22,8 @@ _PROXIMITY_KINDS = frozenset({
     LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L, LevelKind.ROUND,
 })
 _OPEN_RANGE_MINUTES = 15
-_DEFAULT_PARAMS = {
-    "eq_tolerance": 0.001,
-    "round_steps": [50, 100, 500],
-    "round_within_pct": 2.0,
-    "proximity_atr": 1.0,
-}
+_DEFAULTS = {"eq_tolerance": 0.001, "round_steps": [50, 100, 500],
+             "round_within_pct": 2.0, "proximity_atr": 1.0}
 
 
 def _mid(zone: tuple[Decimal, Decimal]) -> Decimal:
@@ -86,6 +37,9 @@ def _overlaps(a: tuple, b: tuple) -> bool:
 @register
 class LiquidityDetector(Detector):
     name = "liquidity"
+
+    def __init__(self, params: dict):
+        super().__init__({**_DEFAULTS, **params})
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         self._create_pdh_pdl(ctx)
@@ -141,8 +95,8 @@ class LiquidityDetector(Detector):
         close = last[-1].close
         if close <= 0:
             return
-        within_pct = Decimal(str(self.params.get("round_within_pct", _DEFAULT_PARAMS["round_within_pct"])))
-        steps = self.params.get("round_steps", _DEFAULT_PARAMS["round_steps"])
+        within_pct = Decimal(str(self.params["round_within_pct"]))
+        steps = self.params["round_steps"]
         for step in steps:
             step_d = Decimal(str(step))
             nearest = (close / step_d).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * step_d
@@ -162,7 +116,7 @@ class LiquidityDetector(Detector):
     def _create_eq(
         self, ctx: StockContext, source: LevelKind, target: LevelKind,
     ) -> None:
-        tolerance = Decimal(str(self.params.get("eq_tolerance", _DEFAULT_PARAMS["eq_tolerance"])))
+        tolerance = Decimal(str(self.params["eq_tolerance"]))
         candidates = sorted(
             (lv for lv in ctx.levels if lv.kind is source and lv.state in _ACTIVE_STATES),
             key=lambda lv: _mid(lv.zone),
@@ -216,7 +170,7 @@ class LiquidityDetector(Detector):
         if not last:
             return []
         price = last[-1].close
-        proximity_atr = Decimal(str(self.params.get("proximity_atr", _DEFAULT_PARAMS["proximity_atr"])))
+        proximity_atr = Decimal(str(self.params["proximity_atr"]))
         max_distance = proximity_atr * atr
 
         pools = [
