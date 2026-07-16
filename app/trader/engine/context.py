@@ -5,7 +5,7 @@ no-lookahead CandleView from CandleStore.view()."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -23,6 +23,7 @@ class DayState:
 
     session_date: date
     template: str = "UNCLASSIFIED"
+    po3: dict = field(default_factory=dict)  # scale ("day"/"leg") -> PO3FSM
 
 
 @dataclass
