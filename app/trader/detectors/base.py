@@ -92,7 +92,12 @@ class DetectorRegistry:
     def run_all(self, ctx: StockContext) -> list[Evidence]:
         """Run every enabled detector against ctx, in config order.
         Unmet ``requires`` -> silent skip. A raising detector is logged and
-        contributes nothing, but never stops the others."""
+        contributes nothing, but never stops the others.
+
+        ``settings.detectors.enabled`` order IS execution order: level-writer
+        detectors (e.g. swings, liquidity) must be listed before the
+        consumers that read ``ctx.levels`` in the same tick (e.g. structure,
+        sweep)."""
         evidence: list[Evidence] = []
         for detector in self.detectors:
             if not _requires_met(detector, ctx):

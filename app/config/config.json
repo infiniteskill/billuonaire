@@ -39,8 +39,8 @@
     }
   },
   "detectors": {
-    "enabled": ["swings", "structure", "orderblock", "breaker", "fvg", "liquidity", "sweep", "wyckoff", "volume", "timestats"],
-    "disabled": ["cage"],
+    "enabled": ["swings", "liquidity", "structure", "sweep"],
+    "disabled": ["orderblock", "breaker", "fvg", "wyckoff", "volume", "timestats", "cage"],
     "params": {}
   },
   "fills": {

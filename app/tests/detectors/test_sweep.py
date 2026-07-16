@@ -62,10 +62,43 @@ def test_pdl_sweep_exact_score_and_evidence_fields():
 
 
 def test_fast_reclaim_adds_bonus():
-    # swept 2 candles before the reclaim candle (<=3) -> +0.1 => 0.80
-    ctx = make_ctx(levels=[lvl(LevelKind.PDL, bar_ts(3), reclaim_ts=bar_ts(5))])
-    [ev] = SweepDetector({}).detect(ctx)
-    assert ev.strength == pytest.approx(0.80)
+    # ONE detector instance sees the episode across two ticks: swept tick
+    # emits the base evidence, then the reclaim tick (<=3 candles later)
+    # emits a second, upgraded evidence -- not a bonus folded into the first.
+    det = SweepDetector({})
+    level = lvl(LevelKind.PDL, bar_ts(3))
+    ctx1 = make_ctx(n_bars=4, levels=[level])
+    [ev1] = det.detect(ctx1)
+    assert ev1.strength == pytest.approx(0.70)
+    assert "upgrade" not in ev1.meta
+
+    level.record_state(bar_ts(5), LevelState.RECLAIMED)
+    ctx2 = make_ctx(n_bars=6, levels=[level])
+    [ev2] = det.detect(ctx2)
+    assert ev2.strength == pytest.approx(0.80)
+    assert ev2.meta["upgrade"] is True
+    assert ev2.meta["level_id"] == "X-PDL-1"
+
+
+def test_reclaim_upgrade_caps_at_one():
+    # EQL, touches=5 (pool maxed), born == ctx1.now (recency=1.0), plus a
+    # chain-depth>=2 bonus -> base = 0.4 + 0.25*1.0 + 0.2 + 0.1 = 0.95.
+    # Upgrade would be 1.05; must cap at 1.0 exactly.
+    det = SweepDetector({})
+    prior = Evidence(detector="sweep", direction=Direction.SHORT, strength=0.7,
+                     zone=(tick(105), tick(105)), ts=bar_ts(1), ttl_candles=18,
+                     meta={"level_id": "X-PDH-0", "kind": "PDH", "chain_depth": 1})
+    born = SESSION_START + timedelta(minutes=4 * M5.minutes)  # == ctx1.now
+    level = lvl(LevelKind.EQL, bar_ts(3), touches=5, born=born)
+    ctx1 = make_ctx(n_bars=4, levels=[level], history=[prior])
+    [ev1] = det.detect(ctx1)
+    assert ev1.strength == pytest.approx(0.95)
+
+    level.record_state(bar_ts(5), LevelState.RECLAIMED)
+    ctx2 = make_ctx(n_bars=6, levels=[level], history=[prior])
+    [ev2] = det.detect(ctx2)
+    assert ev2.strength == pytest.approx(1.0)
+    assert ev2.meta["upgrade"] is True
 
 
 def test_touches_bonus():

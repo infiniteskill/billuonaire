@@ -2,6 +2,13 @@ import json
 from pathlib import Path
 import pytest
 from trader.config import load_settings, load_stocks
+from trader.detectors.base import DetectorRegistry
+import trader.detectors.liquidity  # noqa: F401  -- register phase-2 detectors
+import trader.detectors.structure  # noqa: F401
+import trader.detectors.sweep  # noqa: F401
+import trader.detectors.swings  # noqa: F401
+
+SHIPPED_CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.json"
 
 def write(tmp_path, cfg):
     p = tmp_path / "config.json"
@@ -40,3 +47,10 @@ def test_bad_config_rejected(tmp_path):
     bad = dict(BASE, risk=dict(BASE["risk"], per_trade_pct=-1))
     with pytest.raises(Exception):
         load_settings(write(tmp_path, bad))
+
+def test_shipped_config_registry_constructs():
+    # Regression: the shipped template must only enable detectors that are
+    # actually implemented, or DetectorRegistry's typo-guard raises.
+    settings = load_settings(SHIPPED_CONFIG)
+    registry = DetectorRegistry(settings)
+    assert {d.name for d in registry.detectors} == set(settings.detectors.enabled)

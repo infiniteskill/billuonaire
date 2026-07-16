@@ -132,9 +132,13 @@ def test_trend_day_bos_long(trend):
     assert structure_events(trend, "BOS", Direction[TREND.truth["direction"]])
 
 
-# 3b. no strong sweep-reversal on a trend day
+# 3b. no strong sweep-reversal on a trend day. 0.7 sits above the ceiling a
+# bare sweep+fast-reclaim can reach on its own (kind not daily/weekly,
+# touches<3, chain_depth=1: 0.525 base -> 0.625 upgraded) and below what any
+# extra stacked confluence factor (touches>=3, daily/weekly kind, or
+# chain_depth>=2) would produce (>=0.775 upgraded) -- a real reversal signal.
 def test_trend_day_no_strong_sweep_reversal(trend):
-    assert not [e for e in sweeps(trend) if e.strength > 0.6]
+    assert not [e for e in sweeps(trend) if e.strength > 0.7]
 
 
 # 4. isolation: disabling structure changes nothing for the other detectors
