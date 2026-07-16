@@ -1,6 +1,7 @@
 from datetime import date
 from trader.models.candle import Timeframe
-from trader.feed.mock import ScenarioFeed, judas_reversal, trend_day
+from trader.feed.mock import (ScenarioFeed, double_trap, judas_reversal,
+                              range_pin, trend_day)
 
 def test_judas_shape():
     sc = judas_reversal("X", date(2026, 7, 15), 100.0)
@@ -66,7 +67,11 @@ def test_sweep_low_is_unique_day_low():
     assert sweep.low < zlo < zhi                       # spike undercuts the ORL zone
 
 
-@pytest.mark.parametrize("sc", _both_scenarios(), ids=lambda s: s.name)
+def _all_scenarios():
+    return _both_scenarios() + [range_pin("Z", D, 100.0), double_trap("W", D, 200.0)]
+
+
+@pytest.mark.parametrize("sc", _all_scenarios(), ids=lambda s: s.name)
 def test_ohlc_invariants_every_candle(sc):
     for c in sc.candles():
         assert c.high >= max(c.open, c.close)
@@ -95,6 +100,33 @@ def test_subscribe_filters_and_merges_time_order():
     merged = [e.candle for e in feed.events()]
     assert len(merged) == 750
     assert [c.ts for c in merged] == sorted(c.ts for c in merged)
+
+
+@pytest.mark.parametrize("sc", _all_scenarios(), ids=lambda s: s.name)
+def test_session_length_and_determinism(sc):
+    candles = sc.candles()
+    assert len(candles) == 375
+    assert candles == sc.candles()                      # pure + deterministic
+
+
+def test_double_trap_spikes_are_unique_day_extremes():
+    sc = double_trap("W", D, 200.0)
+    candles = sc.candles()
+    lo_i, hi_i = sc.truth["sweep_low_minute"], sc.truth["sweep_high_minute"]
+    assert candles[lo_i].low == sc.truth["day_low"] == min(c.low for c in candles)
+    assert candles[hi_i].high == sc.truth["day_high"] == max(c.high for c in candles)
+    assert candles[lo_i].low < min(c.low for i, c in enumerate(candles) if i != lo_i)
+    assert candles[hi_i].high > max(c.high for i, c in enumerate(candles) if i != hi_i)
+
+
+def test_range_pin_holds_the_opening_range():
+    sc = range_pin("Z", D, 100.0)
+    candles = sc.candles()
+    or_high = max(c.high for c in candles[:15])
+    or_low = min(c.low for c in candles[:15])
+    rest = candles[15:]
+    assert max(c.high for c in rest) < or_high          # both edges hold,
+    assert min(c.low for c in rest) > or_low            # all day
 
 
 def test_historical_m1_range_and_other_tf_rejected():

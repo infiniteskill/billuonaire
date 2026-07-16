@@ -3,10 +3,18 @@ from pathlib import Path
 import pytest
 from trader.config import load_settings, load_stocks
 from trader.detectors.base import DetectorRegistry
-import trader.detectors.liquidity  # noqa: F401  -- register phase-2 detectors
+import trader.detectors.breaker  # noqa: F401  -- register all implemented detectors
+import trader.detectors.compression  # noqa: F401
+import trader.detectors.fvg  # noqa: F401
+import trader.detectors.index  # noqa: F401
+import trader.detectors.liquidity  # noqa: F401
+import trader.detectors.orderblock  # noqa: F401
 import trader.detectors.structure  # noqa: F401
 import trader.detectors.sweep  # noqa: F401
 import trader.detectors.swings  # noqa: F401
+import trader.detectors.timestats  # noqa: F401
+import trader.detectors.volume  # noqa: F401
+import trader.detectors.wyckoff  # noqa: F401
 
 SHIPPED_CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.json"
 
