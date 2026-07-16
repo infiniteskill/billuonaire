@@ -12,12 +12,22 @@
     "max_trades_day": 3,
     "max_per_stock": 1,
     "consecutive_loss_stop": 2,
-    "expiry_size_mult": 0.5
+    "expiry_size_mult": 0.5,
+    "daily_profit_lock_R": 2.0
   },
   "time": {
     "observe_until": "11:00",
     "no_entry_after": "14:30",
-    "squareoff": "15:10"
+    "squareoff": "15:10",
+    "observe_min": 105
+  },
+  "entry": {
+    "chase_tolerance_atr": 0.1,
+    "max_stop_atr": 2.0
+  },
+  "events": {
+    "big_candle_atr": 3.0,
+    "cooldown_candles": 6
   },
   "stops": {
     "atr_buffer": 0.25,
@@ -40,8 +50,23 @@
     }
   },
   "detectors": {
-    "enabled": ["swings", "liquidity", "orderblock", "fvg", "structure", "sweep", "breaker", "wyckoff", "volume", "compression", "timestats", "index"],
-    "disabled": ["cage"],
+    "enabled": [
+      "swings",
+      "liquidity",
+      "orderblock",
+      "fvg",
+      "structure",
+      "sweep",
+      "breaker",
+      "wyckoff",
+      "volume",
+      "compression",
+      "timestats",
+      "index"
+    ],
+    "disabled": [
+      "cage"
+    ],
     "params": {}
   },
   "fills": {

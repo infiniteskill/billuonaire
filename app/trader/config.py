@@ -17,12 +17,14 @@ class RiskCfg(StrictModel):
     max_per_stock: int = Field(gt=0)
     consecutive_loss_stop: int = Field(gt=0)
     expiry_size_mult: float = Field(gt=0)
+    daily_profit_lock_R: float = Field(default=2.0, gt=0)
 
 
 class TimeCfg(StrictModel):
     observe_until: str
     no_entry_after: str
     squareoff: str
+    observe_min: int = Field(default=105, ge=0)  # entry window opens open+observe_min
 
     @field_validator("observe_until", "no_entry_after", "squareoff")
     @classmethod
@@ -35,6 +37,16 @@ class StopsCfg(StrictModel):
     atr_buffer: float = Field(gt=0)
     wick_tolerance_candles: int = Field(gt=0)
     round_offset_ticks: int = Field(gt=0)
+
+
+class EntryCfg(StrictModel):
+    chase_tolerance_atr: float = Field(default=0.1, gt=0)
+    max_stop_atr: float = Field(default=2.0, gt=0)
+
+
+class EventsCfg(StrictModel):
+    big_candle_atr: float = Field(default=3.0, gt=0)
+    cooldown_candles: int = Field(default=6, gt=0)
 
 
 class ConfluenceCfg(StrictModel):
@@ -82,6 +94,8 @@ class Settings(StrictModel):
     confluence: ConfluenceCfg
     detectors: DetectorsCfg
     fills: FillsCfg
+    entry: EntryCfg = Field(default_factory=EntryCfg)
+    events: EventsCfg = Field(default_factory=EventsCfg)
     market: MarketCfg = Field(default_factory=MarketCfg)  # absent => NSE
 
     def market_spec(self) -> MarketSpec:
