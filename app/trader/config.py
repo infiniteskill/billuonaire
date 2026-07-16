@@ -41,7 +41,8 @@ class StopsCfg(StrictModel):
 
 class EntryCfg(StrictModel):
     chase_tolerance_atr: float = Field(default=0.1, gt=0)
-    max_stop_atr: float = Field(default=2.0, gt=0)
+    max_stop_atr: float = Field(default=1.2, gt=0)
+    arm_ttl_candles: int = Field(default=12, gt=0)
 
 
 class EventsCfg(StrictModel):
