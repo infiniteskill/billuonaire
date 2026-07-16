@@ -89,6 +89,18 @@ def test_trend_handoff_two_closes_beyond_no_reclaim():
     assert fsm.step(bar(2, 103, 104, "102.8", "103.5"), ATR, True) is None
 
 
+def test_step_same_candle_twice_is_noop():
+    fsm = _armed()
+    beyond = bar(0, 102, "102.6", "101.8", "102.5")  # close beyond hi: streak 1
+
+    assert fsm.step(beyond, ATR, False) is None
+    # same candle re-stepped: no-op, streak must NOT advance to 2
+    assert fsm.step(beyond, ATR, False) is None
+    assert fsm.state == "ACCUMULATION"
+    # a genuinely new second close beyond still hands off
+    assert fsm.step(bar(1, "102.5", "103.2", "102.2", 103), ATR, False) == "IDLE"
+
+
 def test_close_back_inside_resets_handoff_streak():
     fsm = _armed()
 

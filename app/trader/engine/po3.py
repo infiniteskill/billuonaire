@@ -30,6 +30,7 @@ class PO3FSM:
         self.box: tuple[Decimal, Decimal] | None = None
         self.box_ts = None
         self.reason: str | None = None
+        self._last_ts = None  # ts of last candle consumed by step (idempotency)
         self._reset_sequence()
 
     def _reset_sequence(self) -> None:
@@ -39,18 +40,19 @@ class PO3FSM:
         self._beyond: tuple[str, int] | None = None  # (side, consecutive closes)
 
     def set_box(self, lo: Decimal, hi: Decimal, ts) -> str:
-        """Arm on a fresh box (compression cluster / opening range)."""
-        self.box, self.box_ts = (lo, hi), ts
+        self.box, self.box_ts = (lo, hi), ts  # fresh box arms the FSM
         self.state, self.reason = "ACCUMULATION", None
         self._reset_sequence()
         return self.state
 
     def step(self, candle: Candle, atr: Decimal | None,
              bos_evidence_recent: bool) -> str | None:
-        """Feed one closed candle; returns the new state on a transition."""
-        if self.state not in ("ACCUMULATION", "MANIPULATION"):
-            return None  # IDLE waits for set_box; DISTRIBUTION is terminal
-        lo, hi = self.box
+        """Feed one closed candle; new state on transition. Re-stepping an
+        already-consumed candle ts is a no-op (idempotent per candle)."""
+        if (self.state not in ("ACCUMULATION", "MANIPULATION")
+                or (self._last_ts is not None and candle.ts <= self._last_ts)):
+            return None  # inert state, or same/older candle re-stepped: no-op
+        self._last_ts, (lo, hi) = candle.ts, self.box
         if (self.state == "MANIPULATION"
                 and self._displaced(candle, atr, bos_evidence_recent, lo, hi)):
             return self.state
@@ -75,8 +77,7 @@ class PO3FSM:
                    bos_recent: bool, lo: Decimal, hi: Decimal) -> bool:
         if atr is None or not bos_recent:
             return False
-        need = Decimal(str(self.params["displacement_atr"])) * atr
-        mid = (lo + hi) / 2
+        need, mid = Decimal(str(self.params["displacement_atr"])) * atr, (lo + hi) / 2
         if self.swept_side == "low" and candle.close - mid >= need:
             self.true_direction = Direction.LONG
         elif self.swept_side == "high" and mid - candle.close >= need:
