@@ -67,7 +67,7 @@ class ConfluenceEngine:
         live = [e for e in evidence if e.ts + e.ttl_candles * _M5 >= ctx.now]
         gap = self.merge_atr * (ctx.atr(Timeframe.M5) or Decimal(0))
         stats = [e for e in live if e.detector == "timestats"]
-        time_mult = (max(stats, key=lambda e: e.ts).strength if stats
+        time_mult = (max(stats, key=lambda e: (e.ts, e.strength)).strength if stats
                      else self.time_default)
         play = self._play(ctx, m15_trend)
         zones = [self._score_zone(lo, hi, evs, ctx, htf_phase, m15_trend,
