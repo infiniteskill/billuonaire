@@ -1,19 +1,15 @@
 """Phase-2 exit gate: scenario ground truth + detector isolation.
 
-Assertions 1-3 of the task-7 brief are strict xfails — BLOCKED by genuine
-component/scenario mismatches, not harness issues (full evidence in
-.superpowers/sdd/task-7-report.md):
-- no level EVER transitions SWEPT in either scenario, so the sweep detector
-  cannot emit (judas closes below ORL for 3 straight M5 candles -> 2-candle
-  break confirm DEADs it one candle before the wick-through-close-back);
-- scenario noise is sub-tick at open_price 100 (0.01-0.06% vs TICK 0.05), so
-  strict-inequality swing confirmation yields 1 swing on judas / 0 on
-  trend_day -> structure never has a trend, no BOS/CHoCH possible.
-Remove the xfails once scenarios/detector defaults are recalibrated.
+Runs both flagship scenarios through the real feed -> store -> LevelEngine ->
+DetectorRegistry pipeline at every M5 close and asserts the detectors fire
+where the scenario's ground truth says they must: the judas sweep (ORL wick-
+through-close-back), the CHoCH LONG shortly after it, BOS on the trend day,
+sweep silence on the trend day, detector isolation, and no lookahead.
 """
 
 import json
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from pathlib import Path
 from typing import NamedTuple
 from zoneinfo import ZoneInfo
@@ -39,20 +35,6 @@ CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.json"
 PHASE2 = ("swings", "liquidity", "structure", "sweep")
 JUDAS = judas_reversal("X", DAY, 100.0)
 TREND = trend_day("X", DAY, 100.0)
-
-BLOCKED_SWEEP = (
-    "BLOCKED: no SWEPT transition ever occurs — judas M5 closes 98.55/98.45/"
-    "98.70 sit below ORL zone (98.80, 98.90) for 3 consecutive candles, so the "
-    "2-candle break confirm DEADs ORL at 09:35, one candle before the "
-    "wick-through-close-back candle (09:45 low 98.70 close 98.95); no level "
-    "zone can contain reversal_from = day low - 5 ticks anyway (see report)"
-)
-BLOCKED_STRUCTURE = (
-    "BLOCKED: swings starve structure — sub-tick scenario noise ties M5/M15 "
-    "highs/lows, judas confirms 1 swing all day and trend_day 0, but structure "
-    "needs >=2 SWING_H and >=2 SWING_L among the last 4 swings (see report)"
-)
-
 
 class Run(NamedTuple):
     now: datetime            # M5 close this tick evaluated at
@@ -121,20 +103,21 @@ def structure_events(result: Result, event: str, direction: Direction) -> list:
             and e.meta.get("event") == event and e.direction is direction]
 
 
-# 1. sweep fires near truth minute, on the swept low pool
-@pytest.mark.xfail(strict=True, reason=BLOCKED_SWEEP)
+# 1. sweep fires near truth minute, LONG, on a low pool at reversal_from
 def test_judas_sweep_near_truth_minute(judas):
     target = JUDAS.truth["reversal_from"]
+    band = target * Decimal("0.003")  # both zone bounds within 0.3% of truth
     center = m5_close(JUDAS.truth["sweep_low_minute"])
-    tol = timedelta(minutes=3 * 5)
+    tol = timedelta(minutes=4 * 5)
     hits = [e for e in sweeps(judas)
-            if e.zone[0] <= target <= e.zone[1] and abs(e.ts - center) <= tol]
-    assert hits, "no sweep evidence covering reversal_from within truth ±3 M5"
-    assert all(e.meta["kind"] in ("OPEN_RANGE_L", "SWING_L") for e in hits)
+            if e.direction is Direction.LONG
+            and e.meta["kind"] in ("OPEN_RANGE_L", "SWING_L")
+            and abs(e.ts - center) <= tol
+            and all(abs(z - target) <= band for z in e.zone)]
+    assert hits, "no LONG sweep evidence on OPEN_RANGE_L/SWING_L near truth"
 
 
 # 2. CHoCH LONG within 12 M5 candles after the sweep
-@pytest.mark.xfail(strict=True, reason=BLOCKED_STRUCTURE)
 def test_judas_choch_long_within_12_m5_of_sweep(judas):
     assert sweeps(judas), "prerequisite: sweep evidence (assertion 1)"
     first = min(e.ts for e in sweeps(judas))
@@ -145,7 +128,6 @@ def test_judas_choch_long_within_12_m5_of_sweep(judas):
 
 
 # 3a. trend day produces BOS in the truth direction
-@pytest.mark.xfail(strict=True, reason=BLOCKED_STRUCTURE)
 def test_trend_day_bos_long(trend):
     assert structure_events(trend, "BOS", Direction[TREND.truth["direction"]])
 

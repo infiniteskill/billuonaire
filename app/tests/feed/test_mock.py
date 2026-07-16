@@ -62,6 +62,8 @@ def test_sweep_low_is_unique_day_low():
     assert sweep.low < others_min                      # strictly unique low
     assert sweep.low == sc.truth["reversal_from"]
     assert sweep.low % TICK == 0                       # tick-quantized
+    zlo, zhi = sc.truth["swept_zone"]
+    assert sweep.low < zlo < zhi                       # spike undercuts the ORL zone
 
 
 @pytest.mark.parametrize("sc", _both_scenarios(), ids=lambda s: s.name)
