@@ -87,6 +87,11 @@ def _resolve_symbols(dir: Path, stocks: list[str], numbers: list[int],
     fit() using any cached candle data under dir/journal/candles, falling
     back to the first K configured stocks when none has data."""
     if auto is None:
+        bad = [n for n in numbers if not 1 <= n <= len(stocks)]
+        if bad:
+            typer.echo(f"stock number(s) out of range: {bad} "
+                       f"(stocks.json has {len(stocks)} entries)", err=True)
+            raise typer.Exit(code=1)
         return [stocks[n - 1] for n in numbers]
     settings = load_settings(dir / "config.json")
     spec = settings.market_spec()
@@ -153,7 +158,10 @@ def watch(
         today = date.today()
         data_feed = ScenarioFeed([judas_reversal(sym, today, 100.0) for sym in symbols])
     elif feed == "file":
-        data_feed = FileFeed(data or dir)
+        if data is None:
+            typer.echo("--feed file requires --data DIR", err=True)
+            raise typer.Exit(code=1)
+        data_feed = FileFeed(data)
     else:
         typer.echo(f"unknown --feed {feed!r} (expected mock|file)", err=True)
         raise typer.Exit(code=1)

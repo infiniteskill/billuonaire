@@ -45,6 +45,12 @@ def test_missing_data_all_components_neutral():
     assert res["score"] == pytest.approx(50.0)
 
 
+def test_single_d1_candle_all_components_neutral():
+    res = fit(SYM, store(d1s=[d1(0, 100, 101, 99, 100)]), NSE)
+    assert all(v == 0.5 for v in res["components"].values())
+    assert res["score"] == pytest.approx(50.0)
+
+
 def test_has_data_false_on_empty_store():
     assert has_data(SYM, store(), NSE) is False
 

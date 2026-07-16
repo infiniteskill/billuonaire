@@ -76,6 +76,22 @@ def test_watch_requires_symbols(tmp_path):
     assert r.exit_code != 0
 
 
+def test_watch_out_of_range_number(tmp_path):
+    _init(tmp_path, ["ACME"])
+    r = runner.invoke(app, ["watch", "5", "--dir", str(tmp_path), "--feed", "mock"])
+    assert r.exit_code == 1
+    out = r.output + (r.stderr or "")
+    assert "out of range" in out and "Traceback" not in out
+
+
+def test_watch_file_feed_requires_data(tmp_path):
+    _init(tmp_path, ["ACME"])
+    r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--feed", "file"])
+    assert r.exit_code == 1
+    out = r.output + (r.stderr or "")
+    assert "requires --data" in out and "Traceback" not in out
+
+
 def test_watch_unknown_feed(tmp_path):
     _init(tmp_path, ["ACME"])
     r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--feed", "bogus"])

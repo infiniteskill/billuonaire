@@ -59,7 +59,7 @@ def _cleanliness(d1: list[Candle], m5: list[Candle]) -> float:
 
 def _energy(d1: list[Candle]) -> float:
     """D1 ATR% of price, peaking at 1.0 at 2.5%, 0 at/outside 1%-4%."""
-    if not d1 or float(d1[-1].close) == 0:
+    if len(d1) < 2 or float(d1[-1].close) == 0:
         return _NEUTRAL
     atr_pct = _rolling_atr(d1)[-1] / float(d1[-1].close) * 100
     if atr_pct <= 1 or atr_pct >= 4:
