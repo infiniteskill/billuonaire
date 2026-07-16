@@ -82,17 +82,17 @@ def test_arm_plain_far_edge_buffer_and_qty_floor(fsm):
 
 def test_arm_sweep_trap_round_snap_targets_decimal(fsm):
     levels = [lvl(LevelKind.SWING_L, "97.40", "98.50", LevelState.SWEPT, SWEPT),
-              lvl(LevelKind.ROUND, "96.85", "96.85"),
+              lvl(LevelKind.ROUND, "96.95", "96.95"),
               lvl(LevelKind.SWING_H, "100.50", "101.00"),   # < 1.5R: not T1
               lvl(LevelKind.SWING_H, "102.40", "102.80"),
               lvl(LevelKind.SWING_H, "104.00", "104.50"),
               lvl(LevelKind.PDH, "106.00", "106.10")]
     p = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000).plan
-    # trap extreme 97.40 - 0.50 buffer = 96.90; within 2 ticks of round 96.85
-    # => shifted away 3 ticks; risk 99.00 - 96.75 = 2.25
-    assert p.stop == D("96.75")
+    # trap extreme 97.40 - 0.50 buffer = 96.90; within 2 ticks of round 96.95
+    # => landed 3 ticks PAST the round far edge; risk 99.00 - 96.80 = 2.20
+    assert p.stop == D("96.80")
     assert p.targets == [D("102.40"), D("104.00"), D("106.00")]
-    assert p.qty == 222                             # floor(500 / 2.25)
+    assert p.qty == 227                             # floor(500 / 2.20)
     assert all(isinstance(x, Decimal) and x % D("0.05") == 0
                for x in [p.stop, *p.targets, *p.entry_zone])
 
@@ -121,12 +121,21 @@ def test_t2_t3_fallback_prices(fsm):  # single level beyond: 2.5R / 4R fallbacks
     assert p.targets == [D("101.50"), D("102.75"), D("105.00")]
 
 
+def energy_ev(energy):
+    return Evidence("compression", Direction.LONG, 0.75, (D("98.50"), D("99.50")),
+                    at(10, 0), 24, meta={"event": "PO3_DIST", "energy": energy})
+
+
 def test_t3_capped_by_compression_energy(fsm):
-    hist = [Evidence("compression", Direction.LONG, 0.75, (D("98.50"), D("99.50")),
-                     at(10, 0), 24, meta={"event": "PO3_DIST", "energy": "4.50"})]
-    ctx = ctx_at(at(11, 0), calm(), [t_lvl()], history=hist)
+    ctx = ctx_at(at(11, 0), calm(), [t_lvl()], history=[energy_ev("4.50")])
     p = fsm.arm(zone("98.00", "100.00"), ctx, 1000).plan
     assert p.targets[2] == D("103.50")              # min(4R=105, entry + 4.50)
+
+
+def test_t3_dropped_when_energy_cap_inside_t2(fsm):
+    ctx = ctx_at(at(11, 0), calm(), [t_lvl()], history=[energy_ev("3.00")])
+    p = fsm.arm(zone("98.00", "100.00"), ctx, 1000).plan
+    assert p.targets == [D("101.50"), D("102.75")]  # cap 102.00 < T2: T3 dropped
 
 
 def test_opposing_scored_zone_supplies_t1(fsm):
@@ -170,10 +179,25 @@ def test_trigger_rejection_wick_boundary(fsm, o, filled):
 @pytest.mark.parametrize("det,event", [("structure", "CHOCH"), ("volume", "VSA")])
 def test_trigger_on_confirmation_evidence(fsm, det, event):
     levels = armed(fsm)
-    ev = Evidence(det, Direction.LONG, 0.7, (D("98"), D("100")), at(10, 30), 6,
+    # detectors stamp ts=ctx.now = candle close = c.ts + 5min (window edge)
+    ev = Evidence(det, Direction.LONG, 0.7, (D("98"), D("100")), at(10, 35), 6,
                   meta={"event": event})
     c = m1(at(10, 30), o=99.1, h=100.0, lo=98.0, c=99.9)  # wick 55%: needs evidence
     assert fsm.step(step_ctx(c, levels=levels), [ev]).action == "fill"
+
+
+@pytest.mark.parametrize("dirn,zlo,zhi,ts_mm", [
+    (Direction.SHORT, "98", "100", 35),   # opposing CHoCH must not fill LONG
+    (Direction.LONG, "103", "104", 35),   # zone does not overlap entry zone
+    (Direction.LONG, "98", "100", 30),    # stale: ts = c.ts, before c formed
+])
+def test_confirmation_evidence_rejected(fsm, dirn, zlo, zhi, ts_mm):
+    levels = armed(fsm)
+    ev = Evidence("structure", dirn, 0.7, (D(zlo), D(zhi)), at(10, ts_mm), 6,
+                  meta={"event": "CHOCH"})
+    c = m1(at(10, 30), o=99.1, h=100.0, lo=98.0, c=99.9)
+    r = fsm.step(step_ctx(c, levels=levels), [ev])
+    assert r.action == "hold" and fsm.state is EntryState.ARMED
 
 
 def test_disarm_chased_close_beyond_far_edge(fsm):

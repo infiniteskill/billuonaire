@@ -5,18 +5,20 @@ TradePlan; threshold/gates are the CALLER's job (GateChain), as is
 journalling the skip/disarm reasons returned here.
 
   STOP     zone far edge, pushed past any swept-trap extreme (level with
-           SWEPT history overlapping the zone), buffered by atr_buffer x ATR,
-           shifted round_offset_ticks AWAY if within 2 ticks of a ROUND level
-           edge, tick-quantized. Skip "stop_too_wide" if risk > max_stop_atr
-           x ATR.
+           SWEPT history overlapping the zone), buffered by atr_buffer x ATR;
+           if within 2 ticks of a ROUND level edge, landed round_offset_ticks
+           PAST the round zone's far edge (never tighter), tick-quantized.
+           Skip "stop_too_wide" if risk > max_stop_atr x ATR.
   TARGETS  opposing liquidity map: ACTIVE/TESTED levels + opposing
            ScoredZones beyond entry (near edge, quantized). T1 = nearest
            >= 1.5R (none => skip "no_room"); T2 = next beyond T1 (else 2.5R);
            T3 = nearest PDH/PDL beyond T2 (else 4R), capped at entry +/-
-           compression energy (evidence meta) overlapping the zone.
+           compression energy (evidence meta) overlapping the zone; T3 is
+           DROPPED if the cap pulls it inside T2 (monotonic T1<T2<T3).
   QTY      min(max_qty, floor(capital x per_trade_pct% / risk)); 0 => skip.
   TRIGGER  latest closed M5 enters the zone AND (rejection wick >= 60% of
-           range off the far side | CHoCH/VSA evidence stamped this candle).
+           range off the far side | same-direction CHoCH/VSA evidence
+           overlapping the zone, stamped in (c.ts, c.ts + 5m]).
   DISARM   "chased" (close beyond far edge + chase_tolerance x ATR),
            "expired" (armed > arm_ttl_candles), "zone_broken" (OB level in
            zone DEAD/INVERTED).
@@ -106,10 +108,12 @@ class EntryFSM:
         stop = self.spec.quantize(min([lo, *traps]) - buf if up
                                   else max([hi, *traps]) + buf)
         tick = self.spec.tick_size
-        if any(abs(stop - edge) <= 2 * tick for lv in ctx.levels
-               if lv.kind is LevelKind.ROUND for edge in lv.zone):
-            off = self.s.stops.round_offset_ticks * tick
-            stop += -off if up else off              # away from entry
+        off = self.s.stops.round_offset_ticks * tick
+        for lv in ctx.levels:                        # land PAST the round number
+            if (lv.kind is LevelKind.ROUND
+                    and any(abs(stop - e) <= 2 * tick for e in lv.zone)):
+                stop = (min(stop, min(lv.zone) - off) if up
+                        else max(stop, max(lv.zone) + off))  # never tighter
         return stop
 
     def _targets(self, entry, risk, up, zone, ctx, opps) -> list[Decimal] | None:
@@ -132,7 +136,7 @@ class EntryFSM:
             if "energy" in e.meta and _overlaps(e.zone, zone):
                 cap = self.spec.quantize(entry + sign * Decimal(e.meta["energy"]))
                 t3 = min(t3, cap) if up else max(t3, cap)
-        return [t1, t2, t3]
+        return [t1, t2, t3] if (t3 - t2) * sign > 0 else [t1, t2]
 
     def step(self, ctx: StockContext,
              evidence: list[Evidence] = ()) -> TriggerResult:
@@ -152,7 +156,10 @@ class EntryFSM:
             return self._disarm("zone_broken")
         wick = c.lower_wick if up else c.upper_wick   # rejection off far side
         confirmed = (c.range > 0 and wick >= Decimal("0.6") * c.range) or any(
-            e.ts == c.ts and e.meta.get("event") in _CONFIRM for e in evidence)
+            c.ts < e.ts <= c.ts + _M5                 # stamped while c formed
+            and e.meta.get("event") in _CONFIRM
+            and e.direction is self.plan.direction
+            and _overlaps(e.zone, (lo, hi)) for e in evidence)
         if c.low <= hi and c.high >= lo and confirmed:
             plan, self.state, self.plan = self.plan, EntryState.IDLE, None
             return TriggerResult("fill", plan=plan)
