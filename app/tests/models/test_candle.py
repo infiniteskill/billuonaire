@@ -32,4 +32,6 @@ def test_naive_timestamp_rejected():
                tick(1), tick(1), tick(1), tick(1), 0)
 
 def test_timeframe_minutes():
-    assert Timeframe.M5.minutes == 5 and Timeframe.D1.minutes == 375
+    assert Timeframe.M5.minutes == 5
+    with pytest.raises(ValueError):  # D1 duration moved to MarketSpec.session_minutes
+        Timeframe.D1.minutes

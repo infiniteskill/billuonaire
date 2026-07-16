@@ -4,14 +4,11 @@ Only M1 candles may be added; M5/M15/H1/D1 series are derived by
 re-aggregating the affected bucket from its constituent M1 candles on every
 add (correct over fast).
 
-Session model (NSE): 09:15-15:30 local wall clock, 375 minutes. All bucket
-math is done on the candle's own wall clock, so timestamps are expected to
-be session-local (IST) and timezone-aware.
-
-Bucket rule: bucket start = 09:15 + floor((ts - 09:15) / tf.minutes) *
-tf.minutes on ts's session day. Because Timeframe.D1.minutes == 375, the D1
-bucket is exactly the whole session (start 09:15, closes 15:30) and needs no
-special case.
+Session model comes from a MarketSpec (default NSE: 09:15-15:30, 375 min).
+Bucket math is on the candle's own wall clock, so timestamps must be
+session-local and timezone-aware. Bucket start = session_open +
+floor((ts - session_open) / tf_minutes) * tf_minutes on ts's session day;
+D1's duration is spec.session_minutes, so its bucket is the whole session.
 
 Ordering guarantees:
 - Out-of-order adds are inserted at their sorted position (lists are always
@@ -20,8 +17,8 @@ Ordering guarantees:
   (last write wins), and every derived bucket containing it is recomputed.
 
 Visibility rule (no lookahead): a candle is visible through a view iff
-``candle.ts + timedelta(minutes=candle.tf.minutes) <= now`` -- i.e. only
-fully closed candles. For D1 this means the session's 15:30 close.
+``candle.ts + its tf duration <= now`` -- i.e. only fully closed candles.
+For D1 this means the session close.
 """
 
 from __future__ import annotations
@@ -33,18 +30,24 @@ from pathlib import Path
 
 import pandas as pd
 
-from trader.models.candle import Candle, Timeframe, tick
+from trader.models.candle import Candle, Timeframe
+from trader.models.market import NSE, MarketSpec
 
 _TS = attrgetter("ts")
 _DERIVED = (Timeframe.M5, Timeframe.M15, Timeframe.H1, Timeframe.D1)
 _PRICE_COLS = ("open", "high", "low", "close")
 
 
-def _bucket_start(ts: datetime, tf: Timeframe) -> datetime:
-    """Start of the tf bucket containing ts, anchored at 09:15 of ts's day."""
-    session_open = ts.replace(hour=9, minute=15, second=0, microsecond=0)
-    offset_min = int((ts - session_open).total_seconds() // 60)
-    return session_open + timedelta(minutes=(offset_min // tf.minutes) * tf.minutes)
+def _tf_minutes(tf: Timeframe, spec: MarketSpec) -> int:
+    """Duration of one tf candle; D1 is the market's whole session."""
+    return spec.session_minutes if tf is Timeframe.D1 else tf.minutes
+
+
+def _bucket_start(ts: datetime, tf: Timeframe, spec: MarketSpec) -> datetime:
+    """Start of the tf bucket containing ts, anchored at session open."""
+    open_, n = spec.session_open_dt(ts), _tf_minutes(tf, spec)
+    offset_min = int((ts - open_).total_seconds() // 60)
+    return open_ + timedelta(minutes=(offset_min // n) * n)
 
 
 def _insert_sorted(candles: list[Candle], candle: Candle) -> None:
@@ -68,9 +71,9 @@ class CandleView:
         self._now = now
 
     def _closed(self, tf: Timeframe) -> list[Candle]:
-        """All candles of tf closed as of now (ts + tf.minutes <= now)."""
+        """All candles of tf closed as of now (ts + tf duration <= now)."""
         candles = self._store._data.get(self._symbol, {}).get(tf, [])
-        cutoff = self._now - timedelta(minutes=tf.minutes)
+        cutoff = self._now - timedelta(minutes=_tf_minutes(tf, self._store.spec))
         return candles[: bisect_right(candles, cutoff, key=_TS)]
 
     def _today(self) -> "datetime.date":
@@ -102,13 +105,13 @@ class CandleStore:
     """Per-symbol candle store. Add M1 only; derived TFs stay consistent.
 
     Persistence: ``save``/``load`` write one parquet per timeframe under
-    ``root/<symbol>/<tf>.parquet``. Prices are stored as strings and
-    rehydrated through ``tick()`` so Decimals roundtrip exactly; timestamps
-    keep their timezone.
+    ``root/<symbol>/<tf>.parquet``. Prices are stored as strings, rehydrated
+    via ``spec.quantize`` (exact Decimal roundtrip); timestamps keep their tz.
     """
 
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, spec: MarketSpec = NSE):
         self.root = Path(root)
+        self.spec = spec
         self._data: dict[str, dict[Timeframe, list[Candle]]] = {}
 
     def _series(self, symbol: str) -> dict[Timeframe, list[Candle]]:
@@ -117,16 +120,15 @@ class CandleStore:
     def add(self, candle: Candle) -> None:
         """Add an M1 candle (raise ValueError otherwise) and recompute the
         M5/M15/H1/D1 buckets that contain it. The timestamp must lie within
-        the NSE session of its day: 09:15 <= ts < 15:30 (else ValueError).
+        the market session of its day: open <= ts < close (else ValueError).
         Duplicates replace; see module docstring."""
         if candle.tf is not Timeframe.M1:
             raise ValueError(f"CandleStore.add accepts M1 only, got {candle.tf}")
-        session_open = candle.ts.replace(hour=9, minute=15, second=0, microsecond=0)
-        session_close = session_open + timedelta(minutes=Timeframe.D1.minutes)
+        session_open = self.spec.session_open_dt(candle.ts)
+        session_close = session_open + timedelta(minutes=self.spec.session_minutes)
         if not (session_open <= candle.ts < session_close):
-            raise ValueError(
-                f"M1 ts {candle.ts} outside session 09:15-15:30 of its day"
-            )
+            raise ValueError(f"M1 ts {candle.ts} outside session "
+                             f"{self.spec.session_open}-{self.spec.session_close} of its day")
         series = self._series(candle.symbol)
         _insert_sorted(series[Timeframe.M1], candle)
         for tf in _DERIVED:
@@ -134,8 +136,8 @@ class CandleStore:
 
     def _recompute_bucket(self, symbol: str, tf: Timeframe, ts: datetime) -> None:
         """Rebuild the tf bucket containing ts from its constituent M1s."""
-        start = _bucket_start(ts, tf)
-        end = start + timedelta(minutes=tf.minutes)
+        start = _bucket_start(ts, tf, self.spec)
+        end = start + timedelta(minutes=_tf_minutes(tf, self.spec))
         m1 = self._data[symbol][Timeframe.M1]
         members = m1[bisect_left(m1, start, key=_TS): bisect_left(m1, end, key=_TS)]
         agg = Candle(
@@ -197,10 +199,10 @@ class CandleStore:
                         symbol=row.symbol,
                         tf=tf,
                         ts=row.ts.to_pydatetime(),
-                        open=tick(row.open),
-                        high=tick(row.high),
-                        low=tick(row.low),
-                        close=tick(row.close),
+                        open=self.spec.quantize(row.open),
+                        high=self.spec.quantize(row.high),
+                        low=self.spec.quantize(row.low),
+                        close=self.spec.quantize(row.close),
                         volume=int(row.volume),
                     )
                     for row in df.itertuples(index=False)

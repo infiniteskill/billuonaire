@@ -12,7 +12,7 @@ from decimal import Decimal
 
 from trader.detectors.base import Detector, register
 from trader.engine.context import StockContext
-from trader.models.candle import TICK, Candle, Timeframe
+from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
 from trader.models.level import Level, LevelKind, LevelState
 
@@ -89,9 +89,9 @@ class StructureDetector(Detector):
         meta = {"event": event, "swing_id": swing.id}
         if ctx.symbol in self._fake:
             meta["fake_bos_recent"] = True
-        m = _mid(swing.zone)
+        m, T = _mid(swing.zone), ctx.spec.tick_size
         return Evidence(detector=self.name, direction=direction, strength=strength,
-                        zone=(m - TICK, m + TICK), ts=ctx.now, ttl_candles=ttl, meta=meta)
+                        zone=(m - T, m + T), ts=ctx.now, ttl_candles=ttl, meta=meta)
 
     def _swept_recently(self, ctx: StockContext, tf: Timeframe) -> bool:
         window = ctx.candles.last(int(self.params["trap_window"]), tf)

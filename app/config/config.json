@@ -1,5 +1,11 @@
 {
   "capital": 100000,
+  "market": {
+    "tz": "Asia/Kolkata",
+    "session_open": "09:15",
+    "session_close": "15:30",
+    "tick_size": "0.05"
+  },
   "risk": {
     "per_trade_pct": 0.5,
     "daily_loss_pct": 1.5,

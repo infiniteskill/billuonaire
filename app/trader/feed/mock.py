@@ -1,9 +1,9 @@
 """ScenarioFeed: scripted market days with KNOWN ground truth.
 
 These scenarios are the detector test fixtures: each helper constructor
-returns a full 375-minute NSE session (09:15..15:29 IST, exactly what
-CandleStore.add accepts) whose interesting features are placed by
-construction, not by luck, and recorded in ``scenario.truth``.
+returns a full session for its MarketSpec (default NSE: 375 minutes from
+09:15 IST, exactly what CandleStore.add accepts) whose interesting features
+are placed by construction, not by luck, and recorded in ``scenario.truth``.
 
 Determinism is mandatory: generation uses ONLY a ``random.Random`` instance
 seeded with ``f"{name}:{symbol}:{date}"`` -- never the global ``random``
@@ -13,9 +13,9 @@ Two generation modes:
 
 - ``segments`` random walk: piecewise ``(minutes, drift_per_min, vol_range,
   volume)`` segments. Noise is TICK-SCALED: per-candle amplitude =
-  ``max(price * vol_pct, 3 * TICK)``, so wicks always span whole ticks and
-  strict-inequality swing confirmation stays possible at any price.
-- ``script``: a callable building all 375 candles explicitly, used where a
+  ``max(price * vol_pct, 3 * spec.tick_size)``, so wicks always span whole
+  ticks and strict-inequality swing confirmation stays possible at any price.
+- ``script``: a callable building the session's candles explicitly, used where a
   shape must hold BY CONSTRUCTION (judas_reversal). Scripted candles are
   planned in integer ticks with per-minute clamp bands, so every level/swing
   interaction below is guaranteed, not probabilistic.
@@ -31,14 +31,10 @@ from dataclasses import dataclass, field
 from datetime import date as date_type
 from datetime import datetime, time, timedelta
 from typing import Callable, Iterator
-from zoneinfo import ZoneInfo
 
 from trader.feed.base import DataFeed, FeedEvent
-from trader.models.candle import TICK, Candle, Timeframe, tick
-
-IST = ZoneInfo("Asia/Kolkata")
-SESSION_MINUTES = 375  # 09:15 .. 15:29 inclusive
-_NOISE_FLOOR = float(3 * TICK)  # random-walk noise never collapses sub-tick
+from trader.models.candle import Candle, Timeframe
+from trader.models.market import NSE, MarketSpec
 
 # (minutes, drift_per_min, (noise_lo, noise_hi), base_volume)
 Segment = tuple[int, float, tuple[float, float], int]
@@ -46,7 +42,7 @@ Segment = tuple[int, float, tuple[float, float], int]
 
 @dataclass
 class Scenario:
-    """A scripted 375-minute session with ground-truth markers in ``truth``."""
+    """A scripted full-session day with ground-truth markers in ``truth``."""
 
     name: str
     symbol: str
@@ -55,32 +51,34 @@ class Scenario:
     open_price: float
     truth: dict = field(default_factory=dict)
     script: Callable[["Scenario"], list[Candle]] | None = None
+    spec: MarketSpec = NSE
 
     def __post_init__(self) -> None:
         total = sum(m for m, *_ in self.segments)
-        if self.script is None and total != SESSION_MINUTES:
-            raise ValueError(f"segments sum to {total} minutes, need {SESSION_MINUTES}")
+        if self.script is None and total != self.spec.session_minutes:
+            raise ValueError(f"segments sum to {total} minutes, need {self.spec.session_minutes}")
 
     def rng(self) -> random.Random:
         return random.Random(f"{self.name}:{self.symbol}:{self.date}")
 
     def session_open(self) -> datetime:
-        return datetime.combine(self.date, time(9, 15), tzinfo=IST)
+        return datetime.combine(self.date, self.spec.open_t, tzinfo=self.spec.tzinfo)
 
     def candles(self) -> list[Candle]:
-        """Generate the day's 375 M1 candles. Pure + deterministic: repeated
-        calls (or fresh identical Scenarios) return identical candles."""
+        """Generate the day's session_minutes M1 candles. Pure + deterministic:
+        repeated calls (or fresh identical Scenarios) return identical candles."""
         if self.script is not None:
             return self.script(self)
         rng = self.rng()
-        session_open = self.session_open()
+        session_open, tick = self.session_open(), self.spec.quantize
+        noise_floor = float(3 * self.spec.tick_size)  # never collapses sub-tick
         out: list[Candle] = []
         price = float(self.open_price)
         minute = 0
         for minutes, drift, (noise_lo, noise_hi), volume in self.segments:
             for _ in range(minutes):
                 o = price
-                amp = lambda v: max(o * v, _NOISE_FLOOR)  # tick-scaled noise
+                amp = lambda v: max(o * v, noise_floor)  # tick-scaled noise
                 c = o * (1 + drift) + rng.uniform(-amp(noise_lo), amp(noise_lo))
                 h = max(o, c) + rng.uniform(0, amp(noise_hi))
                 l = min(o, c) - rng.uniform(0, amp(noise_hi))
@@ -118,7 +116,7 @@ class ScenarioFeed(DataFeed):
         return [s for s in self._scenarios if s.symbol in self._subscribed]
 
     def events(self) -> Iterator[FeedEvent]:
-        """All 375 M1 candles of each subscribed scenario, in time order
+        """All M1 candles of each subscribed scenario, in time order
         (ties across symbols broken by symbol)."""
         candles = [c for sc in self._active() for c in sc.candles()]
         candles.sort(key=lambda c: (c.ts, c.symbol))
@@ -135,21 +133,20 @@ class ScenarioFeed(DataFeed):
         """M1 candles for symbol within [start, end] inclusive, by calendar
         day. ``start``/``end`` are ``datetime.date``; a ``datetime`` is
         accepted too and normalized via ``.date()`` (time-of-day ignored).
-        Internally this builds tz-aware IST day bounds: 00:00:00 of
-        ``start`` to 23:59:59.999999 of ``end``. Other timeframes are not
-        synthesized here (aggregate via CandleStore instead)."""
+        Internally this builds tz-aware day bounds in each scenario's market
+        tz: 00:00:00 of ``start`` to 23:59:59.999999 of ``end``. Other
+        timeframes are not synthesized here (aggregate via CandleStore)."""
         if tf is not Timeframe.M1:
             raise NotImplementedError("ScenarioFeed serves M1 history only")
         start_date = start.date() if isinstance(start, datetime) else start
         end_date = end.date() if isinstance(end, datetime) else end
-        start_dt = datetime.combine(start_date, time.min, tzinfo=IST)
-        end_dt = datetime.combine(end_date, time.max, tzinfo=IST)
         out = [
             c
             for sc in self._scenarios
             if sc.symbol == symbol
             for c in sc.candles()
-            if start_dt <= c.ts <= end_dt
+            if datetime.combine(start_date, time.min, tzinfo=sc.spec.tzinfo)
+            <= c.ts <= datetime.combine(end_date, time.max, tzinfo=sc.spec.tzinfo)
         ]
         out.sort(key=lambda c: c.ts)
         return out
@@ -195,8 +192,8 @@ _SWEEP_VOLUME_MULT = 4
 
 
 def _judas_candles(sc: Scenario) -> list[Candle]:
-    rng = sc.rng()
-    base = tick(sc.open_price)
+    rng, T = sc.rng(), sc.spec.tick_size
+    base = sc.spec.quantize(sc.open_price)
     # (close, low clamp, high clamp, base volume) per minute, in ticks
     plan: list[tuple[int, int, int, int]] = []
     for i, (closes, lo, hi) in enumerate(_JUDAS_MORNING):
@@ -220,44 +217,47 @@ def _judas_candles(sc: Scenario) -> list[Candle]:
         out.append(Candle(
             symbol=sc.symbol, tf=Timeframe.M1,
             ts=session_open + timedelta(minutes=minute),
-            open=base + o * TICK,
-            high=base + max(h, o, close) * TICK,
-            low=base + min(l, o, close) * TICK,
-            close=base + close * TICK,
+            open=base + o * T,
+            high=base + max(h, o, close) * T,
+            low=base + min(l, o, close) * T,
+            close=base + close * T,
             volume=volume,
         ))
         prev = close
     return out
 
 
-def judas_reversal(symbol: str, date: date_type, open_price: float) -> Scenario:
+def judas_reversal(symbol: str, date: date_type, open_price: float,
+                   spec: MarketSpec = NSE) -> Scenario:
     """Judas swing day: opening range, drift down that TESTS but never breaks
     the OR low, a single-candle liquidity sweep of it (wick through, close
     back => LevelEngine SWEPT), then bearish->bullish CHoCH and a LONG trend
     into the close. See the script commentary above for the exact geometry.
     """
     sc = Scenario("judas_reversal", symbol, date, [], open_price,
-                  script=_judas_candles)
+                  script=_judas_candles, spec=spec)
     candles = sc.candles()  # deterministic, so safe to read ground truth back
     or_low = min(c.low for c in candles[:15])
     sc.truth = {
         "sweep_low_minute": _SWEEP_MINUTE,
         "reversal_from": candles[_SWEEP_MINUTE].low,   # = or_low - 4 ticks
         "afternoon_direction": "LONG",
-        "swept_zone": (or_low - TICK, or_low + TICK),  # the ORL zone swept
+        "swept_zone": (or_low - spec.tick_size, or_low + spec.tick_size),
     }
     return sc
 
 
-def trend_day(symbol: str, date: date_type, open_price: float) -> Scenario:
+def trend_day(symbol: str, date: date_type, open_price: float,
+              spec: MarketSpec = NSE) -> Scenario:
     """One-way LONG trend day: 45-min +0.05%/min runs with 10-min
     -0.06%/min pullbacks (deep enough to confirm M5 swings, never breaking a
     prior swing low); closes near the high. No level is ever wick-through-
     close-back swept, so structure sees BOS but sweep stays quiet."""
     run: Segment = (45, +0.0005, (0.0002, 0.0005), 1000)
     pullback: Segment = (10, -0.0006, (0.0001, 0.0004), 700)
-    segments = [run, pullback] * 6 + [run]  # 6 x 55 + 45 = 375 min
+    cycles, rem = divmod(spec.session_minutes, 55)  # NSE: 6 x 55 + 45 = 375
+    segments = [run, pullback] * cycles + ([(rem, *run[1:])] if rem else [])
     return Scenario(
         "trend_day", symbol, date, segments, open_price,
-        truth={"direction": "LONG"},
+        truth={"direction": "LONG"}, spec=spec,
     )

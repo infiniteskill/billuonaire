@@ -9,6 +9,7 @@ import pytest
 from trader.detectors.liquidity import LiquidityDetector
 from trader.engine.context import DayState, StockContext
 from trader.models.candle import TICK, Candle, Timeframe, tick
+from trader.models.market import NSE
 from trader.models.evidence import Direction
 from trader.models.level import Level, LevelKind, LevelState
 from trader.store.candles import CandleStore
@@ -34,7 +35,7 @@ def add_full_day(store, day, o, h, l, c):
     """Add a full 375-minute session of M1 candles for `day`, each sharing
     the given OHLC, so the day's D1/prev_day aggregate is exactly h/l."""
     start = day.replace(hour=9, minute=15, second=0, microsecond=0)
-    for i in range(Timeframe.D1.minutes):
+    for i in range(NSE.session_minutes):
         store.add(m1(start + timedelta(minutes=i), o, h, l, c))
 
 

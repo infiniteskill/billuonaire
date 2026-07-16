@@ -1,16 +1,9 @@
 import json
-import re
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-_HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
-
-
-def _validate_hhmm(value: str) -> str:
-    if not _HHMM.match(value):
-        raise ValueError(f"expected HH:MM time string, got {value!r}")
-    return value
+from trader.models.market import MarketSpec, _minutes
 
 
 class StrictModel(BaseModel):
@@ -34,7 +27,8 @@ class TimeCfg(StrictModel):
     @field_validator("observe_until", "no_entry_after", "squareoff")
     @classmethod
     def _check_hhmm(cls, v: str) -> str:
-        return _validate_hhmm(v)
+        _minutes(v)  # raises on malformed HH:MM
+        return v
 
 
 class StopsCfg(StrictModel):
@@ -66,6 +60,20 @@ class FillsCfg(StrictModel):
     costs: CostsCfg
 
 
+class MarketCfg(StrictModel):
+    tz: str = "Asia/Kolkata"
+    session_open: str = "09:15"
+    session_close: str = "15:30"
+    tick_size: float | str = "0.05"
+
+    def to_spec(self) -> MarketSpec:
+        return MarketSpec(self.tz, self.session_open, self.session_close, self.tick_size)
+
+    @model_validator(mode="after")
+    def _valid_spec(self) -> "MarketCfg":  # MarketSpec rejects bad times / tick <= 0
+        return self.to_spec() and self
+
+
 class Settings(StrictModel):
     capital: float = Field(gt=0)
     risk: RiskCfg
@@ -74,6 +82,10 @@ class Settings(StrictModel):
     confluence: ConfluenceCfg
     detectors: DetectorsCfg
     fills: FillsCfg
+    market: MarketCfg = Field(default_factory=MarketCfg)  # absent => NSE
+
+    def market_spec(self) -> MarketSpec:
+        return self.market.to_spec()
 
     def enabled_weights(self) -> dict[str, float]:
         w = {k: v for k, v in self.confluence.weights.items()

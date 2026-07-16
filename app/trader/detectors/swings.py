@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from trader.detectors.base import Detector, register
 from trader.engine.context import StockContext
-from trader.models.candle import TICK, Candle, Timeframe
+from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Evidence
 from trader.models.level import Level, LevelKind, LevelState
 
@@ -73,7 +73,7 @@ class SwingsDetector(Detector):
         if not strictly_extreme:
             return
 
-        zone = (extreme - TICK, extreme + TICK)
+        zone = (extreme - ctx.spec.tick_size, extreme + ctx.spec.tick_size)
         level_id = f"{ctx.symbol}-{kind.name}-{tf.value}-{mid.ts.isoformat()}"
 
         if any(lv.id == level_id for lv in ctx.levels):

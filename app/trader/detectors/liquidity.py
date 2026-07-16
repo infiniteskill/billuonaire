@@ -2,7 +2,8 @@
 and EQH/EQL Levels on ctx.levels (side channel, like swings.py) and emits at
 most 2 NEUTRAL proximity Evidence (nearest untapped ACTIVE/TESTED pool above
 and below price, within proximity_atr * ATR(M5); strength = pool * 0.5).
-Params: eq_tolerance, round_steps, round_within_pct, proximity_atr.
+Params: eq_tolerance, round_steps, round_within_pct, proximity_atr,
+or_minutes (opening range = first or_minutes of the session).
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from trader.detectors.base import Detector, register
 from trader.engine.context import StockContext
-from trader.models.candle import TICK, Timeframe, tick
+from trader.models.candle import Timeframe
 from trader.models.evidence import Direction, Evidence
 from trader.models.level import Level, LevelKind, LevelState
 
@@ -21,9 +22,8 @@ _PROXIMITY_KINDS = frozenset({
     LevelKind.PDH, LevelKind.PDL, LevelKind.EQH, LevelKind.EQL,
     LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L, LevelKind.ROUND,
 })
-_OPEN_RANGE_MINUTES = 15
 _DEFAULTS = {"eq_tolerance": 0.001, "round_steps": [50, 100, 500],
-             "round_within_pct": 2.0, "proximity_atr": 1.0}
+             "round_within_pct": 2.0, "proximity_atr": 1.0, "or_minutes": 15}
 
 
 def _mid(zone: tuple[Decimal, Decimal]) -> Decimal:
@@ -49,42 +49,27 @@ class LiquidityDetector(Detector):
         self._create_eq(ctx, LevelKind.SWING_L, LevelKind.EQL)
         return self._proximity_evidence(ctx)
 
-    # ---- PDH/PDL -----------------------------------------------------
+    # ---- PDH/PDL + opening range (high/low pairs) ------------------------
 
     def _create_pdh_pdl(self, ctx: StockContext) -> None:
         prev = ctx.candles.prev_day(Timeframe.M1)
-        if not prev:
-            return
-        high = max(c.high for c in prev)
-        low = min(c.low for c in prev)
-        session_date = ctx.day.session_date
-        self._create_once(
-            ctx, f"{ctx.symbol}-PDH-{session_date}", LevelKind.PDH,
-            (high - TICK, high + TICK),
-        )
-        self._create_once(
-            ctx, f"{ctx.symbol}-PDL-{session_date}", LevelKind.PDL,
-            (low - TICK, low + TICK),
-        )
-
-    # ---- Opening range -------------------------------------------------
+        if prev:
+            self._hl_pair(ctx, prev, ("PDH", LevelKind.PDH), ("PDL", LevelKind.PDL))
 
     def _create_open_range(self, ctx: StockContext) -> None:
+        """Opening range = first or_minutes of the session."""
+        n = int(self.params["or_minutes"])
         today = ctx.candles.today(Timeframe.M1)
-        if len(today) < _OPEN_RANGE_MINUTES:
-            return
-        window = today[:_OPEN_RANGE_MINUTES]
-        high = max(c.high for c in window)
-        low = min(c.low for c in window)
-        session_date = ctx.day.session_date
-        self._create_once(
-            ctx, f"{ctx.symbol}-ORH-{session_date}", LevelKind.OPEN_RANGE_H,
-            (high - TICK, high + TICK),
-        )
-        self._create_once(
-            ctx, f"{ctx.symbol}-ORL-{session_date}", LevelKind.OPEN_RANGE_L,
-            (low - TICK, low + TICK),
-        )
+        if len(today) >= n:
+            self._hl_pair(ctx, today[:n], ("ORH", LevelKind.OPEN_RANGE_H),
+                          ("ORL", LevelKind.OPEN_RANGE_L))
+
+    def _hl_pair(self, ctx: StockContext, window, hi, lo) -> None:
+        """One (tag, kind) level at the window high, one at the window low."""
+        d, T = ctx.day.session_date, ctx.spec.tick_size
+        for (tag, kind), p in ((hi, max(c.high for c in window)),
+                               (lo, min(c.low for c in window))):
+            self._create_once(ctx, f"{ctx.symbol}-{tag}-{d}", kind, (p - T, p + T))
 
     # ---- Round numbers -------------------------------------------------
 
@@ -105,10 +90,10 @@ class LiquidityDetector(Detector):
             pct = abs(nearest - close) / close * 100
             if pct > within_pct:
                 continue
-            nearest = tick(nearest)
+            nearest, T = ctx.spec.quantize(nearest), ctx.spec.tick_size
             level_id = f"{ctx.symbol}-ROUND-{step}-{nearest}"
             self._create_once(
-                ctx, level_id, LevelKind.ROUND, (nearest - TICK, nearest + TICK),
+                ctx, level_id, LevelKind.ROUND, (nearest - T, nearest + T),
             )
 
     # ---- Equal highs/lows -----------------------------------------------

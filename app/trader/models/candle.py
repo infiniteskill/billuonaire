@@ -1,20 +1,23 @@
 from dataclasses import dataclass
 from datetime import datetime
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
 from enum import Enum
 
-TICK = Decimal("0.05")
+from trader.models.market import NSE
+
+TICK = NSE.tick_size  # deprecated: use MarketSpec.tick_size
 
 def tick(value) -> Decimal:
-    d = Decimal(str(value))
-    return (d / TICK).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * TICK
+    return NSE.quantize(value)  # deprecated NSE-default wrapper; use MarketSpec.quantize
 
 class Timeframe(Enum):
     M1 = "1m"; M5 = "5m"; M15 = "15m"; H1 = "1h"; D1 = "1d"
 
     @property
     def minutes(self) -> int:
-        return {"1m": 1, "5m": 5, "15m": 15, "1h": 60, "1d": 375}[self.value]
+        if self is Timeframe.D1:
+            raise ValueError("D1 duration is market-dependent; use MarketSpec.session_minutes")
+        return {"1m": 1, "5m": 5, "15m": 15, "1h": 60}[self.value]
 
 @dataclass(frozen=True)
 class Candle:

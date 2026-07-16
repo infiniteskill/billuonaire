@@ -1,8 +1,7 @@
 """StockContext: everything a detector may look at for one symbol at one
 point in time. Built fresh per evaluation tick; ``levels`` and
 ``evidence_history`` are the live shared objects (mutable), ``candles`` is a
-no-lookahead CandleView from CandleStore.view().
-"""
+no-lookahead CandleView from CandleStore.view()."""
 
 from __future__ import annotations
 
@@ -13,6 +12,7 @@ from decimal import Decimal
 from trader.models.candle import Timeframe
 from trader.models.evidence import Evidence
 from trader.models.level import Level
+from trader.models.market import NSE, MarketSpec
 from trader.store.candles import CandleView
 
 
@@ -34,6 +34,7 @@ class StockContext:
     evidence_history: list[Evidence]
     day: DayState
     options: object | None = None        # options chain snapshot; None if absent
+    spec: MarketSpec = NSE               # market calendar + tick grid
 
     def atr(self, tf: Timeframe, period: int = 14) -> Decimal | None:
         """Average True Range: SMA of the last ``period`` true ranges over
