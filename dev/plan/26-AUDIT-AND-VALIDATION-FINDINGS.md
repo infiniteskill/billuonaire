@@ -45,13 +45,30 @@ QUICK target (~1–1.5R) or used as direction/context, NOT held for 3R. (compres
 past 3R: exp@5R only +0.07 → ~3R target is its peak.) NOTE: executor doesn't honor meta["sl"]
 yet (C-1) so this is POTENTIAL RR motivating the SL-wiring; and it's pre-F-fix (re-measure after).
 
-### A4. Emergent system (what the DATA supports — not the initial confluence-engine vision)
-- **RR sniper core:** compression_fade + bpr (tiny SL, ~3R, positive holdout-stable expectancy).
-- **Hit-edge signals:** inducement/turtle_soup/mitigation/fvg_cb/ob_lux → quick-target (~1–1.5R)
-  exit to monetize hit-edge, or direction/context; NOT 3R.
-- **Direction filter (wyckoff-PHASE align): +11.7pt — apply to all.**
-- **No confluence stacking** (proven not to lift causally).
-- The combination grid (§C) now must sweep detector × filter × **exit-target** to find each signal's best config.
+### A4. COMBINATION / PERMUTATION GRID — definitive (25,138 causal signals, 46 stk × 19 sess, leak-free, both-holdout)
+`runs/val50/combos.md`. Grid = detector × exit-target × filter, all causal + holdout-stable.
+- **BEST CONFIG: compression_fade @2R + premium/discount-favorable + volatility-contraction → +0.39R/trade
+  (n=4028, 46% win, T1+0.39/T2+0.40/xA+0.40/xB+0.39). +release-window → +0.41.** The workhorse.
+- **Per-detector best exit:** compression_fade 2R (+0.30 solo→+0.39 filtered), bpr 1.5–5R (+0.31–0.41, n=222),
+  ob_lux 1R (+0.08 thin), inducement/mitigation ~breakeven @1R. **fvg_cb + turtle_soup RR-NEGATIVE every
+  target → DROP as standalone** (hit-edge, no RR).
+- **Filters ranked:** (1) RELEASE WINDOW 11:00–14:45 = top lever (confirms operator model: morning
+  manipulation loses, release pays) — lifts compression_fade/mitigation/inducement/ob_lux; (2)
+  premium/discount (+0.12 compression_fade); (3) vol-regime but DIRECTION-SPECIFIC (compression_fade→
+  contraction, bpr→expansion); (4) FRESHNESS = WORTHLESS (obvious≈fresh, hypothesis dead);
+  (5) **wyckoff-phase align does NOT generalize** — per-detector fade/follow switch, NOT the universal
+  +11.7pt (corrects A2's aggregate reading).
+- **Filters compound modestly then SATURATE** (+0.30→+0.39 @2 filters, noise beyond; n collapses).
+- **Stacking still doesn't pay** — 1 pair beats solos (ob_lux confirms mitigation +0.12@1R), still < compression_fade solo.
+- **Surprise:** bpr NEGATIVE hit-edge (−0.03) yet BEST RR (+0.41) — sharpest hit≠RR.
+
+### A5. THE SYSTEM (data-locked, Wave-3 target)
+- **Workhorse:** compression_fade, 2R target, gated by {release-window, premium/discount-fav, vol-contraction}.
+- **Add:** bpr, ~1.5R, low frequency, gated by {release-window, vol-expansion}.
+- **Hard time gate:** trade only the RELEASE WINDOW (~11:00–14:45); skip morning manipulation.
+- **Drop as standalone entries:** fvg_cb, turtle_soup (no RR). inducement/mitigation = marginal/context only.
+- **NO confluence-stack engine, NO freshness gate, NO universal direction filter.** Per-detector filter sets.
+- **Requires SL-wiring (C-1):** executor MUST honor meta["sl"] tiny stop or none of this expectancy is realized.
 
 ## B. CODE AUDIT — real bugs (ranked)
 
