@@ -544,7 +544,8 @@ def _shs_candles(sc: Scenario) -> list[Candle]:
         for _ in range(n):
             c += step
             plan.append((c, c - 3, c + 3, 1100))
-    return _plan_candles(sc, rng, plan, {**_JUDAS_FORCED, **_SHS_FORCED},
+    morning = {m: f for m, f in _JUDAS_FORCED.items() if m < 80}
+    return _plan_candles(sc, rng, plan, {**morning, **_SHS_FORCED},
                          boosted=frozenset({_SWEEP_MINUTE,
                                             _SHS_PIVOT_SWEEP_MINUTE}))
 
