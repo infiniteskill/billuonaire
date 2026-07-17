@@ -6,6 +6,7 @@ dependencies = ["typer>=0.12", "rich>=13", "pydantic>=2.7", "pandas>=2.2", "pyar
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+data = ["yfinance>=0.2"]
 
 [project.scripts]
 trader = "trader.cli:app"

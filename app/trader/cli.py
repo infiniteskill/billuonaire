@@ -228,5 +228,39 @@ def status(
     })
 
 
+@app.command()
+def fetch(
+    symbols: list[str] = typer.Argument(..., help="Symbols to fetch (e.g. RELIANCE TCS)."),
+    days: int = typer.Option(25, "--days", help="Trailing days of M1 data to pull."),
+    data: Path = typer.Option(..., "--data", help="CSV root; writes/merges <SYMBOL>.csv."),
+    source: str = typer.Option("yfinance", "--source", help="Data source (yfinance)."),
+) -> None:
+    """Pull trailing M1 candles for SYMBOLS into --data as FileFeed CSVs
+    (merged with any existing file), printing a per-symbol summary with a
+    gap report (sessions with <300 M1 rows)."""
+    if source != "yfinance":
+        typer.echo(f"unknown --source {source!r} (expected yfinance)", err=True)
+        raise typer.Exit(code=1)
+    from trader.tools.fetch import fetch_symbol
+
+    data.mkdir(parents=True, exist_ok=True)
+    for symbol in symbols:
+        try:
+            summary = fetch_symbol(symbol, days, data)
+        except RuntimeError as e:
+            typer.echo(str(e), err=True)
+            raise typer.Exit(code=1)
+        table = Table(title=f"fetch {symbol}")
+        table.add_column("metric")
+        table.add_column("value")
+        table.add_row("days requested", str(summary["days"]))
+        table.add_row("rows", str(summary["rows"]))
+        gaps = summary["gaps"]
+        table.add_row("gap sessions", str(len(gaps)))
+        for day_iso, n in gaps:
+            table.add_row(f"  {day_iso}", f"{n} rows")
+        console.print(table)
+
+
 if __name__ == "__main__":
     app()
