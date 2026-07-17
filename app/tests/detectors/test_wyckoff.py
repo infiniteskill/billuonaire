@@ -11,6 +11,7 @@ from trader.detectors.wyckoff import WyckoffDetector
 from trader.engine.context import DayState, StockContext
 from trader.models.candle import Candle, Timeframe, tick
 from trader.models.evidence import Direction
+from trader.models.level import Level, LevelKind, LevelState
 from trader.store.candles import CandleStore
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -27,14 +28,20 @@ def bar(i, o, h, l, c, v):
     return Candle("X", M1, bar_ts(i), tick(o), tick(h), tick(l), tick(c), v)
 
 
-def make_ctx(candles):
+def make_ctx(candles, levels=None):
     store = CandleStore("/nonexistent")
     for cd in candles:
         store.add(cd)
     now = candles[-1].ts + timedelta(minutes=5)
     return StockContext(symbol="X", now=now, candles=store.view("X", now),
-                        levels=[], evidence_history=[],
+                        levels=levels if levels is not None else [],
+                        evidence_history=[],
                         day=DayState(session_date=now.date()))
+
+
+def swing(kind, lo, hi, born, tf=Timeframe.M5):
+    return Level(id=f"sw-{born.isoformat()}-{kind.name}", symbol="X", kind=kind,
+                zone=(tick(lo), tick(hi)), born=born, tf=tf, state=LevelState.ACTIVE)
 
 
 # 40 flat range candles: band = 101 - 99 = 2, TR = 2 -> ATR = 2; in-range
@@ -141,6 +148,22 @@ def test_phase_unclear_in_range_without_event():
     assert WyckoffDetector(PARAMS).phase(ctx) == ("UNCLEAR", 0.4)
 
 
+def test_phase_unclear_on_zero_atr_after_trend_stall():
+    # 25 trending candles (real net movement) then 15 dead-flat candles at
+    # the same price (o=h=l=c) -> the ATR-period(14) window sits entirely
+    # inside the flat tail -> ATR = 0 while the 40-candle net != 0. Pre-A8
+    # this divided by (3*atr)=0 -> ZeroDivisionError; must be UNCLEAR instead.
+    trend = [bar(i, 100 + Decimal("0.1") * i, 101 + Decimal("0.1") * i,
+                 99 + Decimal("0.1") * i, 100 + Decimal("0.1") * i, 100)
+             for i in range(25)]
+    stall = trend[-1].close
+    flat = [bar(i, stall, stall, stall, stall, 100) for i in range(25, 40)]
+    ctx = make_ctx(trend + flat)
+
+    assert WyckoffDetector(PARAMS).phase(ctx) == ("UNCLEAR", 0.0)
+    assert WyckoffDetector(PARAMS).detect(ctx) == []  # full path, no crash
+
+
 def test_phase_accumulation_after_spring():
     ctx = make_ctx(_spiked(SPRING))
     det = WyckoffDetector(PARAMS)
@@ -175,21 +198,58 @@ def test_phase_markdown_mirror():
     assert conf == pytest.approx(0.975)
 
 
-# ---- continuation evidence ----
+# ---- continuation evidence (A5: zone anchors to the phase's defining swing) ----
 
-def test_continuation_evidence_in_markup_and_dedupe():
-    ctx = make_ctx(_trend40())
+def test_continuation_evidence_zone_is_swing_and_dedupe():
+    sw = swing(LevelKind.SWING_L, "97", "97.5", bar_ts(20))
+    ctx = make_ctx(_trend40(), levels=[sw])
     det = WyckoffDetector(PARAMS)
 
     [ev] = det.detect(ctx)
 
-    latest = ctx.candles.last(1, Timeframe.M5)[-1]
     assert ev.direction is Direction.LONG
     assert ev.strength == 0.5
     assert ev.ttl_candles == 12
-    assert ev.zone == (latest.low, latest.high)
+    assert ev.zone == sw.zone
     assert ev.meta == {"event": "PHASE", "phase": "MARKUP"}
     assert det.detect(ctx) == []  # dedupe per candle
+
+
+def test_continuation_evidence_markdown_uses_swing_h():
+    sw = swing(LevelKind.SWING_H, "103", "103.5", bar_ts(20))
+    ctx = make_ctx(_trend40(sign=-1), levels=[sw])
+
+    [ev] = WyckoffDetector(PARAMS).detect(ctx)
+
+    assert ev.direction is Direction.SHORT
+    assert ev.zone == sw.zone
+    assert ev.meta == {"event": "PHASE", "phase": "MARKDOWN"}
+
+
+def test_continuation_zone_stable_across_consecutive_candles():
+    sw = swing(LevelKind.SWING_L, "97", "97.5", bar_ts(20))
+    candles40 = _trend40()
+    candles41 = candles40 + [bar(40, "106", "107", "105", "106", 100)]
+    det = WyckoffDetector(PARAMS)
+
+    [ev1] = det.detect(make_ctx(candles40, levels=[sw]))
+    [ev2] = det.detect(make_ctx(candles41, levels=[sw]))
+
+    assert ev1.zone == sw.zone
+    assert ev2.zone == sw.zone  # same swing, same candle -> zone never moved
+
+
+def test_no_continuation_emission_without_same_direction_swing():
+    ctx = make_ctx(_trend40())  # MARKUP, no levels at all
+
+    assert WyckoffDetector(PARAMS).detect(ctx) == []
+
+
+def test_no_continuation_emission_with_only_opposite_direction_swing():
+    sw = swing(LevelKind.SWING_H, "103", "103.5", bar_ts(20))  # wrong side for MARKUP
+    ctx = make_ctx(_trend40(), levels=[sw])
+
+    assert WyckoffDetector(PARAMS).detect(ctx) == []
 
 
 # ---- htf_phase() over D1 ----

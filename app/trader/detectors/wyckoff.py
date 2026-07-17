@@ -12,9 +12,13 @@ memory for phase().
 ``window`` candles: <window or no ATR => UNCLEAR 0.0; in-range => event
 within the last 10 candles ? ACCUMULATION/DISTRIBUTION 0.7 : UNCLEAR 0.4;
 out-of-range => |net close change| > 1xATR ? MARKUP/MARKDOWN with confidence
-min(1, |net|/(3xATR)) : UNCLEAR 0.0. MARKUP/MARKDOWN with confidence >= 0.5
-also emits ONE continuation Evidence 0.5 ttl 12 along the phase direction,
-zone = latest candle (low, high), deduped per candle.
+min(1, |net|/(3xATR)) : UNCLEAR 0.0; ``atr<=0`` also => UNCLEAR 0.0.
+MARKUP/MARKDOWN with confidence >= 0.5 also emits ONE continuation Evidence
+0.5 ttl 12 along the phase direction, zone = the latest confirmed
+same-direction M5 swing level (SWING_L for MARKUP, SWING_H for MARKDOWN)
+from ``ctx.levels`` -- a stable pullback-to-swing entry zone that clusters
+with other evidence at that swing instead of drifting every candle; no
+such swing yet => no emission that candle. Deduped per candle.
 
 ``htf_phase(ctx)``: net D1 close change over the last 10 D1 candles (else
 UNCLEAR 0.0); > +2% MARKUP / < -2% MARKDOWN, confidence min(1, |pct|/5)."""
@@ -28,6 +32,7 @@ from trader.detectors.base import Detector, register
 from trader.engine.context import StockContext
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
+from trader.models.level import LevelKind
 
 _DEFAULTS = {"tf": "5m", "window": 40, "range_atr": 3.0, "vol_sma": 20}
 
@@ -57,14 +62,24 @@ class WyckoffDetector(Detector):
         if name in ("MARKUP", "MARKDOWN") and conf >= 0.5 and candles:
             latest = candles[-1]
             if (latest.ts, "PHASE") not in self._seen:
-                self._seen.add((latest.ts, "PHASE"))
-                out.append(Evidence(
-                    detector=self.name,
-                    direction=Direction.LONG if name == "MARKUP" else Direction.SHORT,
-                    strength=0.5, zone=(latest.low, latest.high),
-                    ts=ctx.now, ttl_candles=12,
-                    meta={"event": "PHASE", "phase": name}))
+                zone = self._continuation_zone(ctx, name)
+                if zone is not None:
+                    self._seen.add((latest.ts, "PHASE"))
+                    out.append(Evidence(
+                        detector=self.name,
+                        direction=Direction.LONG if name == "MARKUP" else Direction.SHORT,
+                        strength=0.5, zone=zone,
+                        ts=ctx.now, ttl_candles=12,
+                        meta={"event": "PHASE", "phase": name}))
         return out
+
+    def _continuation_zone(self, ctx: StockContext, name: str) -> tuple[Decimal, Decimal] | None:
+        """Stable continuation zone = latest confirmed same-direction M5 swing
+        (pullback-to-swing entry): SWING_L for MARKUP, SWING_H for MARKDOWN.
+        None if no such swing exists yet -- caller skips emission."""
+        kind = LevelKind.SWING_L if name == "MARKUP" else LevelKind.SWING_H
+        swings = [lv for lv in ctx.levels if lv.kind is kind and lv.tf is Timeframe.M5]
+        return max(swings, key=lambda lv: lv.born).zone if swings else None
 
     def _event(self, ctx: StockContext, candles: list[Candle], atr: Decimal) -> Evidence | None:
         rng, latest = candles[:-1], candles[-1]
@@ -94,7 +109,7 @@ class WyckoffDetector(Detector):
         w = int(self.params["window"])
         candles = ctx.candles.last(w, Timeframe(self.params["tf"]))
         atr = ctx.atr(Timeframe(self.params["tf"]))
-        if len(candles) < w or atr is None:
+        if len(candles) < w or atr is None or atr <= 0:
             return "UNCLEAR", 0.0
         lo, hi = min(c.low for c in candles), max(c.high for c in candles)
         if hi - lo < self._band_max(atr):
