@@ -21,6 +21,7 @@ class RiskCfg(StrictModel):
     day_after_trend_mult: float = Field(default=0.75, gt=0)  # axiom 16
     portfolio_heat_pct: float = Field(default=1.0, gt=0)     # B8 open-risk cap
     max_correlated_positions: int = Field(default=2, gt=0)   # same-direction cap
+    min_minutes_between_trades: int = Field(default=15, ge=0)  # B11 cooldown
 
 
 class TimeCfg(StrictModel):

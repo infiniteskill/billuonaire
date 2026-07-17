@@ -18,7 +18,8 @@
     "daily_profit_lock_R": 2.0,
     "day_after_trend_mult": 0.75,
     "portfolio_heat_pct": 1.0,
-    "max_correlated_positions": 2
+    "max_correlated_positions": 2,
+    "min_minutes_between_trades": 15
   },
   "time": {
     "observe_until": "11:00",

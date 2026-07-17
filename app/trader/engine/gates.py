@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from trader.config import Settings
@@ -38,6 +38,7 @@ class RiskState:
     locked: bool = False
     open_risk: Decimal = Decimal(0)          # sum of open risk_pts x qty (B8)
     open_dirs: dict[str, Direction] = field(default_factory=dict)
+    last_close_ts: datetime | None = None    # B11 trade-cooldown anchor
     _amts: dict[str, Decimal] = field(default_factory=dict)  # release ledger
 
     def record_open(self, symbol: str, risk_amt: Decimal = Decimal(0),
@@ -49,9 +50,12 @@ class RiskState:
         if direction is not None:
             self.open_dirs[symbol] = direction
 
-    def record_close(self, r_multiple: float, symbol: str | None = None) -> None:
+    def record_close(self, r_multiple: float, symbol: str | None = None,
+                     ts: datetime | None = None) -> None:
         self.open_risk -= self._amts.pop(symbol, Decimal(0))
         self.open_dirs.pop(symbol, None)
+        if ts is not None:
+            self.last_close_ts = ts
         r = self.settings.risk
         self.daily_pnl_R += r_multiple
         self.consecutive_losses = self.consecutive_losses + 1 if r_multiple < 0 else 0
@@ -64,6 +68,7 @@ class RiskState:
         self.trades_today, self.consecutive_losses, self.daily_pnl_R = 0, 0, 0.0
         self.per_symbol, self.locked = {}, False
         self.open_risk, self.open_dirs, self._amts = Decimal(0), {}, {}
+        self.last_close_ts = None
 
 
 class Gate(ABC):
@@ -169,6 +174,10 @@ class RiskBudgetGate(Gate):
     def check(self, ctx, direction, plan_zone, htf_phase, risk) -> Verdict:
         if risk.locked:
             return self._no("risk locked for the day")
+        if (risk.last_close_ts is not None                    # B11 throttle
+                and ctx.now - risk.last_close_ts
+                < timedelta(minutes=self.r.min_minutes_between_trades)):
+            return self._no("cooldown_after_trade")
         if risk.trades_today >= self.r.max_trades_day:
             return self._no(f"max {self.r.max_trades_day} trades/day reached")
         if risk.per_symbol.get(ctx.symbol, 0) >= self.r.max_per_stock:

@@ -212,6 +212,39 @@ def test_correlation_cap_third_same_direction_blocked(settings):
     assert run(gate, ctx, direction=Direction.SHORT, risk=rs).allow
 
 
+# --- B11: min_minutes_between_trades cooldown ---
+
+def test_cooldown_after_trade_boundary_exact(settings):
+    """Close at 11:30 + 15-min window: 11:44:59 blocked, 11:45:00 exact passes."""
+    gate = RiskBudgetGate(settings)
+    rs = RiskState(settings)
+    rs.record_close(1.0, "X", ts=at(TODAY, 11, 30))
+    assert rs.last_close_ts == at(TODAY, 11, 30)
+    v = run(gate, gate_ctx(now=at(TODAY, 11, 44)), risk=rs)
+    assert not v.allow and v.reason == "cooldown_after_trade"
+    late = at(TODAY, 11, 44).replace(second=59)
+    assert not run(gate, gate_ctx(now=late), risk=rs).allow
+    assert run(gate, gate_ctx(now=at(TODAY, 11, 45)), risk=rs).allow  # exact boundary
+
+
+def test_cooldown_without_close_or_ts_passes(settings):
+    gate = RiskBudgetGate(settings)
+    assert run(gate, gate_ctx(), risk=RiskState(settings)).allow  # never closed
+    rs = RiskState(settings)
+    rs.record_close(1.0, "X")             # legacy call, no ts: no anchor set
+    assert rs.last_close_ts is None
+    assert run(gate, gate_ctx(), risk=rs).allow
+
+
+def test_cooldown_resets_on_new_day(settings):
+    rs = RiskState(settings)
+    rs.record_close(1.0, "X", ts=at(TODAY, 11, 30))
+    rs.reset_day()
+    assert rs.last_close_ts is None
+    assert run(RiskBudgetGate(settings), gate_ctx(now=at(TODAY, 11, 31)),
+               risk=rs).allow
+
+
 # --- GateChain ---
 
 def test_chain_returns_first_failure(settings):
