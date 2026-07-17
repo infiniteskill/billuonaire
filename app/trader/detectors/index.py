@@ -26,6 +26,9 @@ class IndexDetector(Detector):
         super().__init__(dict(params))
         self._seen: set = set()
 
+    def on_session_end(self) -> None:
+        self._seen.clear()   # ts-keyed: old ts never recurs
+
     def detect(self, ctx: StockContext) -> list[Evidence]:
         if ctx.index.trend is Direction.NEUTRAL:
             return []

@@ -60,6 +60,12 @@ class Detector(ABC):
     def detect(self, ctx: StockContext) -> list[Evidence]:
         ...
 
+    def on_session_end(self) -> None:
+        """Prune per-session instance memory (ts/level-keyed dedupe sets) so
+        long multi-day runs stay bounded. Stateless detectors: no-op.
+        Learning data that must survive sessions (timestats counts) is
+        exempt by its own override."""
+
 
 _REQUIRES = {
     "options_chain": lambda ctx: ctx.options is not None,
@@ -92,6 +98,11 @@ class DetectorRegistry:
     def get(self, name: str) -> Detector | None:
         """The enabled instance named ``name`` (pipeline hooks), else None."""
         return next((d for d in self.detectors if d.name == name), None)
+
+    def end_session(self) -> None:
+        """Session boundary: let every detector prune its instance memory."""
+        for d in self.detectors:
+            d.on_session_end()
 
     def run_all(self, ctx: StockContext) -> list[Evidence]:
         """Run every enabled detector against ctx, in config order.

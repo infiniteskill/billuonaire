@@ -60,6 +60,9 @@ class TimestatsDetector(Detector):
         self._counts: dict[str, dict[int, tuple[int, int]]] = {}
         self._seen: set = set()
 
+    def on_session_end(self) -> None:
+        self._seen.clear()   # dedupe only; _counts is LEARNING data, kept
+
     def prior(self, bucket: int, spec: MarketSpec) -> float:
         if spec.session_minutes != 375:
             return 0.5

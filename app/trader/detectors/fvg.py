@@ -39,6 +39,10 @@ class FvgDetector(Detector):
         self._ifvg_seen: set[tuple[str, datetime]] = set()  # (level_id, inv ts)
         self._bpr_fired: set[tuple[str, str]] = set()      # (bull_id, bear_id)
 
+    def on_session_end(self) -> None:
+        for m in (self._episode, self._ce_fired, self._ifvg_seen, self._bpr_fired):
+            m.clear()        # FVG levels never carry across sessions
+
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
         window = ctx.candles.last(3, tf)

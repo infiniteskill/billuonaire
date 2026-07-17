@@ -35,6 +35,9 @@ class StructureDetector(Detector):
         self._fake: dict[str, datetime] = {}       # symbol -> ts of last fake BOS
         self._session: date | None = None
 
+    def on_session_end(self) -> None:
+        self._pending, self._fake = {}, {}
+
     def detect(self, ctx: StockContext) -> list[Evidence]:
         if ctx.day.session_date != self._session:  # new session: stale memories
             self._session = ctx.day.session_date

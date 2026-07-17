@@ -109,7 +109,10 @@ class SymbolPipeline:
         intraday micro-structure (swings, OB/FVG, OR) must not block or bias
         the new day (liquidity re-creates fresh PDH/PDL/OR per session).
         Persist the pruned set (if a level_store is wired) so it survives
-        into the next run."""
+        into the next run. Detector instance memories (ts/level-keyed dedupe
+        sets) are pruned via the registry hook -- C10 memory bound."""
+        self.registry.end_session()
+        self.wyckoff.on_session_end()   # pipeline's own instance, not in registry
         self._prune_levels()
         self._save_levels()
         self._save_timestats()

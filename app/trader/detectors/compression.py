@@ -43,6 +43,9 @@ class CompressionDetector(Detector):
         super().__init__({**_DEFAULTS, **params})
         self._seen: set = set()  # (event, box ts) already emitted
 
+    def on_session_end(self) -> None:
+        self._seen.clear()   # box ts is intra-day (day-scoped PO3 FSM)
+
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf, w = Timeframe(self.params["tf"]), int(self.params["window"])
         candles = ctx.candles.last(w, tf)

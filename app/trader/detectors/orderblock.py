@@ -44,6 +44,10 @@ class OrderblockDetector(Detector):
         self._quality: dict[str, float] = {}          # level_id -> base quality
         self._emitted: set[tuple[str, datetime]] = set()  # (level_id, candle ts)
 
+    def on_session_end(self) -> None:
+        self._quality.clear()    # OB levels never carry; new day re-derives
+        self._emitted.clear()
+
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
         atr = ctx.atr(tf)

@@ -44,6 +44,9 @@ class BreakerDetector(Detector):
         super().__init__({**_DEFAULTS, **params})
         self._seen: set[tuple[str, object]] = set()  # (level_id, inversion ts)
 
+    def on_session_end(self) -> None:
+        self._seen.clear()   # watched kinds never carry across sessions
+
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
         window = ctx.candles.last(1, tf)

@@ -36,6 +36,10 @@ class SweepDetector(Detector):
         self._base: dict[tuple[str, datetime], Evidence] = {}  # swept-tick evidence, keyed
         # by (level_id, swept ts); consulted to build the later reclaim upgrade.
 
+    def on_session_end(self) -> None:
+        self._seen.clear()   # episodes are ts-keyed: old ts never recurs, and
+        self._base.clear()   # the reclaim window never spans a session gap
+
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
         window = ctx.candles.last(int(self.params["reclaim_bonus_candles"]) + 1, tf)

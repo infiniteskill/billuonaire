@@ -31,6 +31,9 @@ class VolumeDetector(Detector):
         super().__init__({**_DEFAULTS, **params})
         self._seen: set = set()  # latest-candle ts already processed
 
+    def on_session_end(self) -> None:
+        self._seen.clear()   # ts-keyed: old ts never recurs
+
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
         n = int(self.params["sma"])

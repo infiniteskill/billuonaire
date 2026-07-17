@@ -49,6 +49,10 @@ class WyckoffDetector(Detector):
         self._seen: set = set()  # (candle ts, event) already emitted
         self._last_event: tuple | None = None  # (name, candle ts), instance memory
 
+    def on_session_end(self) -> None:
+        self._seen.clear()   # ts-keyed; _last_event is a bounded scalar
+                             # that phase() already expires by ts window
+
     def _band_max(self, atr: Decimal) -> Decimal:
         return Decimal(str(self.params["range_atr"])) * atr
 
