@@ -80,7 +80,8 @@ class EntryState(Enum):
 @dataclass(frozen=True)
 class ArmResult:
     armed: bool
-    reason: str | None = None    # "too_far" | "stop_too_wide" | "no_room"
+    reason: str | None = None    # "no_atr" | "no_risk" | "too_far"
+    #                              | "stop_too_wide" | "no_room"
     #                              | "qty_zero" | "costs_dominate"
     plan: TradePlan | None = None
 
@@ -119,7 +120,9 @@ class EntryFSM:
     def arm(self, zone: ScoredZone, ctx: StockContext, max_qty: int,
             opps: list[ScoredZone] = ()) -> ArmResult:
         up = zone.direction is Direction.LONG
-        atr = ctx.atr(Timeframe.M5) or Decimal(0)
+        atr = ctx.atr(Timeframe.M5)
+        if atr is None:                              # no ATR: cannot size a stop
+            return ArmResult(False, "no_atr")        # (mirror the gates' no-op)
         last = ctx.candles.last(1, Timeframe.M5)
         lo, hi = self._traded_zone(zone.zone, ctx,
                                    last[-1].close if last else None)
@@ -142,6 +145,8 @@ class EntryFSM:
                 self.spec.quantize(entry - floor if up else entry + floor),
                 ctx.levels, self.spec, self.s.stops.round_offset_ticks, up)
             risk = abs(entry - stop)
+        if risk <= 0:       # zero ATR + collapsed zone: nothing to size safely
+            return ArmResult(False, "no_risk")
         targets = self._targets(entry, risk, up, zone.zone, ctx, opps)
         if targets is None:
             return ArmResult(False, "no_room")

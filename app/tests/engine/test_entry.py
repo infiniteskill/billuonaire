@@ -71,6 +71,29 @@ def t_lvl():  # T1 source: 102.50 is 3.50 away >= 1.5R for floor risk 2.00
     return lvl(LevelKind.SWING_H, "102.50", "103.00")
 
 
+# --- arm(): ATR / zero-risk guards (audit fix) ---
+
+def flat(n=15):  # zero-range candles => ATR(14) == 0 (a real Decimal, not None)
+    return [m1(at(9, 15) + timedelta(minutes=5 * i), o=100, h=100, lo=100, c=100)
+            for i in range(n)]
+
+
+def test_arm_no_atr_returns_clean_no_arm(fsm):
+    # < 15 M5 candles: ctx.atr(M5) is None -> no-arm, never reaching the
+    # qty = budget // risk division (mirrors the gates' atr no-op)
+    r = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(5), [t_lvl()]), 1000)
+    assert (r.armed, r.reason, r.plan) == (False, "no_atr", None)
+    assert fsm.state is EntryState.IDLE
+
+
+def test_arm_zero_atr_collapsed_zone_no_crash(fsm):
+    # ATR == 0 (flat candles) AND a zero-width traded zone => risk 0: the
+    # guard returns a clean no-arm instead of ZeroDivisionError in qty
+    r = fsm.arm(zone("100.00", "100.00"), ctx_at(at(11, 0), flat(), [t_lvl()]), 1000)
+    assert (r.armed, r.reason, r.plan) == (False, "no_risk", None)
+    assert fsm.state is EntryState.IDLE
+
+
 # --- arm(): stop construction + qty ---
 
 def test_arm_plain_stop_widens_to_cost_floor(fsm):

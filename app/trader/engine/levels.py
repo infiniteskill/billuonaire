@@ -147,6 +147,19 @@ class LevelEngine:
         self._prev_close[(candle.symbol, candle.tf)] = candle.close
         return transitions
 
+    def on_session_end(self) -> None:
+        """Drop ALL per-run memory at a session boundary. Otherwise a carried
+        level (PDH/PDL/PW*/EQ*/ROUND survive _carry_over) swept on day 1's
+        last bars keeps a small window/pending counter, so day 2's FIRST bar
+        would wrongly resolve it -- reclaim the sweep, confirm a break, hold
+        an inversion -- treating the overnight gap as "one candle". Clearing
+        also makes a continuous multi-day run match per-day restarts."""
+        self._pending_break.clear()
+        self._since_swept.clear()
+        self._pending_invert.clear()
+        self._round_side.clear()
+        self._prev_close.clear()
+
     # ------------------------------------------------------------- internals
 
     def _side(self, level: Level, candle: Candle, prev_close: Decimal | None) -> str:

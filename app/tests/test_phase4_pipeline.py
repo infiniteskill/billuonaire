@@ -572,6 +572,34 @@ def test_multi_bucket_gap_closes_each_boundary(tmp_path, monkeypatch):
     assert bars == [t0]                    # one new closed M5, evaluated once
 
 
+def test_open_position_force_closed_same_day_on_overnight_gap(tmp_path):
+    """An open position whose next real M1 is NEXT DAY must be force-closed at
+    the last SAME-DAY price, never filled against the new day's opening candle
+    (the gap loop queues an EOD/stop exit, but it must not price off a
+    different-date candle). Upholds the 'no overnight' guarantee."""
+    pipe, risk = make_pipeline(tmp_path)
+    t0 = datetime(2026, 7, 14, 14, 0, tzinfo=IST)      # before the 14:30 cutoff
+    pipe.on_m1(m1("X", t0, 100, 100, 100, 100))        # warm-up: sets DAY1
+    plan = TradePlan("X", Direction.LONG, (D("99"), D("101")), D("95"),
+                     [D("107"), D("110"), D("115")], 10, 70.0, t0,
+                     {"final": 70.0, "mults": {"align": 1.0}})
+    pipe._pending_plan = plan                          # scripted resting limit
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=5), 100, 104, 100, 104))  # fill @~100
+    pos = pipe.position
+    assert pos is not None and pos.entry.price >= D("100")
+    assert risk.open_risk > 0
+    # next real M1 is NEXT DAY, gapping far down (overnight crash to 80): the
+    # gap loop clamps to DAY1's close and queues EOD exits, then _end_session
+    # force-closes at DAY1's last price BEFORE this candle can fill anything
+    pipe.on_m1(m1("X", datetime(2026, 7, 15, 9, 15, tzinfo=IST), 80, 80, 80, 80))
+    assert pipe.position is None and pipe._pending_exits == []   # closed + flushed
+    [close] = [e for e in pipe.journal.read(DAY1) if e["kind"] == "trade_close"]
+    assert close["reason"] == ExitReason.EOD.value
+    assert close["at"][:10] == "2026-07-14"                      # SAME-day squareoff
+    assert D(close["exit_price"]) > D("103")   # ~104 (last DAY1 price), NOT the 80 gap
+    assert risk.open_risk == 0                                   # ledger released
+
+
 def test_overnight_gap_stops_at_session_close(tmp_path, monkeypatch):
     """Overnight jumps close out the old session only -- no phantom
     boundary evaluations through the night."""
