@@ -44,7 +44,7 @@ class CompressionFadeDetector(Detector):
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
         bw = int(self.params["break_window"])
-        window = ctx.candles.last(bw + 1, tf)
+        window = ctx.candles.today(tf)[-(bw + 1):]
         if len(window) < 2:
             return []
         j = window[-1]

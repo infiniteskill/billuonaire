@@ -115,3 +115,38 @@ def test_on_session_end_clears_dedupe():
 def test_default_params_require_n_plus_one_bars():
     store = make_store([PRIOR_A])
     assert TurtleSoupDetector({}).detect(ctx_at(store, 1)) == []  # N=20 default, far short
+
+
+def test_session_boundary_no_cross_day_fade():
+    """PRIOR_A/B/C close out day 1; BREAK_LONG is day 2's first candle. The
+    old ctx.candles.last(N+2, tf) window would span the session boundary,
+    mixing day 1's prior lows with day 2's break bar into a false LONG fade
+    on day 2's very first tick. Session-scoped ctx.candles.today(tf) means
+    day 2 hasn't got N+1=4 bars of its own yet, so nothing fires."""
+    day1 = SESSION_START
+    day2 = day1 + timedelta(days=1)
+    store = CandleStore("/nonexistent")
+    for i, (o, h, l, c) in enumerate([PRIOR_A, PRIOR_B, PRIOR_C]):
+        store.add(Candle("X", M1, day1 + timedelta(minutes=5 * i),
+                         tick(o), tick(h), tick(l), tick(c), 10))
+    o, h, l, c = BREAK_LONG
+    store.add(Candle("X", M1, day2, tick(o), tick(h), tick(l), tick(c), 10))
+
+    det = TurtleSoupDetector(PARAMS)
+    now = day2 + timedelta(minutes=M5.minutes)
+    ctx = StockContext(symbol="X", now=now, candles=store.view("X", now),
+                       levels=[], evidence_history=[],
+                       day=DayState(session_date=now.date()))
+    assert det.detect(ctx) == []            # no cross-session fade
+
+    # a genuine day-2-only PRIOR/BREAK sequence DOES fire, from day-2 candles only
+    for i, (o, h, l, c) in enumerate([PRIOR_A, PRIOR_B, PRIOR_C, BREAK_LONG], start=1):
+        store.add(Candle("X", M1, day2 + timedelta(minutes=5 * i),
+                         tick(o), tick(h), tick(l), tick(c), 10))
+    now2 = day2 + timedelta(minutes=5 * 5)
+    ctx2 = StockContext(symbol="X", now=now2, candles=store.view("X", now2),
+                        levels=[], evidence_history=[],
+                        day=DayState(session_date=now2.date()))
+    [ev] = det.detect(ctx2)
+    assert ev.direction is Direction.LONG
+    assert ev.meta["sl"] == tick(90)
