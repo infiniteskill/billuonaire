@@ -30,7 +30,12 @@ journalling the skip/disarm reasons returned here.
            target is dropped (e.g. the 2.5R T2 fallback landing at/inside
            T1 drops T2 and promotes T3 into the second slot; a capped T3
            inside T2 is dropped as before).
-  QTY      min(max_qty, floor(capital x per_trade_pct% / risk)); 0 => skip.
+  QTY      min(max_qty, floor(capital x per_trade_pct% / risk),
+           floor(capital x leverage / entry)) -- the notional cap keeps
+           risk-derived size fundable on intraday margin; 0 => skip
+           "qty_zero". Expected round-trip costs (2 x brokerage_flat + pct
+           turnover both legs at entry) > max_cost_risk_ratio x (qty x risk)
+           => skip "costs_dominate" (flat costs swamp micro risk amounts).
   TRIGGER  latest closed M5 enters the zone AND (rejection wick >= 60% of
            range off the far side | same-direction CHoCH/VSA evidence
            overlapping the zone, stamped in (c.ts, c.ts + 5m]).
@@ -70,7 +75,8 @@ class EntryState(Enum):
 @dataclass(frozen=True)
 class ArmResult:
     armed: bool
-    reason: str | None = None    # "too_far" | "stop_too_wide" | "no_room" | "qty_zero"
+    reason: str | None = None    # "too_far" | "stop_too_wide" | "no_room"
+    #                              | "qty_zero" | "costs_dominate"
     plan: TradePlan | None = None
 
 
@@ -128,11 +134,18 @@ class EntryFSM:
         targets = self._targets(entry, risk, up, zone.zone, ctx, opps)
         if targets is None:
             return ArmResult(False, "no_room")
-        budget = (Decimal(str(self.s.capital))
-                  * Decimal(str(self.s.risk.per_trade_pct)) / 100)
-        qty = min(max_qty, int(budget // risk))
+        cap = Decimal(str(self.s.capital))
+        budget = cap * Decimal(str(self.s.risk.per_trade_pct)) / 100
+        notional = cap * Decimal(str(self.s.risk.leverage))
+        qty = min(max_qty, int(budget // risk), int(notional // entry))
         if qty <= 0:
             return ArmResult(False, "qty_zero")
+        c = self.s.fills.costs
+        rt = 2 * (Decimal(str(c.brokerage_flat))
+                  + (Decimal(str(c.stt_pct)) + Decimal(str(c.exchange_pct)))
+                  / 100 * entry * qty)
+        if rt > Decimal(str(self.s.risk.max_cost_risk_ratio)) * risk * qty:
+            return ArmResult(False, "costs_dominate")
         meta = {"final": zone.final, "mults": dict(zone.mults),
                 "entry": str(entry), "risk_pts": str(risk),
                 "cluster": [str(zone.zone[0]), str(zone.zone[1])]}

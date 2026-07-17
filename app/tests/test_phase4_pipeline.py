@@ -41,7 +41,8 @@ PCT = (D("0.025") + D("0.00297")) / 100          # config statutory percents
 
 
 def cfg() -> Settings:
-    return Settings.model_validate_json(CONFIG.read_text())
+    from tests.harness import ALL_IMPLEMENTED, scenario_settings
+    return scenario_settings(ALL_IMPLEMENTED)  # shipped enabled, guard off
 
 
 def cost(price: Decimal, qty: int) -> Decimal:

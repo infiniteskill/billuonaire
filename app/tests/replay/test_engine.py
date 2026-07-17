@@ -4,13 +4,12 @@ from datetime import date
 
 import pytest
 
-from trader.config import load_settings
 from trader.engine.pipeline import Orchestrator
 from trader.feed.mock import (ScenarioFeed, double_trap, judas_reversal,
                               range_pin, stop_hunt_survive, trend_day)
 from trader.replay.engine import run_replay
 from trader.store.journal import Journal
-from tests.test_phase4_e2e import CONFIG
+from tests.test_phase4_e2e import _cfg
 
 DAY, DAY2 = date(2026, 7, 14), date(2026, 7, 15)
 CAPITAL, MAX_QTY = 100000, 50
@@ -29,7 +28,7 @@ def _write_csv(path, candles) -> None:
 def test_gate_replay_matches_scenariofeed(tmp_path):
     scs = [mk(f"S{i}", DAY, 100.0) for i, mk in enumerate(MAKERS)]
     symbols = [sc.symbol for sc in scs]
-    cfg = load_settings(CONFIG)
+    cfg = _cfg()
     Orchestrator(cfg, ScenarioFeed(scs), symbols, capital=CAPITAL,
                  max_qty=MAX_QTY, journal_dir=tmp_path / "live").run()
     for sc in scs:
@@ -55,7 +54,7 @@ def two_day_csv(tmp_path_factory):
 def test_replay_multi_day_sessions(two_day_csv, tmp_path):
     """One run spans both sessions: day 1 trades; day 2 is processed with
     day-1 levels carried (its identical setup re-arms on the traded zone)."""
-    cfg = load_settings(CONFIG)
+    cfg = _cfg()
     summary = run_replay(cfg, two_day_csv, ["ACME"], DAY, DAY2, tmp_path,
                          capital=CAPITAL, max_qty=MAX_QTY)
     assert summary["trades"] >= 1
@@ -64,7 +63,7 @@ def test_replay_multi_day_sessions(two_day_csv, tmp_path):
 
 
 def test_replay_range_filters_days(two_day_csv, tmp_path):
-    cfg = load_settings(CONFIG)
+    cfg = _cfg()
     run_replay(cfg, two_day_csv, ["ACME"], DAY, DAY, tmp_path,
                capital=CAPITAL, max_qty=MAX_QTY)
     assert Journal(tmp_path).read(DAY)

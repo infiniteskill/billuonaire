@@ -55,8 +55,12 @@ class Result(NamedTuple):
 
 
 def scenario_settings(enabled: tuple = PHASE2) -> Settings:
+    """Shipped config, cost-viability guard OFF: fixture scenarios trade toy
+    prices (~100) with ~0.1% risk where real NSE costs always dominate; guard
+    economics are unit-tested in tests/engine/test_entry.py."""
     raw = json.loads(CONFIG.read_text())
     raw["detectors"]["enabled"] = list(enabled)
+    raw["risk"]["max_cost_risk_ratio"] = 1000.0
     return Settings.model_validate(raw)
 
 

@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from trader.config import Settings, load_settings
+from trader.config import Settings
 from trader.engine.context import DayState, StockContext
 from trader.engine.gates import GateChain, RiskState
 from trader.engine.pipeline import Orchestrator, SymbolPipeline
@@ -45,7 +45,8 @@ class DayRun(NamedTuple):
 
 
 def _cfg() -> Settings:
-    return load_settings(CONFIG)
+    from tests.harness import ALL_IMPLEMENTED, scenario_settings
+    return scenario_settings(ALL_IMPLEMENTED)  # shipped enabled, guard off
 
 
 ARM_THRESHOLD = _cfg().confluence.threshold  # shipped config.json calibration

@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.harness import ALL_IMPLEMENTED, run_scenario
+from tests.harness import ALL_IMPLEMENTED, run_scenario, scenario_settings
 from trader.config import load_settings
 from trader.engine.pipeline import Orchestrator
 from trader.feed.mock import ScenarioFeed, breaker_retest
@@ -36,7 +36,7 @@ def _kind(entries, k):
 @pytest.fixture(scope="module")
 def day(tmp_path_factory):
     sc = breaker_retest(SYMBOL, DAY, OPEN_PRICE)
-    orch = Orchestrator(load_settings(CONFIG), ScenarioFeed([sc]), [SYMBOL],
+    orch = Orchestrator(scenario_settings(ALL_IMPLEMENTED), ScenarioFeed([sc]), [SYMBOL],
                         capital=100000, max_qty=50,
                         journal_dir=tmp_path_factory.mktemp("breaker"))
     orch.run()

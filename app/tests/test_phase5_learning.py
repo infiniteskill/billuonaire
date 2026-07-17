@@ -30,7 +30,8 @@ D = Decimal
 
 
 def cfg() -> Settings:
-    return Settings.model_validate_json(CONFIG.read_text())
+    from tests.harness import ALL_IMPLEMENTED, scenario_settings
+    return scenario_settings(ALL_IMPLEMENTED)  # shipped enabled, guard off
 
 
 def run_judas(tmp_path, timestats_dir=None):

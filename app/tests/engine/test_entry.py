@@ -4,6 +4,7 @@ Fixture geometry: calm() candles have range 2 => ATR(14) = 2 exactly, so
 buffer = 0.25*ATR = 0.50, chase tol = 0.1*ATR = 0.20, max stop = 1.2*ATR = 2.4.
 LONG zone (98, 100) => entry CE 99.00. capital 100000 x 0.5% => budget 500.
 """
+import json
 from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -144,6 +145,40 @@ def test_arm_no_room_skips(fsm):  # only opposing level is < 1.5R away
 def test_arm_qty_zero_skips(fsm):
     r = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 0)
     assert (r.armed, r.reason) == (False, "qty_zero")
+
+
+def fsm_cfg(patch: dict) -> EntryFSM:
+    raw = json.loads(CONFIG.read_text())
+    for path, v in patch.items():
+        d = raw
+        *ks, last = path.split(".")
+        for k in ks:
+            d = d[k]
+        d[last] = v
+    s = Settings.model_validate(raw)
+    return EntryFSM(s, s.market_spec())
+
+
+def test_arm_notional_cap_exact_and_leverage_config():
+    # leverage 0.2 => floor(100000 x 0.2 / entry 99.00) = 202, binding under
+    # both max_qty 1000 and budget qty 333 (default leverage 5 caps at 5050,
+    # never binding here: the plain test's 333 covers that)
+    p = fsm_cfg({"risk.leverage": 0.2}).arm(
+        zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 1000).plan
+    assert p.qty == 202
+    s = Settings.model_validate_json(CONFIG.read_text())
+    assert (s.risk.leverage, s.risk.max_cost_risk_ratio) == (5.0, 0.2)
+
+
+def test_arm_costs_dominate_boundary():
+    # qty 100, risk 1.50, entry 99.00, pct (0.05+0.05)% => pct leg 9.90;
+    # risk amount 150, cap 0.2 x 150 = 30. flat 5.1 => rt exactly 30 (== cap,
+    # strict > so it ARMS); flat 5.11 => rt 30.02 > 30 skips costs_dominate.
+    base = {"fills.costs.stt_pct": 0.05, "fills.costs.exchange_pct": 0.05}
+    args = (zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 100)
+    assert fsm_cfg({**base, "fills.costs.brokerage_flat": 5.1}).arm(*args).armed
+    r = fsm_cfg({**base, "fills.costs.brokerage_flat": 5.11}).arm(*args)
+    assert (r.armed, r.reason) == (False, "costs_dominate")
 
 
 # --- traded zone: tightest overlapping level, not the cluster span ---
