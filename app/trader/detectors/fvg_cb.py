@@ -28,14 +28,14 @@ of its own."""
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime
 from decimal import Decimal
 
 from trader.detectors.base import Detector, register
 from trader.engine.context import StockContext
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
-from trader.models.level import Level, LevelKind
+from trader.models.level import Level, LevelKind, LevelState
 
 _DEFAULTS = {"tf": "5m", "thr_mult": 1.0}
 _FVG_KINDS = (LevelKind.FVG_BULL, LevelKind.FVG_BEAR)
@@ -50,10 +50,12 @@ class FvgCbDetector(Detector):
         super().__init__({**_DEFAULTS, **params})
         self._retest_done: set[str] = set()
         self._ce_done: set[str] = set()
+        self._c3_ts: dict[str, datetime] = {}  # level_id -> actual c3.ts (eligibility gate)
 
     def on_session_end(self) -> None:
         self._retest_done.clear()
         self._ce_done.clear()
+        self._c3_ts.clear()
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
@@ -79,9 +81,17 @@ class FvgCbDetector(Detector):
                 continue
             ctx.levels.append(Level(id=level_id, symbol=ctx.symbol, kind=kind,
                                     zone=zone, born=c2.ts, tf=tf))
+            self._c3_ts[level_id] = c3.ts  # actual gap-confirming bar, NOT born+tf (may span a session gap)
 
     @staticmethod
     def _cum(full: list[Candle]) -> float:
+        """Sum of bar-range% over ``full[2:]`` (mirrors fvg2.py's running
+        ``cum``, which only starts accumulating at loop index 2). The caller
+        divides by ``len(full)`` -- the full bar count, INCLUDING bars 0/1
+        that were never added to this sum -- reproducing fvg2.py's
+        ``cum/(i+1)`` exactly. This is deliberately NOT a true mean of
+        ``full``; do not "fix" the mismatch or the threshold diverges from
+        the validated source."""
         return sum((float(c.high - c.low) / float(c.low)) if c.low else 0.0
                    for c in full[2:])
 
@@ -90,10 +100,13 @@ class FvgCbDetector(Detector):
         for lv in ctx.levels:
             if lv.kind not in _FVG_KINDS or f"-{self.name}-" not in lv.id:
                 continue
-            if last.ts <= lv.born + timedelta(minutes=tf.minutes):  # born+1: c3 itself excluded
-                continue
             bull = lv.kind is LevelKind.FVG_BULL
             lo, hi = lv.zone
+            filled = last.close < lo if bull else last.close > hi
+            if filled and lv.state is not LevelState.DEAD:
+                lv.record_state(last.ts, LevelState.DEAD)
+            if last.ts <= self._c3_ts[lv.id]:  # c3 itself excluded (its actual ts, not born+tf)
+                continue
             out += self._retest(lv, last, lo, hi, bull, ctx.now)
             out += self._cehold(lv, last, lo, hi, bull, ctx.now)
         return out
