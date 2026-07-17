@@ -166,6 +166,23 @@ def test_m15_trend_only_live_session_evidence(tmp_path):
     assert pipe._m15_trend(t2 + timedelta(minutes=65)) is Direction.NEUTRAL  # ttl
 
 
+def test_index_pipeline_runs_own_wyckoff_detect(tmp_path, monkeypatch):
+    """A3: the index pipeline's own wyckoff instance gets .detect() so its
+    spring/upthrust memory can make phase() reach ACC/DIST."""
+    s = cfg()
+    spec = s.market_spec()
+    pipe = SymbolPipeline("NIFTY", s, CandleStore(tmp_path / "c", spec),
+                          Journal(tmp_path / "j"), PaperBroker(s),
+                          PositionManager(s, spec), RiskState(s), 1, True)
+    seen = []
+    monkeypatch.setattr(pipe.wyckoff, "detect", lambda ctx: seen.append(ctx.now) or [])
+    t0 = datetime.combine(DAY1, time(10, 0), tzinfo=IST)
+    for m in range(6):
+        pipe.on_m1(m1("NIFTY", t0 + timedelta(minutes=m), 100, 101, 99, 100))
+    assert seen == [t0 + timedelta(minutes=5)]
+    assert pipe.index_view is not None
+
+
 # --------------------------------------------- 2. broker+manager integration
 
 def test_partials_and_eod_exact_accounting(tmp_path):

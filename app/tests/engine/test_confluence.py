@@ -43,10 +43,10 @@ def ev(det: str, dirn: Direction, s: float, lo="100", hi="101",
                     meta={"event": "event"})
 
 
-def ctx(levels=(), template="TREND", atr="2") -> StockContext:
+def ctx(levels=(), template="TREND", atr="2", index=None) -> StockContext:
     c = StockContext(symbol="X", now=NOW, candles=None, levels=list(levels),
                      evidence_history=[],
-                     day=DayState(session_date=DAY, template=template))
+                     day=DayState(session_date=DAY, template=template), index=index)
     c.atr = lambda tf, period=14: Decimal(atr)  # dataclass: instance override
     return c
 
@@ -170,6 +170,19 @@ def test_obviousness_unswept_obvious_haircut_reclaimed_boost():
     touched = score(TRIO, levels=[level(LevelKind.SWING_H, touches=3)])[0].final
     assert unswept == touched == pytest.approx(plain * 0.85, abs=0.05)
     assert reclaimed == pytest.approx(plain * 1.15, abs=0.05)
+
+
+def test_counter_index_haircut_halves_final():
+    from trader.engine.context import IndexView
+    base = score(TRIO)[0]
+    z = score(TRIO, index=IndexView(SHORT, "MARKDOWN", 0.6))[0]   # LONG vs SHORT idx
+    assert z.mults["index"] == 0.5
+    assert z.final == pytest.approx(base.final * 0.5, abs=0.06)
+    for idx in (None,                                  # no index context
+                IndexView(LONG, "MARKUP", 0.9),        # aligned
+                IndexView(SHORT, "MARKDOWN", 0.4),     # opposing but weak
+                IndexView(NEUTRAL, "RANGE", 0.9)):     # trendless
+        assert score(TRIO, index=idx)[0].mults["index"] == 1.0
 
 
 # ------------------------------------------------------------ ttl windowing

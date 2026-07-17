@@ -70,6 +70,45 @@ def test_watch_file_feed(tmp_path):
     assert r.exit_code == 0 and "ACME" in r.output
 
 
+def _spy_index(monkeypatch, seen):
+    import trader.cli as cli_mod
+    orig = cli_mod.Orchestrator
+
+    def spy(settings, feed, symbols, index_symbol=None, **kw):
+        seen["index"] = index_symbol
+        return orig(settings, feed, symbols, index_symbol=index_symbol, **kw)
+
+    monkeypatch.setattr(cli_mod, "Orchestrator", spy)
+
+
+def test_watch_index_flag_overrides_config(tmp_path, monkeypatch):
+    _init(tmp_path, ["ACME"])
+    cfg = json.loads((tmp_path / "config.json").read_text())
+    cfg["index_symbol"] = "CFGIDX"
+    (tmp_path / "config.json").write_text(json.dumps(cfg))
+    seen = {}
+    _spy_index(monkeypatch, seen)
+    r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--feed", "mock",
+                            "--index", "NIFTY"])
+    assert r.exit_code == 0 and seen["index"] == "NIFTY"      # flag wins
+    r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--feed", "mock"])
+    assert r.exit_code == 0 and seen["index"] == "CFGIDX"     # config fallback
+
+
+def test_watch_file_feed_index_without_data_dropped(tmp_path, monkeypatch):
+    _init(tmp_path, ["ACME"])
+    csv = ("ts,open,high,low,close,volume\n"
+           "2026-07-15T09:15:00+05:30,100,101,99,100.5,1000\n")
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "ACME.csv").write_text(csv)
+    seen = {}
+    _spy_index(monkeypatch, seen)
+    r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--feed", "file",
+                            "--data", str(data_dir), "--index", "NIFTY"])
+    assert r.exit_code == 0 and seen["index"] is None         # no NIFTY.csv
+
+
 def test_watch_requires_symbols(tmp_path):
     _init(tmp_path, ["ACME"])
     r = runner.invoke(app, ["watch", "--dir", str(tmp_path)])

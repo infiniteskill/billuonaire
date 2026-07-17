@@ -1,5 +1,6 @@
 {
   "capital": 100000,
+  "index_symbol": null,
   "market": {
     "tz": "Asia/Kolkata",
     "session_open": "09:15",
@@ -47,7 +48,8 @@
       "wyckoff": 10,
       "cage": 10,
       "timestats": 5,
-      "compression": 12
+      "compression": 12,
+      "index": 5
     }
   },
   "detectors": {

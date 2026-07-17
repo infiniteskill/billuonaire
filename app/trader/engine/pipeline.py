@@ -120,6 +120,7 @@ class SymbolPipeline:
         del self.evidence_history[:-200]
         self.classifier.update(ctx)
         if self.is_index:
+            self.wyckoff.detect(ctx)  # prime spring/upthrust memory so phase() can reach ACC/DIST
             self.index_view = IndexView(self._m15_trend(now),
                                         *self.wyckoff.phase(ctx))
             return

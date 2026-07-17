@@ -15,9 +15,11 @@ ScoredZones, then multiplies in cross-TF alignment and session context:
   CONTEXT  time (latest live timestats strength, default 0.5) x template
            (matched play 1.0 / off-template 0.5 / RANGE_PIN always 0.5 /
            UNCLASSIFIED 0) x obviousness (unswept obvious level in zone 0.85,
-           swept+reclaimed 1.15; obvious = ROUND kind or touches >= 3).
+           swept+reclaimed 1.15; obvious = ROUND kind or touches >= 3) x index
+           (axiom 11: zone opposing a non-NEUTRAL ctx.index trend with
+           strength >= 0.5 is halved, else 1.0).
 
-final = raw x align x time x template x obviousness, capped 100, 1dp.
+final = raw x align x time x template x obviousness x index, capped 100, 1dp.
 Zones with distinct winning detectors < min_zone_detectors are unarmable
 (final forced 0) but still returned, members intact, for the journal.
 """
@@ -111,7 +113,8 @@ class ConfluenceEngine:
             1 for d, e in best.items() if d != "volume" and e.direction is dirn)
         mults = {"align": self._align(dirn, htf, m15), "time": time_mult,
                  "template": self._template_mult(dirn, ctx.day.template, play),
-                 "obviousness": self._obviousness(lo, hi, ctx)}
+                 "obviousness": self._obviousness(lo, hi, ctx),
+                 "index": self._index_mult(dirn, ctx.index)}
         final = 0.0
         if distinct >= self.min_detectors:
             prod = raw
@@ -121,6 +124,13 @@ class ConfluenceEngine:
         members = [(d, e.meta.get("event", ""), e.strength)
                    for d, e in sorted(best.items())]
         return ScoredZone((lo, hi), dirn, members, distinct, raw, final, mults)
+
+    @staticmethod
+    def _index_mult(dirn, idx) -> float:
+        """Axiom 11: fading a strong index trend costs half the score."""
+        return 0.5 if (idx is not None and idx.trend is not Direction.NEUTRAL
+                       and dirn.value == -idx.trend.value
+                       and idx.strength >= 0.5) else 1.0
 
     @staticmethod
     def _align(dirn, htf, m15) -> float:

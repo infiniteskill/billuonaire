@@ -89,6 +89,7 @@ class MarketCfg(StrictModel):
 
 class Settings(StrictModel):
     capital: float = Field(gt=0)
+    index_symbol: str | None = None  # index-context source (e.g. "NIFTY50")
     risk: RiskCfg
     time: TimeCfg
     stops: StopsCfg

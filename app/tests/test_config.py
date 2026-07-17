@@ -56,6 +56,16 @@ def test_bad_config_rejected(tmp_path):
     with pytest.raises(Exception):
         load_settings(write(tmp_path, bad))
 
+def test_index_symbol_optional(tmp_path):
+    assert load_settings(write(tmp_path, BASE)).index_symbol is None      # default
+    s = load_settings(write(tmp_path, dict(BASE, index_symbol="NIFTY50")))
+    assert s.index_symbol == "NIFTY50"
+
+def test_shipped_config_has_index_weight():
+    s = load_settings(SHIPPED_CONFIG)
+    assert s.index_symbol is None and s.confluence.weights["index"] == 5
+    assert "index" in s.enabled_weights()          # enabled => renormalized in
+
 def test_shipped_config_registry_constructs():
     # Regression: the shipped template must only enable detectors that are
     # actually implemented, or DetectorRegistry's typo-guard raises.

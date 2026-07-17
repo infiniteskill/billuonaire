@@ -144,6 +144,8 @@ def watch(
     feed: str = typer.Option("mock", "--feed", help="mock|file"),
     data: Optional[Path] = typer.Option(None, "--data", help="CSV root for --feed file."),
     auto: Optional[int] = typer.Option(None, "--auto", help="Auto-pick top K by fit score."),
+    index: Optional[str] = typer.Option(None, "--index",
+                                        help="Index symbol (overrides config index_symbol)."),
 ) -> None:
     """Run the Orchestrator against mock or file data to exhaustion, then
     print a summary + per-symbol table once (live streaming is a later phase)."""
@@ -154,21 +156,27 @@ def watch(
         raise typer.Exit(code=1)
 
     settings = load_settings(dir / "config.json")
+    index = index or settings.index_symbol
     if feed == "mock":
         today = date.today()
-        data_feed = ScenarioFeed([judas_reversal(sym, today, 100.0) for sym in symbols])
+        data_feed = ScenarioFeed([judas_reversal(sym, today, 100.0)
+                                  for sym in symbols + ([index] if index else [])])
     elif feed == "file":
         if data is None:
             typer.echo("--feed file requires --data DIR", err=True)
             raise typer.Exit(code=1)
+        if index and not (data / f"{index}.csv").exists():
+            typer.echo(f"index {index}: no data in feed, running without index context",
+                       err=True)
+            index = None
         data_feed = FileFeed(data)
     else:
         typer.echo(f"unknown --feed {feed!r} (expected mock|file)", err=True)
         raise typer.Exit(code=1)
 
     journal_dir = dir / "journal"
-    orch = Orchestrator(settings, data_feed, symbols, capital=capital,
-                        max_qty=max_qty, journal_dir=journal_dir)
+    orch = Orchestrator(settings, data_feed, symbols, index_symbol=index,
+                        capital=capital, max_qty=max_qty, journal_dir=journal_dir)
     summary = orch.run()
     _print_summary("Session Summary", summary)
 
