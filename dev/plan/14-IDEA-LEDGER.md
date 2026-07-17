@@ -13,7 +13,7 @@ Status: `proposed` → `validating` → `validated(OOS)` → `applied` | `reject
 |---|---|---|---|---|
 | S1 | sweep quality → `0.45 + 0.30·fade_setup` (against 60m drift AND ≥105min) | top tier +11.2% OOS(time) n=1633 | proposed | cross-sectional + bootstrap CI>0 |
 | S2 | sweep reclaim-upgrade emits at BASE strength (drop +0.1) | upgrade +0.1% vs base +10.7% | proposed | low-risk; still confirm |
-| S3 | structure weight 15→0 (context/direction only) | BOS/CHoCH −22%/−20% both splits; LuxAlgo bar-0 confirms inherent | proposed | strong; confirm no template harm |
+| S3 | structure weight 15→0 (context/direction only) | **CONFIRMED both defs anti: ours −18.6%, LuxAlgo −17.1%, all splits** — concept not code | validated(OOS,2axes) | portfolio replay |
 | S4 | liquidity weight 10→0 (POOL_NEAR targets only) | pool-strength corr ~0 | proposed | confirm |
 | S5 | breaker strength 0.85→0.5, weight 10→5 | −9%/−6.8% both splits | proposed | confirm; against-move slice only? |
 | S6 | FVG CE_HOLD graded strength (gap/fill/counter-drift) | +12.7/+14.1% OOS(time) | proposed | our best; cross-sectional |
@@ -30,9 +30,9 @@ Status: `proposed` → `validating` → `validated(OOS)` → `applied` | `reject
 
 | # | Hypothesis | Rationale | Status | Bar to clear |
 |---|---|---|---|---|
-| P1 | **Premium/Discount gate** (reject longs in top-5% swing range, shorts in bottom) | LuxAlgo canonical + study "against-move carries all edge" | proposed | MEASURE edge as a filter first, then holdout |
+| P1 | **Premium/Discount gate** (buy discount/sell premium) | **TESTED: +3.3% standalone, holdout-stable** (16-OB-VALIDATION) — modest; best as a filter on other signals | validating | test as GATE on armed signals, portfolio replay |
 | P2 | Vol-adjusted OB anchor (swap H/L on ≥2×ATR bars; extreme-of-leg, size 8) | **VALIDATED 2 axes**: +10.4% vs our +4.4%; temporal val +9.3%, x-sect both stock-sets +10.1/+10.8% (`16-OB-VALIDATION.md`) | **validated(OOS, 2 axes)** | remaining: bootstrap CI + portfolio replay + forward month |
-| P3 | FVG requires displacement bar CLOSE-beyond + adaptive body-% threshold | LuxAlgo stricter FVG | proposed | measure edge lift on our best detector |
+| P3 | FVG lux stricter gap def | **TESTED: TIE** (+2.8 lux vs +2.4 ours, same event rule) — edge is in CE-hold event not gap def | rejected | keep ours |
 | P4 | EQH/EQL tolerance → ATR-relative (0.1×ATR) | LuxAlgo; ours over-groups high-priced | proposed | measure EQ-sweep edge before/after |
 | P5 | Volume-in-zone liquidity strength (Liquidity Swings) | replaces useless touch-count | proposed | does volume-strength predict? measure |
 | P6 | Strong/Weak High/Low tagging (trend-relative wall vs draw) | sharper targets + sweep direction | parked | design later |

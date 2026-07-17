@@ -1,4 +1,26 @@
-# Order Block Validation — LuxAlgo (Pine) vs Ours (2026-07-17)
+# Head-to-Head: Pine (LuxAlgo) concept defs vs Ours (2026-07-17)
+
+All measured identically (study `outcome`/`baseline`; retest-into-zone event where a
+zone applies; temporal split derive/validate + cross-sectional stock-set A/B holdout).
+Scripts: scratchpad `luxob.py`, `h2h.py`.
+
+## Full head-to-head summary (edge = hit% − time-bucket random baseline)
+
+| Concept | Ours | LuxAlgo | temporal val (ours/lux) | x-sect A/B (lux) | Verdict |
+|---|---|---|---|---|---|
+| **Order Block** | +4.4% | **+10.4%** | +4.3 / +9.3 | +10.8 / +10.1 | **ADOPT LuxAlgo** (2.4×, both holdouts) |
+| **FVG** (same retest rule) | +2.4% | +2.8% | +3.4 / +3.6 | +2.7 / +2.8 | **TIE — keep ours.** Gap def barely matters; FVG edge lives in the CE-hold event (+8.8% in study), not the gap criteria |
+| **Structure BOS/CHoCH** | −18.6% | −17.1% | −18.4 / −17.1 | −16.8 / −17.5 | **BOTH anti-signal** — inherent to SMC, not our bug. Demote structure to context/direction-only (confirms S3) |
+| **Premium/Discount** (buy discount / sell premium, tight f=.15) | — (we lack it) | +3.3% | val +2.5 | +3.4 / +3.3 | **NEW, modest, holdout-stable.** Fade-extension as a positional FILTER, not standalone entry |
+
+Reads: OB is the one decisive definitional win. FVG's value is the event rule we already
+have, not LuxAlgo's stricter gap. Structure is a dead entry-signal by concept (both
+implementations). Premium/Discount confirms the fade-extension law positionally — best as
+a gate on other signals.
+
+---
+
+# Order Block detail — LuxAlgo (Pine) vs Ours
 
 User trusted the LuxAlgo Pine OB visually. Tested it head-to-head on our real month
 (20 NIFTY stocks × 19 sessions M5), scored with the IDENTICAL study machinery
