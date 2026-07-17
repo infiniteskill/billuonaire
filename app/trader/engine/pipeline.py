@@ -48,8 +48,9 @@ for _m in pkgutil.iter_modules(trader.detectors.__path__):    # @register all
 
 _M5 = timedelta(minutes=5)
 _VERDICT_MIN = 3.0
-_CARRY = frozenset({LevelKind.PDH, LevelKind.PDL, LevelKind.EQH,
-                    LevelKind.EQL, LevelKind.ROUND})  # cross-day liquidity
+_CARRY = frozenset({LevelKind.PDH, LevelKind.PDL, LevelKind.PWH, LevelKind.PWL,
+                    LevelKind.EQH, LevelKind.EQL, LevelKind.ROUND})  # cross-day
+_DATED = (LevelKind.PDH, LevelKind.PDL, LevelKind.PWH, LevelKind.PWL)
 
 
 class SymbolPipeline:
@@ -124,9 +125,17 @@ class SymbolPipeline:
             self._skip(ts, "fsm_disarm", "session_end")
 
     def _carry_over(self) -> list:
-        """Cross-day-safe subset: live liquidity kinds, non-terminal."""
-        return [lv for lv in self.levels
-               if lv.kind in _CARRY and lv.state not in TERMINAL]
+        """Cross-day-safe subset: live liquidity kinds, non-terminal. Dated
+        pair kinds (PDH/PDL, PWH/PWL) carry only their NEWEST generation:
+        older ones are stale pools that widen stops, fake sweep evidence and
+        grow one pair per session (measured 22 of 26 carried levels after a
+        22-session replay before this prune)."""
+        live = [lv for lv in self.levels
+                if lv.kind in _CARRY and lv.state not in TERMINAL]
+        top = {k: max((lv.born for lv in live if lv.kind is k), default=None)
+               for k in _DATED}
+        return [lv for lv in live
+                if lv.kind not in _DATED or lv.born == top[lv.kind]]
 
     def _prune_levels(self) -> None:
         self.levels[:] = self._carry_over()

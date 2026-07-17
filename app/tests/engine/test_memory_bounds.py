@@ -38,5 +38,11 @@ def test_thirty_day_memory_bounded(tmp_path, capsys):
             assert len(val) < _CAP, f"{det.name}.{attr} grew to {len(val)}"
     assert len(pipe.evidence_history) <= 200  # existing window still holds
     assert pipe.day.session_date == date(2026, 7, 10)  # all 30 sessions ran
+    # dated liquidity pairs: only the newest generation may carry, so the
+    # level population stays flat instead of gaining one stale pair/session
+    carried = pipe._carry_over()
+    for kind in ("PDH", "PDL", "PWH", "PWL"):
+        assert sum(lv.kind.name == kind for lv in carried) <= 1, kind
+    assert len(pipe.levels) < 60
     with capsys.disabled():
         print(f"\n[memory-bounds] 30-day single-symbol run: {wall:.1f}s wall")
