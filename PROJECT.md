@@ -33,6 +33,9 @@ SL beyond the trap extreme, targets at opposing liquidity, squareoff 15:10.
 - **Phase 6 (Kite live/options) NOT started** — blocked on the user buying the API;
   also needs a Broker-ABC refactor first.
 
+## NORTH-STAR DESIGN
+`dev/plan/18-MASTER-SYNTHESIS.md` — the evidence-based v2 system: 5 measured laws (enter at the grab not the breakout; fresh>obvious; slower-TF>faster; structure=direction-only; sniper=HTF-dir+LTF-grab+tiny-SL) + validated toolkit (inducement-sniper +20%, SD/OB retest +14%, compression-fade +9%, FVG close-beyond +12%). NOT built yet — gated by portfolio-replay economic test.
+
 ## The current research frontier (what we're actually doing now)
 The 64k-evidence study measured every detector's real edge vs time-matched random baselines,
 walk-forward. Key measured facts (ONE month, must re-validate):
