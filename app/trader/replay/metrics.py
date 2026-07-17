@@ -107,7 +107,7 @@ def compute(journal_dir: Path, start: date | None = None,
                                     D(e["pnl"]), float(gross / risk) if risk
                                     else 0.0, e["r"]))
         per_day.append((day.isoformat(), len(trades) - n0,
-                        sum(t.net_r for t in trades[n0:])))
+                        float(sum(t.net_r for t in trades[n0:]))))
 
     n = len(trades)
     wins = sum(1 for t in trades if t.net > 0)
@@ -115,8 +115,8 @@ def compute(journal_dir: Path, start: date | None = None,
         totals={"trades": n, "wins": wins,
                 "losses": sum(1 for t in trades if t.net < 0),
                 "wr": wins / n if n else 0.0,
-                "gross_r": sum(t.gross_r for t in trades),
-                "net_r": sum(t.net_r for t in trades),
+                "gross_r": float(sum(t.gross_r for t in trades)),
+                "net_r": float(sum(t.net_r for t in trades)),
                 "gross_pnl": sum((t.gross for t in trades), D(0)),
                 "net_pnl": sum((t.net for t in trades), D(0)),
                 "pf_gross": _pf([t.gross for t in trades]),

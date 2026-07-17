@@ -30,6 +30,8 @@ from trader.engine.pipeline import Orchestrator
 from trader.engine.scanner import fit, has_data
 from trader.feed.file import FileFeed
 from trader.feed.mock import ScenarioFeed, judas_reversal
+from trader.replay.engine import run_replay
+from trader.replay.metrics import Report, compute
 from trader.store.candles import CandleStore
 from trader.store.journal import Journal
 
@@ -247,6 +249,110 @@ def status(
         "pnl": str(sum((Decimal(e["pnl"]) for e in closes), Decimal(0))),
         "skips": sum(1 for e in entries if e["kind"] == "skip"),
     })
+
+
+def _parse_day(s: Optional[str]) -> Optional[date]:
+    try:
+        return date.fromisoformat(s) if s else None
+    except ValueError:
+        typer.echo(f"invalid date {s!r} (want YYYY-MM-DD)", err=True)
+        raise typer.Exit(code=1)
+
+
+def _fmt(v) -> str:
+    return "-" if v is None else f"{v:.2f}" if isinstance(v, float) else str(v)
+
+
+def _render_report(rep: Report) -> None:
+    _print_summary("Totals", {k: _fmt(v) for k, v in rep.totals.items()})
+    for title, rows in (("By template", rep.per_template),
+                        ("By symbol", rep.per_symbol),
+                        ("By exit reason", rep.per_exit)):
+        if not rows:
+            continue
+        table = Table(title=title)
+        for col in ("", "n", "wr", "gross R", "net R", "net pnl"):
+            table.add_column(col)
+        for key, r in rows.items():
+            table.add_row(key, str(r["n"]), f"{r['wr']:.0%}", _fmt(r["gross_r"]),
+                          _fmt(r["net_r"]), str(r["net_pnl"]))
+        console.print(table)
+    if rep.per_gate:
+        table = Table(title="Skips by gate")
+        table.add_column("gate")
+        table.add_column("n")
+        for gate, n in sorted(rep.per_gate.items()):
+            table.add_row(gate, str(n))
+        console.print(table)
+    if rep.per_day:
+        table = Table(title="Per day")
+        for col in ("day", "trades", "net R"):
+            table.add_column(col)
+        for day_iso, n, r in rep.per_day:
+            table.add_row(day_iso, str(n), _fmt(r))
+        console.print(table)
+        s = rep.day_stats
+        console.print(f"daily net R: mean {s['mean']:.2f}, std {s['std']:.2f}, "
+                      f"n_days {s['n_days']}")
+    for note in rep.notes:
+        console.print(f"[yellow]note: {note}[/yellow]")
+
+
+@app.command()
+def replay(
+    data: Path = typer.Option(..., "--data", help="CSV root (FileFeed schema)."),
+    from_: str = typer.Option(..., "--from", help="Start date YYYY-MM-DD."),
+    to: str = typer.Option(..., "--to", help="End date YYYY-MM-DD."),
+    stocks: Optional[str] = typer.Option(None, "--stocks",
+                                         help="Comma-separated stock numbers (stocks.json)."),
+    all_: bool = typer.Option(False, "--all", help="Replay every CSV in --data."),
+    index: Optional[str] = typer.Option(None, "--index",
+                                        help="Index symbol (overrides config index_symbol)."),
+    dir: Path = typer.Option(Path("."), "--dir", help="Config directory."),
+    capital: Optional[float] = typer.Option(None, "--capital"),
+    max_qty: int = typer.Option(1, "--max-qty"),
+) -> None:
+    """Replay a date range of CSV data through the live pipeline (journals
+    under dir/journal), then print the metrics report for the range."""
+    settings = load_settings(dir / "config.json")
+    index = index or settings.index_symbol
+    start, end = _parse_day(from_), _parse_day(to)
+    if start > end:
+        typer.echo(f"--from {start} is after --to {end}", err=True)
+        raise typer.Exit(code=1)
+    if all_:
+        symbols = sorted(p.stem for p in data.glob("*.csv") if p.stem != index)
+    elif stocks:
+        try:
+            numbers = [int(n) for n in stocks.split(",")]
+        except ValueError:
+            typer.echo(f"invalid --stocks {stocks!r} (want e.g. 1,4)", err=True)
+            raise typer.Exit(code=1)
+        symbols = _resolve_symbols(dir, load_stocks(dir / "stocks.json"), numbers, None)
+    else:
+        typer.echo("pass --stocks 1,4 or --all", err=True)
+        raise typer.Exit(code=1)
+    if not symbols:
+        typer.echo("no symbols to replay", err=True)
+        raise typer.Exit(code=1)
+    if index and not (data / f"{index}.csv").exists():
+        typer.echo(f"index {index}: no data in feed, running without index context",
+                   err=True)
+        index = None
+    summary = run_replay(settings, data, symbols, start, end, dir / "journal",
+                         index=index, capital=capital, max_qty=max_qty)
+    _print_summary("Replay Summary", summary)
+    _render_report(compute(dir / "journal", start, end))
+
+
+@app.command()
+def report(
+    journal: Path = typer.Option(..., "--journal", help="Journal directory (JSONL days)."),
+    from_: Optional[str] = typer.Option(None, "--from", help="Start date YYYY-MM-DD."),
+    to: Optional[str] = typer.Option(None, "--to", help="End date YYYY-MM-DD."),
+) -> None:
+    """Re-render the metrics report from journal JSONL files."""
+    _render_report(compute(journal, _parse_day(from_), _parse_day(to)))
 
 
 @app.command()

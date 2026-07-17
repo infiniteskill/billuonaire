@@ -236,3 +236,82 @@ def test_status_no_journal(tmp_path):
     r = runner.invoke(app, ["status", "--dir", str(tmp_path)])
     assert r.exit_code == 0
     assert "no journal entries" in r.output
+
+
+# ------------------------------------------------------------ replay / report
+
+def test_replay_cli_runs_and_reports(tmp_path):
+    _init(tmp_path, ["ACME"])
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "ACME.csv").write_text(
+        "ts,open,high,low,close,volume\n"
+        "2026-07-15T09:15:00+05:30,100,101,99,100.5,1000\n"
+        "2026-07-15T09:16:00+05:30,100.5,102,100,101.5,1200\n")
+    r = runner.invoke(app, ["replay", "--data", str(data), "--from", "2026-07-15",
+                            "--to", "2026-07-15", "--stocks", "1", "--dir", str(tmp_path)])
+    assert r.exit_code == 0
+    assert "Replay Summary" in r.output and "Totals" in r.output
+    assert "CIs unreliable" in r.output
+
+
+def test_replay_all_uses_every_csv_except_index(tmp_path, monkeypatch):
+    _init(tmp_path, ["ACME"])
+    data = tmp_path / "data"
+    data.mkdir()
+    for s in ("AAA", "ZZZ", "NIFTY"):
+        (data / f"{s}.csv").write_text("ts,open,high,low,close,volume\n")
+    seen = {}
+    import trader.cli as cli_mod
+    monkeypatch.setattr(cli_mod, "run_replay", lambda st, d, syms, s0, s1, jd, **kw:
+                        seen.update(syms=syms, **kw) or {"trades": 0})
+    r = runner.invoke(app, ["replay", "--data", str(data), "--from", "2026-07-14",
+                            "--to", "2026-07-15", "--all", "--dir", str(tmp_path),
+                            "--index", "NIFTY"])
+    assert r.exit_code == 0
+    assert seen["syms"] == ["AAA", "ZZZ"] and seen["index"] == "NIFTY"
+
+
+def test_replay_validation_errors(tmp_path):
+    _init(tmp_path, ["ACME"])
+    data = tmp_path / "data"
+    data.mkdir()
+    base = ["replay", "--data", str(data), "--dir", str(tmp_path)]
+    for extra, msg in (
+            (["--from", "2026-07-15", "--to", "2026-07-14", "--all"], "after"),
+            (["--from", "bogus", "--to", "2026-07-14", "--all"], "invalid date"),
+            (["--from", "2026-07-14", "--to", "2026-07-15"], "--stocks"),
+            (["--from", "2026-07-14", "--to", "2026-07-15", "--stocks", "x"], "invalid --stocks"),
+            (["--from", "2026-07-14", "--to", "2026-07-15", "--all"], "no symbols")):
+        r = runner.invoke(app, base + extra)
+        out = r.output + (r.stderr or "")
+        assert r.exit_code == 1 and msg in out and "Traceback" not in out
+
+
+def _report_fixture(root):
+    j = Journal(root)
+    d1, d2 = date(2026, 7, 14), date(2026, 7, 15)
+    j.log("verdict", {"symbol": "AAA", "template": "TRAP_REVERSAL", "final": 6.0}, day=d1)
+    j.log("skip", {"symbol": "AAA", "gate": "risk_budget", "reason": "x"}, day=d1)
+    j.log("trade_open", {"symbol": "AAA", "direction": "LONG", "qty": 10,
+                         "price": D("100"), "stop": D("95")}, day=d1)
+    j.log("trade_close", {"symbol": "AAA", "reason": "EXIT_TARGET", "pnl": D("70"),
+                          "r": 1.4, "exit_price": D("110")}, day=d1)
+    j.log("skip", {"symbol": "AAA", "gate": "fsm_arm", "reason": "y"}, day=d2)
+
+
+def test_report_command_renders_tables(tmp_path):
+    _report_fixture(tmp_path)
+    r = runner.invoke(app, ["report", "--journal", str(tmp_path)])
+    assert r.exit_code == 0
+    for text in ("Totals", "TRAP_REVERSAL", "EXIT_TARGET", "risk_budget",
+                 "Per day", "CIs unreliable"):
+        assert text in r.output
+
+
+def test_report_command_date_bounds(tmp_path):
+    _report_fixture(tmp_path)
+    r = runner.invoke(app, ["report", "--journal", str(tmp_path),
+                            "--from", "2026-07-15"])
+    assert r.exit_code == 0
+    assert "TRAP_REVERSAL" not in r.output and "fsm_arm" in r.output
