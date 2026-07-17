@@ -512,6 +512,26 @@ def test_limit_entry_expires_unfilled(tmp_path):
     assert any(e["gate"] == "fill" and e["reason"] == "unfilled" for e in skips)
 
 
+def test_journal_r_denominated_on_fill_risk(tmp_path):
+    """Effective R (finding 5): the journaled r divides realized by the
+    FILL->stop risk (10.10 off the 500.10 limit fill), never the plan-CE
+    risk (10.00). RiskState's open-risk ledger uses the same denominator."""
+    pipe, risk = make_pipeline(tmp_path)
+    t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
+    pipe.on_m1(m1("X", t0, 500, 500, 500, 500))
+    _queue_limit(pipe, t0)                            # zone (495,505) stop 490
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=1), 500, 501, 499, 500))
+    pos = pipe.position
+    assert pos.risk_pts == D("10.10")                 # fill 500.10 - stop 490
+    assert risk.open_risk == D("10.10") * 10
+    pipe._pending_exits = [Action("EXIT_STOP", None, "close_beyond_stop")]
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=2), 489, 489, 488, 488))
+    assert pipe.position is None and pos.realized < 0
+    [close] = [e for e in pipe.journal.read(t0.date())
+               if e["kind"] == "trade_close"]
+    assert close["r"] == round(float(pos.realized / (D("10.10") * 10)), 3)
+
+
 def test_pending_limit_blocks_entry_flow(tmp_path, monkeypatch):
     """While a limit rests, the M5 entry flow is paused -- a second arm must
     not clobber the working order."""

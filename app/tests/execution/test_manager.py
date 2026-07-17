@@ -85,6 +85,16 @@ def test_r_multiple_signed():
     assert pos(Direction.SHORT).r_multiple(D("90")) == 2
 
 
+def test_r_denominated_on_fill_to_stop_risk():
+    # effective R: entry FILL 100.50 (not the plan CE 99.00), plan stop 95
+    # => risk_pts 5.50 and every r floats on that fill->stop distance
+    p = Position(plan=pos().plan, entry=Fill(D("100.50"), 100, at(10, 0), D("20")),
+                 remaining_qty=100, stop=D("95"))
+    assert p.risk_pts == D("5.50")
+    assert p.r_multiple(D("106.00")) == 1
+    assert p.r_multiple(D("89.50")) == -2
+
+
 # -- (1) EOD squareoff -------------------------------------------------
 
 def test_eod_squareoff_full_exit(mgr):

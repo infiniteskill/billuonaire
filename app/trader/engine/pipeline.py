@@ -284,6 +284,8 @@ class SymbolPipeline:
             pos.remaining_qty -= qty
             if a.kind != "PARTIAL":              # full exit: close remainder
                 pos.status = PositionStatus.CLOSED
+                # effective R: denominator = FILL->stop risk (pos.risk_pts),
+                # never the plan-CE risk -- limit fills make them converge
                 r = float(pos.realized / (pos.risk_pts * pos.plan.qty))
                 self.risk.record_close(r, self.symbol, fill.ts)
                 self.closed.append(pos)
