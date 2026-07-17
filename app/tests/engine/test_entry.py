@@ -159,6 +159,21 @@ def test_t3_dropped_when_energy_cap_inside_t2(fsm):
     assert p.targets == [D("101.50"), D("102.75")]  # cap 102.00 < T2: T3 dropped
 
 
+def test_t2_fallback_inside_t1_dropped_t3_promoted(fsm):
+    # T1 103.00 (4.00 >= 1.5R); T2 fallback 99 + 2.5*1.5 = 102.75 <= T1:
+    # dropped (strict T1<T2<T3); T3 = 4R = 105 takes the second slot
+    ctx = ctx_at(at(11, 0), calm(), [lvl(LevelKind.SWING_H, "103.00", "103.50")])
+    p = fsm.arm(zone("98.00", "100.00"), ctx, 1000).plan
+    assert p.targets == [D("103.00"), D("105.00")]
+
+
+def test_t2_fallback_inside_t1_dropped_short(fsm):
+    # SHORT mirror: T1 97.00; T2 fallback 101 - 3.75 = 97.25 inside T1
+    ctx = ctx_at(at(11, 0), calm(), [lvl(LevelKind.SWING_L, "96.50", "97.00")])
+    p = fsm.arm(zone("100.00", "102.00", Direction.SHORT), ctx, 1000).plan
+    assert p.targets == [D("97.00"), D("95.00")]
+
+
 def test_opposing_scored_zone_supplies_t1(fsm):
     ctx = ctx_at(at(11, 0), calm(), [lvl(LevelKind.SWING_H, "100.50", "101.00")])
     opp = zone("102.60", "103.00", Direction.SHORT)

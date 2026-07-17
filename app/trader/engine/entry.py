@@ -16,8 +16,11 @@ journalling the skip/disarm reasons returned here.
            ScoredZones beyond entry (near edge, quantized). T1 = nearest
            >= 1.5R (none => skip "no_room"); T2 = next beyond T1 (else 2.5R);
            T3 = nearest PDH/PDL beyond T2 (else 4R), capped at entry +/-
-           compression energy (evidence meta) overlapping the zone; T3 is
-           DROPPED if the cap pulls it inside T2 (monotonic T1<T2<T3).
+           compression energy (evidence meta) overlapping the zone.
+           T1<T2<T3 is enforced STRICTLY after all fallbacks: a violating
+           target is dropped (e.g. the 2.5R T2 fallback landing at/inside
+           T1 drops T2 and promotes T3 into the second slot; a capped T3
+           inside T2 is dropped as before).
   QTY      min(max_qty, floor(capital x per_trade_pct% / risk)); 0 => skip.
   TRIGGER  latest closed M5 enters the zone AND (rejection wick >= 60% of
            range off the far side | same-direction CHoCH/VSA evidence
@@ -152,7 +155,11 @@ class EntryFSM:
             if "energy" in e.meta and _overlaps(e.zone, zone):  # (unexpired)
                 cap = self.spec.quantize(entry + sign * Decimal(e.meta["energy"]))
                 t3 = min(t3, cap) if up else max(t3, cap)
-        return [t1, t2, t3] if (t3 - t2) * sign > 0 else [t1, t2]
+        out = [t1]                       # strict T1<T2<T3 after ALL fallbacks:
+        for t in (t2, t3):               # drop violators (2.5R T2 fallback can
+            if (t - out[-1]) * sign > 0:  # land inside T1; cap can pull T3 in)
+                out.append(t)
+        return out
 
     def step(self, ctx: StockContext,
              evidence: list[Evidence] = ()) -> TriggerResult:

@@ -91,17 +91,21 @@ def test_judas_two_day_orchestrator(tmp_path):
     armable = [v for v in verdicts if v["final"] >= threshold]
     assert armable and all(v["direction"] == "LONG" and v["distinct"] >= 4
                            and v["template"] == "TRAP_REVERSAL" for v in armable)
-    # day 1 arms at the 12:50 pivot; targets now execute: the trade rides to
-    # T3 and closes EXIT_TARGET above entry (gross win; 4x flat brokerage
-    # can still swamp net pnl at this scenario's tiny notional)
+    # day 1 arms at the 12:50 pivot; the T2-clamp drops the 2.5R fallback
+    # (101.10, inside T1 101.20) and promotes the old T3 101.45 into the T2
+    # slot: partials 1R then T2 AT 101.45, runner rides the trail to a
+    # profitable EOD squareoff (net win even at this tiny notional)
     day1 = orch.journal.read(DAY1)
     opens = [e for e in day1 if e["kind"] == "trade_open"]
     closes = [e for e in day1 if e["kind"] == "trade_close"]
+    parts = [e for e in day1 if e["kind"] == "trade_partial"]
     assert len(opens) == 1 and opens[0]["direction"] == "LONG"
     assert opens[0]["at"][11:16] == "12:50" and opens[0]["stop"] == "100.20"
-    assert len(closes) == 1 and closes[0]["reason"] == ExitReason.TARGET.value
+    assert [p["reason"] for p in parts] == ["1R", "T2"]
+    assert D(parts[1]["price"]) == D("101.45")
+    assert len(closes) == 1 and closes[0]["reason"] == ExitReason.EOD.value
     assert D(closes[0]["exit_price"]) > D(opens[0]["price"])
-    assert summary["trades"] == 1 and summary["wins"] + summary["losses"] == 1
+    assert summary["trades"] == 1 and summary["wins"] == 1
     # day 2: pivot re-scores above threshold, but arms are refused
     day2 = orch.journal.read(DAY2)
     assert [e for e in day2 if e["kind"] == "verdict" and e["final"] >= threshold]
