@@ -6,8 +6,9 @@ born at the OB candle ts; mitigation is LevelEngine's job (2nd test ->
 MITIGATED).
 
 Quality = min(disp/ATR * 0.27, 0.4) + min(body/ATR * 0.3, 0.3)
-          + body_pct * 0.3; hunt-born (OB candle within the first 105
-session minutes) adds +0.15, cap 1.0. The quality map is instance-lifetime:
+          + body_pct * 0.3; hunt-born (OB candle within the first
+``hunt_minutes`` of the session) adds +0.15, cap 1.0. The quality map is
+instance-lifetime:
 a restart re-derives it as candles rescan; OB levels loaded from LevelStore
 that never rescan fall back to 0.5.
 
@@ -27,10 +28,11 @@ from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
 from trader.models.level import Level, LevelKind, LevelState
 
-_DEFAULTS = {"tf": "5m", "displacement_atr": 1.5, "lookback": 3}
+# hunt_minutes: keep in sync with config time.observe_min (B12)
+_DEFAULTS = {"tf": "5m", "displacement_atr": 1.5, "lookback": 3,
+             "hunt_minutes": 105}
 _LIVE = (LevelState.ACTIVE, LevelState.TESTED)
 _OB_KINDS = (LevelKind.OB_BULL, LevelKind.OB_BEAR)
-_HUNT_MINUTES = 105
 
 
 @register
@@ -102,10 +104,10 @@ class OrderblockDetector(Detector):
             ))
         return out
 
-    @staticmethod
-    def _hunt(ctx: StockContext, born: datetime) -> bool:
-        """OB candle inside the first _HUNT_MINUTES of its session."""
-        return born < ctx.spec.session_open_dt(born) + timedelta(minutes=_HUNT_MINUTES)
+    def _hunt(self, ctx: StockContext, born: datetime) -> bool:
+        """OB candle inside the first hunt_minutes of its session."""
+        return born < (ctx.spec.session_open_dt(born)
+                       + timedelta(minutes=int(self.params["hunt_minutes"])))
 
     def _strength(self, ctx: StockContext, lv: Level) -> float:
         return min(self._quality.get(lv.id, 0.5) + 0.15 * self._hunt(ctx, lv.born), 1.0)

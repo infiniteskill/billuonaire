@@ -123,6 +123,17 @@ def test_no_hunt_bonus_after_105_minutes():
     assert ev.meta["hunt_born"] is False
 
 
+def test_hunt_minutes_param_overrides_default():
+    # B12: same 11:05 OB, hunt window widened to 115min (open+115 = 11:10)
+    # -> hunt bonus applies where the 105 default (test above) denies it
+    store, ob_i = bull_store(n_flat=22, retrace=True)
+    det, levels = OrderblockDetector({"hunt_minutes": 115}), []
+    det.detect(ctx_at(store, ob_i + 3, levels))
+    [ev] = det.detect(ctx_at(store, ob_i + 4, levels))
+    assert ev.strength == pytest.approx(0.70)
+    assert ev.meta["hunt_born"] is True
+
+
 def test_bearish_evidence_direction_short():
     store = make_store([FLAT] * 16 + [OB_BEAR_C, BEAR_D1, BEAR_D2, BEAR_RETRACE])
     det, levels = OrderblockDetector({}), []
