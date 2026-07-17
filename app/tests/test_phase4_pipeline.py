@@ -37,7 +37,8 @@ IST = ZoneInfo("Asia/Kolkata")
 CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.json"
 D = Decimal
 DAY1, DAY2 = date(2026, 7, 14), date(2026, 7, 15)
-PCT = (D("0.025") + D("0.00297")) / 100          # config statutory percents
+PCT_EXCH = D("0.00297") / 100                    # exchange_pct, both legs
+PCT = D("0.025") / 100 + PCT_EXCH                 # + STT, SELL leg only
 
 
 def cfg() -> Settings:
@@ -46,7 +47,13 @@ def cfg() -> Settings:
 
 
 def cost(price: Decimal, qty: int) -> Decimal:
+    """SELL-leg cost (STT + exchange): use for exits of a LONG."""
     return D("20") + PCT * price * qty
+
+
+def cost_buy(price: Decimal, qty: int) -> Decimal:
+    """BUY-leg cost (exchange only, no STT): use for entry of a LONG."""
+    return D("20") + PCT_EXCH * price * qty
 
 
 def m1(sym, ts, o, h, lo, c, vol=1000):
@@ -304,7 +311,7 @@ def test_partials_and_eod_exact_accounting(tmp_path):
     pipe.on_m1(m1("X", t0.replace(hour=15, minute=10), 111, 111, 110, 111))
     pipe.on_m1(m1("X", t0.replace(hour=15, minute=15), 111, 111, 110, 111))  # EOD
     assert pipe.position is None and pos.remaining_qty == 0
-    expected = (-cost(D("100.05"), 50)   # T2=110 touched: limit fill AT 110
+    expected = (-cost_buy(D("100.05"), 50)   # entry BUY leg; T2=110 touched: limit fill AT 110
                 + (D("105.95") - D("100.05")) * 16 - cost(D("105.95"), 16)
                 + (D("110.00") - D("100.05")) * 16 - cost(D("110.00"), 16)
                 + (D("110.95") - D("100.05")) * 18 - cost(D("110.95"), 18))

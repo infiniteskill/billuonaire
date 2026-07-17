@@ -2,7 +2,8 @@
 
 Adverse = (half_spread 2 + slippage 3) bps = 5 bps = x0.0005 on the fill
 candle's open, always against us. Cost config stt_pct/exchange_pct are
-PERCENTS: (0.025 + 0.00297)/100 = 0.0002797 of turnover, + flat 20/fill.
+PERCENTS of turnover, + flat 20/fill. STT (0.025%) is SELL-leg only (LONG
+exit / SHORT entry); exchange_pct (0.00297%) applies both legs.
 """
 from datetime import datetime
 from decimal import Decimal
@@ -86,15 +87,25 @@ def test_fill_price_tick_quantized(broker):
 
 
 def test_costs_formula_exact(broker):
-    # price 100.05, qty 100: 20 + 0.0002797 x 10005.00 = 22.7983985
+    # LONG entry = BUY leg -> exchange_pct only (no STT).
+    # price 100.05, qty 100: 20 + 0.0000297 x 10005.00 = 20.2971485
     f = broker.entry_fill(plan(), candle(100))
     assert isinstance(f.costs, Decimal)
-    assert f.costs == D("22.7983985")
+    assert f.costs == D("20.2971485")
 
 
 def test_costs_percent_semantics(broker):
-    # SHORT entry off open 100.05 -> 99.999975 -> quantized 100.00 exactly;
+    # SHORT entry = SELL leg (sell to open) -> STT + exchange both apply.
+    # off open 100.05 -> 99.999975 -> quantized 100.00 exactly;
     # turnover 100000: percent leg = 100000 x (0.025+0.00297)% = 27.97
     f = broker.entry_fill(plan(Direction.SHORT, qty=1000), candle("100.05"))
     assert f.price == D("100.00")
     assert f.costs == D("47.97")
+
+
+def test_costs_buy_leg_no_stt_on_cover(broker):
+    # SHORT exit = BUY to cover -> exchange_pct only (no STT).
+    # target price 100 fixed, qty 1000: 20 + 0.0000297 x 100000 = 22.97
+    f = broker.exit_fill(position(Direction.SHORT, qty=1000), candle(100),
+                         1000, price=D("100"))
+    assert f.costs == D("22.97")

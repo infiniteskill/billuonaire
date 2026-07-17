@@ -72,8 +72,8 @@ class DetectorsCfg(StrictModel):
 
 class CostsCfg(StrictModel):
     brokerage_flat: float = Field(gt=0)
-    stt_pct: float = Field(gt=0)
-    exchange_pct: float = Field(gt=0)
+    stt_pct: float = Field(gt=0)          # NSE intraday equity: SELL leg only
+    exchange_pct: float = Field(gt=0)     # txn charges + GST + stamp duty approx, both legs
 
 
 class FillsCfg(StrictModel):

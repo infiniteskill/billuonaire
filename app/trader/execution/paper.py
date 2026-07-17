@@ -6,8 +6,10 @@ lower; SHORT mirrors. Fill prices are tick-quantized; costs stay
 full-precision Decimal money (config floats cross into Decimal via str()).
 
 Cost semantics (verified): config stt_pct / exchange_pct are PERCENTS of
-turnover (stt_pct 0.025 means 0.025% => multiplier 0.00025), so
-costs = brokerage_flat + (stt_pct + exchange_pct) / 100 * price * qty.
+turnover (stt_pct 0.025 means 0.025% => multiplier 0.00025). NSE intraday
+equity STT applies to the SELL leg only (LONG exit / SHORT entry);
+exchange_pct (txn charges + GST + stamp duty approx) applies both legs:
+costs = brokerage_flat + (sell? stt_pct + exchange_pct : exchange_pct) / 100 * price * qty.
 """
 
 from __future__ import annotations
@@ -27,8 +29,8 @@ class PaperBroker:
         self._half = Decimal(str(f.half_spread_bps)) / 10000
         self._adverse = self._half + Decimal(str(f.slippage_bps)) / 10000
         self._flat = Decimal(str(f.costs.brokerage_flat))
-        self._pct = (Decimal(str(f.costs.stt_pct))
-                     + Decimal(str(f.costs.exchange_pct))) / 100
+        self._exch = Decimal(str(f.costs.exchange_pct)) / 100
+        self._stt = Decimal(str(f.costs.stt_pct)) / 100
 
     def entry_fill(self, plan: TradePlan, next_candle: Candle) -> Fill:
         """Fill the whole plan at next_candle.open, adverse in trade direction."""
@@ -46,7 +48,9 @@ class PaperBroker:
                 else self._fill(price, candle.ts, qty, sign, self._half))
 
     def _fill(self, base: Decimal, ts, qty: int, sign: int, rate: Decimal) -> Fill:
-        """sign +1 pays up (LONG buy / SHORT cover), -1 receives down."""
+        """sign +1 pays up (LONG buy / SHORT cover), -1 receives down (a SELL
+        -- STT applies)."""
         price = self.spec.quantize(base * (1 + sign * rate))
+        pct = self._exch + (self._stt if sign < 0 else 0)
         return Fill(price=price, qty=qty, ts=ts,
-                    costs=self._flat + self._pct * price * qty)
+                    costs=self._flat + pct * price * qty)
