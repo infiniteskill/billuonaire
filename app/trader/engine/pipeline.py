@@ -9,8 +9,11 @@ IndexView, shares ONE RiskState across all symbols, and returns a summary.
 
 Timing: an M5 close is detected when an M1 crosses the bucket boundary; the
 closed-M5 flow (LevelEngine -> detectors -> template -> confluence -> gates/
-FSM -> manager) decides, and any resulting entry/exit fills execute at the
-OPEN of that boundary-crossing M1 -- the next M1 open, no lookahead.
+FSM -> manager) decides. Exits execute at the OPEN of that boundary-crossing
+M1 -- the next M1 open, no lookahead. A triggered ENTRY rests as a LIMIT at
+the plan entry (traded-zone CE): it fills when a later M1 trades through it
+(AT the limit, half-spread only -- no chase), and expires unfilled after
+entry.fill_ttl_candles M5 (journal skip "unfilled").
 """
 
 from __future__ import annotations
@@ -83,6 +86,7 @@ class SymbolPipeline:
         self.closed: list[Position] = []
         self.n_trades = self.n_skips = 0
         self._last_bucket = self._last_c5 = self._pending_plan = None
+        self._pending_since = None
         self._pending_exits, self._hunt_logged = [], False
         self._cutoff = _minutes(settings.time.no_entry_after)
 
@@ -205,7 +209,7 @@ class SymbolPipeline:
                       members=z.members)    # (detector, event, strength): calibration food
         if self.position is not None:
             self._manage(ctx, zones)
-        else:
+        elif self._pending_plan is None:     # resting limit blocks re-arming
             self._entry_flow(ctx, zones, htf, evidence)
 
     def _entry_flow(self, ctx, zones, htf, evidence) -> None:
@@ -225,8 +229,8 @@ class SymbolPipeline:
         step = self.fsm.step(ctx, evidence)      # this-candle evidence
         if step.action == "disarm":
             self._skip(ctx.now, "fsm_disarm", step.reason)
-        elif step.action == "fill":
-            self._pending_plan = step.plan       # fills at next M1 open
+        elif step.action == "fill":              # resting LIMIT at plan entry
+            self._pending_plan, self._pending_since = step.plan, ctx.now
 
     def _manage(self, ctx, zones) -> None:
         pos = self.position
@@ -242,11 +246,20 @@ class SymbolPipeline:
 
     def _fill_pending(self, candle: Candle) -> None:
         if self._pending_plan is not None:
-            plan, self._pending_plan = self._pending_plan, None
+            plan = self._pending_plan
+            up = plan.direction is Direction.LONG
+            limit = self.spec.quantize(sum(plan.entry_zone) / 2)  # plan entry CE
             if candle.ts.hour * 60 + candle.ts.minute >= self._cutoff:
+                self._pending_plan = None
                 self._skip(candle.ts, "fill", "too_late")  # past no_entry_after
-            else:
-                fill = self.broker.entry_fill(plan, candle)
+            elif (self._pending_since is not None
+                  and candle.ts - self._pending_since
+                  >= self.s.entry.fill_ttl_candles * _M5):
+                self._pending_plan = None
+                self._skip(candle.ts, "fill", "unfilled")  # limit never traded
+            elif candle.low <= limit if up else candle.high >= limit:
+                self._pending_plan = None
+                fill = self.broker.entry_fill(plan, candle, limit)
                 self.position = Position(plan, fill, plan.qty, plan.stop,
                                          realized=-fill.costs)
                 self._hunt_logged = False

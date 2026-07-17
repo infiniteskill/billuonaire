@@ -32,10 +32,14 @@ class PaperBroker:
         self._exch = Decimal(str(f.costs.exchange_pct)) / 100
         self._stt = Decimal(str(f.costs.stt_pct)) / 100
 
-    def entry_fill(self, plan: TradePlan, next_candle: Candle) -> Fill:
-        """Fill the whole plan at next_candle.open, adverse in trade direction."""
-        return self._fill(next_candle.open, next_candle.ts, plan.qty,
-                          plan.direction.value, self._adverse)
+    def entry_fill(self, plan: TradePlan, candle: Candle,
+                   price: Decimal | None = None) -> Fill:
+        """Fill the whole plan at candle.open, adverse in trade direction.
+        ``price`` = resting limit traded through: fill AT it, half-spread
+        adverse only, no slippage -- limit orders don't slip."""
+        return self._fill(candle.open if price is None else price, candle.ts,
+                          plan.qty, plan.direction.value,
+                          self._adverse if price is None else self._half)
 
     def exit_fill(self, position: Position, candle: Candle, qty: int,
                   price: Decimal | None = None) -> Fill:

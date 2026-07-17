@@ -33,7 +33,8 @@
     "arm_proximity_atr": 1.0,
     "chase_tolerance_atr": 0.1,
     "max_stop_atr": 1.2,
-    "arm_ttl_candles": 12
+    "arm_ttl_candles": 12,
+    "fill_ttl_candles": 6
   },
   "events": {
     "big_candle_atr": 3.0,

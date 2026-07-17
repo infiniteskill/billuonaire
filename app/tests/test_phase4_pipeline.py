@@ -75,13 +75,13 @@ def make_pipeline(tmp_path, max_qty=50):
 
 def test_judas_two_day_orchestrator(tmp_path):
     """Day 1: the canonical reversal cluster (distinct>=4 LONG at the pivot)
-    must ARM, fill and close profitably. Day 2 gaps up +7: carried-over M5
-    history keeps ATR/wyckoff live from the session open, so the same pivot
-    re-scores above threshold early and the chase guard REFUSES 11:00-11:15
-    (B15's high-tier OR/weekly pool strengths lift the re-score over
-    threshold that early); at the 12:50 pivot the traded-zone stop is tight
-    enough to arm (cluster-span stops used to die stop_too_wide here) and
-    day 2 trades the same reversal."""
+    must ARM, trigger at the 12:50 pivot and FILL AT THE RESTING LIMIT
+    (traded-zone CE 100.60) on the 12:51 M1 -- no market chase -- then close
+    profitably. Day 2 gaps up +7: carried-over M5 history keeps ATR/wyckoff
+    live from the session open, so the same pivot re-scores above threshold
+    early and the chase guard REFUSES 11:00-11:15; the 12:50 pivot arms and
+    triggers again but day 2's rally never retraces to the 107.60 limit --
+    the order expires (skip "unfilled") instead of chasing 3x risk."""
     feed = ScenarioFeed([judas_reversal("ACME", DAY1, 100.0),
                          judas_reversal("ACME", DAY2, 107.0)])
     orch = Orchestrator(cfg(), feed, ["ACME"], capital=100000, max_qty=50,
@@ -103,26 +103,29 @@ def test_judas_two_day_orchestrator(tmp_path):
                            and v["template"] == "TRAP_REVERSAL" for v in armable)
     # day 1 arms at the 12:50 pivot on the TRADED zone (tightest level in
     # the cluster, stop 100.50 behind it; risk 0.10 collapses the R-fallback
-    # ladder into T1): partials 1R + 2R, runner rides to EOD squareoff
+    # ladder into T1): the limit at CE 100.60 fills on the 12:51 M1, then
+    # partials 1R + 2R, runner rides to EOD squareoff
     day1 = orch.journal.read(DAY1)
     opens = [e for e in day1 if e["kind"] == "trade_open"]
     closes = [e for e in day1 if e["kind"] == "trade_close"]
     parts = [e for e in day1 if e["kind"] == "trade_partial"]
     assert len(opens) == 1 and opens[0]["direction"] == "LONG"
-    assert opens[0]["at"][11:16] == "12:50" and opens[0]["stop"] == "100.50"
+    assert opens[0]["at"][11:16] == "12:51" and opens[0]["stop"] == "100.50"
+    assert opens[0]["price"] == "100.60"                  # AT the limit, no chase
     assert D(opens[0]["stop"]) < D(opens[0]["zone"][0])   # behind traded zone
     assert [p["reason"] for p in parts] == ["1R", "2R"]
     assert len(closes) == 1 and closes[0]["reason"] == ExitReason.EOD.value
     assert D(closes[0]["exit_price"]) > D(opens[0]["price"])
-    # day 2: chase guard refuses the early over-threshold re-score, then the
-    # 12:50 pivot arms on its traded zone and wins (was stop_too_wide x3)
+    # day 2: chase guard refuses the early over-threshold re-score; the 12:50
+    # pivot triggers but never retraces to the limit => skip "unfilled"
     day2 = orch.journal.read(DAY2)
     assert [e for e in day2 if e["kind"] == "verdict" and e["final"] >= threshold]
     day2_skips = [e for e in day2 if e["kind"] == "skip"]
-    assert day2_skips and all("chases" in e["reason"] for e in day2_skips)
-    day2_opens = [e for e in day2 if e["kind"] == "trade_open"]
-    assert len(day2_opens) == 1 and day2_opens[0]["at"][11:16] == "12:50"
-    assert summary["trades"] == 2 and summary["wins"] == 2
+    assert day2_skips and all("chases" in e["reason"] or e["reason"] == "unfilled"
+                              for e in day2_skips)
+    assert [e for e in day2_skips if e["reason"] == "unfilled"]
+    assert not [e for e in day2 if e["kind"] == "trade_open"]
+    assert summary["trades"] == 1 and summary["wins"] == 1
     assert set(summary) == {"trades", "wins", "losses", "pnl", "skips"}
     assert summary["skips"] == len([e for e in entries if e["kind"] == "skip"])
 
@@ -287,8 +290,9 @@ def test_index_pipeline_runs_own_wyckoff_detect(tmp_path, monkeypatch):
 # --------------------------------------------- 2. broker+manager integration
 
 def test_partials_and_eod_exact_accounting(tmp_path):
-    """Scripted LONG 50 @ ~100 stop 95: 1R (market) and T2-touch (limit AT
-    110) shave 16 each through the broker, EOD squares off the remaining 18;
+    """Scripted LONG 50 stop 95, entry limit AT zone CE 100 (half-spread
+    only, quantized back to 100.00): 1R (market) and T2-touch (limit AT 110)
+    shave 16 each through the broker, EOD squares off the remaining 18;
     realized is the exact Decimal sum including entry + exit costs, and
     RiskState records the close."""
     pipe, risk = make_pipeline(tmp_path)
@@ -301,8 +305,8 @@ def test_partials_and_eod_exact_accounting(tmp_path):
     pipe.on_m1(m1("X", t0 + timedelta(minutes=5), 100, 106, 100, 106))   # fill @100
     pos = pipe.position
     assert pos is not None and pos.remaining_qty == 50
-    assert pos.entry.price == D("100.05")                          # adverse open
-    assert risk.open_risk == D("5.05") * 50                        # B8 ledger on
+    assert pos.entry.price == D("100.00")                          # AT the limit
+    assert risk.open_risk == D("5.00") * 50                        # B8 ledger on
     assert risk.open_dirs == {"X": Direction.LONG}
     pipe.on_m1(m1("X", t0 + timedelta(minutes=10), 106, 111, 106, 111))  # 1R seen
     assert pos.remaining_qty == 34 and "1R" in pos.partials
@@ -311,13 +315,13 @@ def test_partials_and_eod_exact_accounting(tmp_path):
     pipe.on_m1(m1("X", t0.replace(hour=15, minute=10), 111, 111, 110, 111))
     pipe.on_m1(m1("X", t0.replace(hour=15, minute=15), 111, 111, 110, 111))  # EOD
     assert pipe.position is None and pos.remaining_qty == 0
-    expected = (-cost_buy(D("100.05"), 50)   # entry BUY leg; T2=110 touched: limit fill AT 110
-                + (D("105.95") - D("100.05")) * 16 - cost(D("105.95"), 16)
-                + (D("110.00") - D("100.05")) * 16 - cost(D("110.00"), 16)
-                + (D("110.95") - D("100.05")) * 18 - cost(D("110.95"), 18))
+    expected = (-cost_buy(D("100.00"), 50)   # entry BUY leg; T2=110 touched: limit fill AT 110
+                + (D("105.95") - D("100.00")) * 16 - cost(D("105.95"), 16)
+                + (D("110.00") - D("100.00")) * 16 - cost(D("110.00"), 16)
+                + (D("110.95") - D("100.00")) * 18 - cost(D("110.95"), 18))
     assert pos.realized == expected
     assert risk.trades_today == 1 and risk.consecutive_losses == 0
-    assert risk.daily_pnl_R == pytest.approx(float(expected / (D("5.05") * 50)))
+    assert risk.daily_pnl_R == pytest.approx(float(expected / (D("5.00") * 50)))
     assert risk.open_risk == 0 and risk.open_dirs == {}            # B8 released
     kinds = [e["kind"] for e in pipe.journal.read(t0.date())]
     assert "trade_open" in kinds and "trade_close" in kinds
@@ -434,6 +438,92 @@ def test_fill_after_no_entry_cutoff_dropped(tmp_path):
     assert risk.trades_today == 0
     skips = [e for e in pipe.journal.read(t.date()) if e["kind"] == "skip"]
     assert any(e["reason"] == "too_late" for e in skips)
+
+
+# ------------------------------------------- 2b2. resting limit entries (F1)
+
+def _queue_limit(pipe, t0, direction=Direction.LONG, stop="490"):
+    """Arm a scripted resting limit: zone (495,505) => limit CE 500."""
+    pipe.day = DayState(session_date=t0.date())
+    plan = TradePlan("X", direction, (D("495"), D("505")), D(stop),
+                     [D("520") if direction is Direction.LONG else D("480")],
+                     10, 70.0, t0, {})
+    pipe._pending_plan, pipe._pending_since = plan, t0
+    return plan
+
+
+def test_limit_entry_fills_at_limit_long(tmp_path):
+    """LONG: M1s whose lows stay above the 500 limit do NOT fill; the first
+    M1 trading through fills AT 500 + half-spread (2bps), never the market
+    open -- the chase is gone by construction. R off the limit price."""
+    pipe, risk = make_pipeline(tmp_path)
+    t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
+    pipe.on_m1(m1("X", t0, 500, 500, 500, 500))
+    plan = _queue_limit(pipe, t0)
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=1), 502, 503, 500.05, 502))
+    assert pipe.position is None and pipe._pending_plan is plan  # low > limit
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=2), 502, 502, 499.90, 500.50))
+    pos = pipe.position
+    assert pos is not None and pipe._pending_plan is None
+    assert pos.entry.price == D("500.10")    # 500 x (1 + 2bps), no slippage
+    assert risk.open_risk == (D("500.10") - D("490")) * 10
+
+
+def test_limit_entry_fills_at_limit_short(tmp_path):
+    """SHORT mirror: fills when an M1 high trades through, AT 500 - 2bps."""
+    pipe, _ = make_pipeline(tmp_path)
+    t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
+    pipe.on_m1(m1("X", t0, 498, 498, 498, 498))
+    plan = _queue_limit(pipe, t0, Direction.SHORT, stop="510")
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=1), 498, 499.95, 497, 498))
+    assert pipe.position is None and pipe._pending_plan is plan  # high < limit
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=2), 499, 500.20, 498, 499))
+    assert pipe.position is not None
+    assert pipe.position.entry.price == D("499.90")   # 500 x (1 - 2bps)
+
+
+def test_limit_entry_gap_through_fills_at_limit(tmp_path):
+    """An M1 gapping clean through the limit (opens beyond it) still fills
+    AT the limit -- always-adverse simulation, never a better-than-limit
+    price."""
+    pipe, _ = make_pipeline(tmp_path)
+    t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
+    pipe.on_m1(m1("X", t0, 502, 502, 502, 502))
+    _queue_limit(pipe, t0)
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=1), 498, 499, 497, 498))
+    assert pipe.position is not None
+    assert pipe.position.entry.price == D("500.10")   # AT limit, not the open
+
+
+def test_limit_entry_expires_unfilled(tmp_path):
+    """A limit never traded through dies after fill_ttl_candles (6 M5 = 30
+    M1): journal skip 'unfilled', no position, order cleared."""
+    pipe, risk = make_pipeline(tmp_path)
+    t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
+    pipe.on_m1(m1("X", t0, 510, 510, 510, 510))
+    _queue_limit(pipe, t0)
+    for m in range(1, 30):                          # lows never reach 500
+        pipe.on_m1(m1("X", t0 + timedelta(minutes=m), 510, 511, 505, 510))
+    assert pipe._pending_plan is not None           # minute 29: still resting
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=30), 499, 511, 499, 510))
+    assert pipe.position is None and pipe._pending_plan is None
+    assert risk.trades_today == 0
+    skips = [e for e in pipe.journal.read(t0.date()) if e["kind"] == "skip"]
+    assert any(e["gate"] == "fill" and e["reason"] == "unfilled" for e in skips)
+
+
+def test_pending_limit_blocks_entry_flow(tmp_path, monkeypatch):
+    """While a limit rests, the M5 entry flow is paused -- a second arm must
+    not clobber the working order."""
+    pipe, _ = make_pipeline(tmp_path)
+    t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
+    pipe.on_m1(m1("X", t0, 510, 510, 510, 510))
+    _queue_limit(pipe, t0)
+    called = []
+    monkeypatch.setattr(pipe, "_entry_flow", lambda *a: called.append(a))
+    for m in (1, 5, 10):
+        pipe.on_m1(m1("X", t0 + timedelta(minutes=m), 510, 511, 505, 510))
+    assert not called and pipe._pending_plan is not None
 
 
 # ------------------------------------------------------- 2c. feed gaps (A6)
