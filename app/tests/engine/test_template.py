@@ -8,11 +8,15 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
+import pytest
+
 from trader.engine.context import DayState, StockContext
 from trader.engine.template import TemplateClassifier
+from trader.models.candle import Candle, Timeframe, tick
 from trader.models.evidence import Direction, Evidence
 from trader.models.level import Level, LevelKind, LevelState
 from trader.models.market import NSE
+from trader.store.candles import CandleStore
 
 IST = ZoneInfo("Asia/Kolkata")
 DAY = date(2026, 7, 15)
@@ -119,6 +123,51 @@ def test_only_structure_evidence_counts():
                      zone=Z, ts=at(60), ttl_candles=12, meta={"event": "CHOCH"})
     lvls = [level(ORH), level(ORL, SWEPT, RECLAIMED)]
     assert classify(135, lvls, [stray]) == "UNCLASSIFIED"
+
+
+# -------------------------------------------------- gap fade-bias (axiom 18)
+
+def _gap_view(open_px: float):
+    """Prev-day calm M5s (range 2 => ATR ~2, close 100) + today's open."""
+    store = CandleStore("/nonexistent")
+    prev = datetime.combine(DAY - timedelta(days=1), time(9, 15), tzinfo=IST)
+    m1 = lambda ts, o: Candle("X", Timeframe.M1, ts, tick(o), tick(o + 1),
+                              tick(o - 1), tick(o), 100)
+    for i in range(15):
+        store.add(m1(prev + timedelta(minutes=5 * i), 100))
+    store.add(m1(OPEN, open_px))
+    return store.view("X", at(6))
+
+
+@pytest.mark.parametrize("open_px,want", [(105, Direction.LONG),
+                                          (95, Direction.SHORT), (100.5, None)])
+def test_gap_dir_detected_from_candles(open_px, want):
+    day = DayState(session_date=DAY)
+    c = StockContext(symbol="X", now=at(6), candles=_gap_view(open_px),
+                     levels=[], evidence_history=[], day=day)
+    TemplateClassifier(NSE).update(c)
+    assert day.gap_dir is want
+
+
+def gap_day() -> DayState:
+    return DayState(session_date=DAY, gap_dir=Direction.LONG)
+
+
+def test_gap_direction_drive_one_bos_is_trap():
+    lvls = [level(ORH), level(ORL)]         # would be RANGE_PIN without gap
+    c = ctx(135, lvls, [ev("BOS", Direction.LONG)], gap_day())
+    assert TemplateClassifier(NSE).update(c) == "UNCLASSIFIED"
+
+
+def test_gap_direction_two_bos_locks_trend():
+    hist = [ev("BOS", Direction.LONG, 60), ev("BOS", Direction.LONG, 90)]
+    c = ctx(135, [level(ORH), level(ORL)], hist, gap_day())
+    assert TemplateClassifier(NSE).update(c) == "TREND"
+
+
+def test_gap_fade_direction_unaffected():
+    c = ctx(135, [level(ORH), level(ORL)], [ev("BOS", Direction.SHORT)], gap_day())
+    assert TemplateClassifier(NSE).update(c) == "RANGE_PIN"
 
 
 # ------------------------------------------------------------ locking + state

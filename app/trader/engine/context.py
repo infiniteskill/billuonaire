@@ -46,6 +46,7 @@ class DayState:
     template: str = "UNCLASSIFIED"
     po3: dict = field(default_factory=dict)  # scale ("day"/"leg") -> PO3FSM
     prev_template: str | None = None         # yesterday's locked template
+    gap_dir: Direction | None = None         # open gap > 1xATR (axiom 18)
 
 
 @dataclass
