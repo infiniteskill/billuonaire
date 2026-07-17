@@ -16,12 +16,14 @@ sits strictly between the swept extreme and the close)."""
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from trader.detectors.base import Detector, register
 from trader.engine.context import StockContext
 from trader.models.candle import Timeframe
 from trader.models.evidence import Direction, Evidence
 
-_DEFAULTS = {"tf": "5m", "N": 20}
+_DEFAULTS = {"tf": "5m", "N": 20, "sl_atr_floor": 0.15}
 
 
 @register
@@ -56,6 +58,9 @@ class TurtleSoupDetector(Detector):
             return []
         self._emitted.add(c.ts)
         T = ctx.spec.tick_size
+        atr = ctx.atr(tf)
+        floor = Decimal(str(self.params["sl_atr_floor"])) * atr if atr else Decimal(0)
         return [Evidence(detector=self.name, direction=direction, strength=strength,
                          zone=(sl - T, sl + T), ts=ctx.now, ttl_candles=3,
-                         meta={"event": "TURTLE_SOUP", "sl": sl})]
+                         meta={"event": "TURTLE_SOUP", "sl": str(sl),
+                               "sl_floor": str(floor)})]

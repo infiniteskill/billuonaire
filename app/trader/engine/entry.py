@@ -131,20 +131,31 @@ class EntryFSM:
             if gap > Decimal(str(self.s.entry.arm_proximity_atr)) * atr:
                 return ArmResult(False, "too_far")
         entry = self.spec.quantize((lo + hi) / 2)    # traded-zone CE
-        stop, unsnapped = self._stop(lo, hi, up, atr, ctx)
-        risk, max_risk = abs(entry - stop), Decimal(str(self.s.entry.max_stop_atr)) * atr
         snap_skipped = False
-        if risk > max_risk:
-            un_risk = abs(entry - unsnapped)
-            if un_risk > max_risk:
-                return ArmResult(False, "stop_too_wide")
-            stop, risk, snap_skipped = unsnapped, un_risk, True  # snap vaulted past budget
-        floor = Decimal(str(self.s.stops.min_stop_atr)) * atr
-        if risk < floor:    # cost floor: hunt-food stops widen, qty shrinks
-            stop = snap_stop_off_round(
-                self.spec.quantize(entry - floor if up else entry + floor),
+        sig = self._signal_evidence(lo, hi, zone.direction, ctx)
+        if sig is not None:  # signal-emitter drives the zone: honor its tiny stop
+            # raw structural extreme, floored at 0.15xATR sl_floor -- NOT the
+            # min_stop_atr cost-floor widening that would kill the RR edge.
+            stop_risk = max(abs(entry - Decimal(sig.meta["sl"])),
+                            Decimal(sig.meta["sl_floor"]))
+            stop = snap_stop_off_round(  # round-snap still applies to the tiny stop
+                self.spec.quantize(entry - stop_risk if up else entry + stop_risk),
                 ctx.levels, self.spec, self.s.stops.round_offset_ticks, up)
             risk = abs(entry - stop)
+        else:               # generic ATR/zone stop + min_stop_atr cost floor
+            stop, unsnapped = self._stop(lo, hi, up, atr, ctx)
+            risk, max_risk = abs(entry - stop), Decimal(str(self.s.entry.max_stop_atr)) * atr
+            if risk > max_risk:
+                un_risk = abs(entry - unsnapped)
+                if un_risk > max_risk:
+                    return ArmResult(False, "stop_too_wide")
+                stop, risk, snap_skipped = unsnapped, un_risk, True  # snap vaulted past budget
+            floor = Decimal(str(self.s.stops.min_stop_atr)) * atr
+            if risk < floor:    # cost floor: hunt-food stops widen, qty shrinks
+                stop = snap_stop_off_round(
+                    self.spec.quantize(entry - floor if up else entry + floor),
+                    ctx.levels, self.spec, self.s.stops.round_offset_ticks, up)
+                risk = abs(entry - stop)
         if risk <= 0:       # zero ATR + collapsed zone: nothing to size safely
             return ArmResult(False, "no_risk")
         targets = self._targets(entry, risk, up, zone.zone, ctx, opps)
@@ -163,6 +174,8 @@ class EntryFSM:
         meta = {"final": zone.final, "mults": dict(zone.mults),
                 "entry": str(entry), "risk_pts": str(risk),
                 "cluster": [str(zone.zone[0]), str(zone.zone[1])]}
+        if sig is not None:                          # journal the tiny-SL source
+            meta["sl_source"] = sig.detector
         if snap_skipped:
             meta["snap_skipped"] = True
         plan = TradePlan(ctx.symbol, zone.direction, (lo, hi), stop, targets,
@@ -187,6 +200,21 @@ class EntryFSM:
                                       abs(mid(z) - ref) if ref is not None
                                       else 0))
         return min(z), max(z)
+
+    def _signal_evidence(self, lo, hi, direction, ctx) -> Evidence | None:
+        """The primary (highest weight x strength, mirroring the confluence
+        netting) live evidence overlapping the traded zone in the armed
+        direction. Returned only when that driver is a signal-emitter carrying
+        a structural meta['sl']/['sl_floor'] -- the tiny stop the executor
+        honors verbatim; else None (fall back to the generic _stop path)."""
+        weights = self.s.enabled_weights()
+        cands = [e for e in live_evidence(ctx.evidence_history, ctx.now)
+                 if e.direction is direction and _overlaps(e.zone, (lo, hi))]
+        if not cands:
+            return None
+        primary = max(cands, key=lambda e: (weights.get(e.detector, 0.0) * e.strength,
+                                            e.strength))
+        return primary if "sl" in primary.meta else None
 
     def _stop(self, lo, hi, up, atr, ctx) -> tuple[Decimal, Decimal]:
         """Returns (snapped, unsnapped) -- caller falls back to unsnapped if

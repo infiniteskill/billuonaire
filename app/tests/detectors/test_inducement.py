@@ -18,6 +18,7 @@ Two layers:
 
 import random
 from datetime import datetime, timedelta
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from trader.detectors.inducement import InducementDetector
@@ -171,22 +172,27 @@ def test_no_grab_without_preceding_choch():
 
 
 def test_choch_then_sweep_fires_long_grab():
-    [ev] = InducementDetector(PARAMS).detect(_load_single(LONG_BARS))
+    ctx = _load_single(LONG_BARS)
+    [ev] = InducementDetector(PARAMS).detect(ctx)
     assert ev.detector == "inducement"
     assert ev.direction is Direction.LONG
     assert 0 < ev.strength <= 1
     assert ev.ttl_candles == 3
     extreme = tick(93)
     assert ev.zone == (extreme - TICK, extreme + TICK)
-    assert ev.meta == {"event": "INDUCEMENT_GRAB", "sl": extreme - TICK, "os": 1}
+    # sl = RAW swept extreme (no +/-tick buffer); sl_floor = 0.15xATR; both str
+    floor = str(Decimal("0.15") * ctx.atr(Timeframe.M5))
+    assert ev.meta == {"event": "INDUCEMENT_GRAB", "sl": str(extreme), "sl_floor": floor}
 
 
 def test_choch_then_sweep_fires_short_grab_mirror():
-    [ev] = InducementDetector(PARAMS).detect(_load_single(SHORT_BARS))
+    ctx = _load_single(SHORT_BARS)
+    [ev] = InducementDetector(PARAMS).detect(ctx)
     assert ev.direction is Direction.SHORT
     extreme = tick(107)
     assert ev.zone == (extreme - TICK, extreme + TICK)
-    assert ev.meta == {"event": "INDUCEMENT_GRAB", "sl": extreme + TICK, "os": 0}
+    floor = str(Decimal("0.15") * ctx.atr(Timeframe.M5))
+    assert ev.meta == {"event": "INDUCEMENT_GRAB", "sl": str(extreme), "sl_floor": floor}
 
 
 def test_no_lookahead_fractal_confirmation_delay():
@@ -224,7 +230,8 @@ def test_insufficient_history_returns_empty():
 
 
 def test_default_params():
-    assert InducementDetector({}).params == {"tf": "5m", "ln": 20, "short_len": 3}
+    assert InducementDetector({}).params == {
+        "tf": "5m", "ln": 20, "short_len": 3, "sl_atr_floor": 0.15}
 
 
 # --------------------------------------------------------------------------

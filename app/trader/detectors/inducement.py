@@ -36,12 +36,14 @@ carries across sessions.
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from trader.detectors.base import Detector, register
 from trader.engine.context import StockContext
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
 
-_DEFAULTS = {"tf": "5m", "ln": 20, "short_len": 3}
+_DEFAULTS = {"tf": "5m", "ln": 20, "short_len": 3, "sl_atr_floor": 0.15}
 _STRENGTH = 0.75  # fixed: LuxAlgo source carries no per-signal quality gradient
 _ALL = 10 ** 9    # "all closed candles" sentinel for CandleView.last
 
@@ -141,6 +143,8 @@ class InducementDetector(Detector):
         closed = ctx.candles.last(_ALL, tf)  # full continuous closed history
         out: list[Evidence] = []
         T = ctx.spec.tick_size
+        atr = ctx.atr(tf)
+        floor = Decimal(str(self.params["sl_atr_floor"])) * atr if atr else Decimal(0)
         for i in range(self._n, len(closed)):
             grab = self._step(i, closed)
             if grab is None:
@@ -150,9 +154,8 @@ class InducementDetector(Detector):
             if key in self._seen:
                 continue
             self._seen.add(key)
-            direction, extreme = grab
+            direction, extreme = grab      # sl = RAW swept extreme (no tick buffer)
             long_ = direction == 1
-            sl = extreme - T if long_ else extreme + T
             out.append(Evidence(
                 detector=self.name,
                 direction=Direction.LONG if long_ else Direction.SHORT,
@@ -160,7 +163,8 @@ class InducementDetector(Detector):
                 zone=(extreme - T, extreme + T),
                 ts=ctx.now,
                 ttl_candles=3,
-                meta={"event": "INDUCEMENT_GRAB", "sl": sl, "os": 1 if long_ else 0},
+                meta={"event": "INDUCEMENT_GRAB", "sl": str(extreme),
+                      "sl_floor": str(floor)},
             ))
         self._n = len(closed)
         return out

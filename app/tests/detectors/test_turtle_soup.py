@@ -65,8 +65,8 @@ def test_failed_breakdown_fades_long_with_sl_at_swept_low():
     [ev] = TurtleSoupDetector(PARAMS).detect(ctx_at(store, 4))
     assert ev.detector == "turtle_soup"
     assert ev.direction is Direction.LONG
-    assert ev.meta["sl"] == tick(90)
-    assert ev.meta["event"] == "TURTLE_SOUP"
+    # raw swept low; atr None on this 4-bar fixture -> sl_floor "0"
+    assert ev.meta == {"event": "TURTLE_SOUP", "sl": str(tick(90)), "sl_floor": "0"}
     assert ev.zone == (tick(90) - TICK, tick(90) + TICK)
     assert ev.ttl_candles == 3
     assert 0.0 < ev.strength <= 1.0
@@ -76,7 +76,7 @@ def test_failed_breakout_fades_short_with_sl_at_swept_high():
     store = make_store([PRIOR_D, PRIOR_E, PRIOR_F, BREAK_SHORT])
     [ev] = TurtleSoupDetector(PARAMS).detect(ctx_at(store, 4))
     assert ev.direction is Direction.SHORT
-    assert ev.meta["sl"] == tick(110)
+    assert ev.meta == {"event": "TURTLE_SOUP", "sl": str(tick(110)), "sl_floor": "0"}
     assert ev.zone == (tick(110) - TICK, tick(110) + TICK)
     assert 0.0 < ev.strength <= 1.0
 
@@ -149,4 +149,4 @@ def test_session_boundary_no_cross_day_fade():
                         day=DayState(session_date=now2.date()))
     [ev] = det.detect(ctx2)
     assert ev.direction is Direction.LONG
-    assert ev.meta["sl"] == tick(90)
+    assert ev.meta["sl"] == str(tick(90))

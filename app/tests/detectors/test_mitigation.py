@@ -12,6 +12,7 @@ open == previous close, so ATR(M5,14) == 2 exactly once 15 candles have
 closed and stays 2 through block formation (need = disp_atr(1.0) * 2 = 2)."""
 
 from datetime import datetime, timedelta
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from trader.detectors.mitigation import MitigationDetector
@@ -87,8 +88,9 @@ def test_long_block_body_retest_correct_sl():
     assert ev.detector == "mitigation"
     assert ev.direction is Direction.LONG
     assert ev.zone == (tick(99), tick(100))
-    assert ev.meta["event"] == "MITIGATION"
-    assert ev.meta["sl"] == tick(97)  # min(block.low=98.5, touch.low=97)
+    assert ev.meta == {"event": "MITIGATION",
+                       "sl": str(tick(97)),  # min(block.low=98.5, touch.low=97)
+                       "sl_floor": str(Decimal("0.15") * ctx_at(store, 20).atr(M5))}
     assert ev.ttl_candles == 6
     assert ev.strength == 0.5  # (disp=3 - need=2) / need=2, clamped [0,1]
 
@@ -100,7 +102,9 @@ def test_short_block_mirror():
     [ev] = det.detect(ctx_at(store, 20))
     assert ev.direction is Direction.SHORT
     assert ev.zone == (tick(100), tick(101))
-    assert ev.meta["sl"] == tick("103.5")  # max(block.high=101.5, touch.high=103.5)
+    # max(block.high=101.5, touch.high=103.5)
+    assert ev.meta["sl"] == str(tick("103.5"))
+    assert ev.meta["sl_floor"] == str(Decimal("0.15") * ctx_at(store, 20).atr(M5))
     assert ev.strength == 0.5
 
 
@@ -145,7 +149,7 @@ def test_on_session_end_clears_state():
     det.detect(ctx_at(store, 19))         # re-forms (state cleared)
     [ev] = det.detect(ctx_at(store, 20))  # re-fires after reset
     assert ev.direction is Direction.LONG
-    assert ev.meta["sl"] == tick(97)
+    assert ev.meta["sl"] == str(tick(97))
 
 
 def test_atr_spike_ages_out_no_stale_touch():

@@ -11,6 +11,7 @@ equals it exactly, same convention as test_fvg.py/test_compression_fade.py.
 the 0.3*ATR gap threshold sits around 0.6-0.7 points."""
 
 from datetime import datetime, timedelta
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from trader.detectors.bpr import BprDetector, _Gap
@@ -81,17 +82,22 @@ def test_bull_older_bear_newer_fires_short_sl_hi():
     assert ev.detector == "bpr"
     assert ev.direction is Direction.SHORT
     assert ev.zone == (tick("101.2"), tick(102))     # overlap region
-    assert ev.meta == {"event": "BPR", "sl": tick(102)}  # sl = overlap hi
+    floor = str(Decimal("0.15") * ctx_at(store, 24).atr(M5))
+    assert ev.meta == {"event": "BPR", "sl": str(tick(102)),  # sl = overlap hi
+                       "sl_floor": floor}
     assert ev.ttl_candles == 4
     assert 0.0 <= ev.strength <= 1.0
 
 
 def test_bear_older_bull_newer_fires_long_sl_lo():
     store = make_store(BARS_B)
-    [ev] = run_to(BprDetector({}), store, len(BARS_B))
+    n = len(BARS_B)
+    [ev] = run_to(BprDetector({}), store, n)
     assert ev.direction is Direction.LONG
     assert ev.zone == (tick("101.2"), tick(102))
-    assert ev.meta == {"event": "BPR", "sl": tick("101.2")}  # sl = overlap lo
+    floor = str(Decimal("0.15") * ctx_at(store, n).atr(M5))
+    assert ev.meta == {"event": "BPR", "sl": str(tick("101.2")),  # sl = overlap lo
+                       "sl_floor": floor}
 
 
 def test_no_overlap_no_signal():
