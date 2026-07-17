@@ -11,7 +11,11 @@ journalling the skip/disarm reasons returned here.
            SWEPT history overlapping the zone), buffered by atr_buffer x ATR;
            if within 2 ticks of a ROUND level edge, landed round_offset_ticks
            PAST the round zone's far edge (never tighter), tick-quantized.
-           Skip "stop_too_wide" if risk > max_stop_atr x ATR.
+           If that snap alone vaults risk past max_stop_atr x ATR but the
+           un-snapped stop does not, arm with the un-snapped stop instead
+           (meta["snap_skipped"]=True) -- anti-hunt intent stands, killing
+           the trade outright does not. Skip "stop_too_wide" only when even
+           the un-snapped risk breaches max_stop_atr x ATR.
   TARGETS  opposing liquidity map: ACTIVE/TESTED levels + opposing
            ScoredZones beyond entry (near edge, quantized). T1 = nearest
            >= 1.5R (none => skip "no_room"); T2 = next beyond T1 (else 2.5R);
@@ -106,10 +110,14 @@ class EntryFSM:
             if gap > Decimal(str(self.s.entry.arm_proximity_atr)) * atr:
                 return ArmResult(False, "too_far")
         entry = self.spec.quantize((lo + hi) / 2)    # zone CE
-        stop = self._stop(lo, hi, up, atr, ctx)
-        risk = abs(entry - stop)
-        if risk > Decimal(str(self.s.entry.max_stop_atr)) * atr:
-            return ArmResult(False, "stop_too_wide")
+        stop, unsnapped = self._stop(lo, hi, up, atr, ctx)
+        risk, max_risk = abs(entry - stop), Decimal(str(self.s.entry.max_stop_atr)) * atr
+        snap_skipped = False
+        if risk > max_risk:
+            un_risk = abs(entry - unsnapped)
+            if un_risk > max_risk:
+                return ArmResult(False, "stop_too_wide")
+            stop, risk, snap_skipped = unsnapped, un_risk, True  # snap vaulted past budget
         targets = self._targets(entry, risk, up, (lo, hi), ctx, opps)
         if targets is None:
             return ArmResult(False, "no_room")
@@ -118,22 +126,28 @@ class EntryFSM:
         qty = min(max_qty, int(budget // risk))
         if qty <= 0:
             return ArmResult(False, "qty_zero")
+        meta = {"final": zone.final, "mults": dict(zone.mults),
+                "entry": str(entry), "risk_pts": str(risk)}
+        if snap_skipped:
+            meta["snap_skipped"] = True
         plan = TradePlan(ctx.symbol, zone.direction, (lo, hi), stop, targets,
-                         qty, zone.final, ctx.now,
-                         {"final": zone.final, "mults": dict(zone.mults),
-                          "entry": str(entry), "risk_pts": str(risk)})
+                         qty, zone.final, ctx.now, meta)
         self.state, self.plan, self._armed_ts = EntryState.ARMED, plan, ctx.now
         return ArmResult(True, plan=plan)
 
-    def _stop(self, lo, hi, up, atr, ctx) -> Decimal:
+    def _stop(self, lo, hi, up, atr, ctx) -> tuple[Decimal, Decimal]:
+        """Returns (snapped, unsnapped) -- caller falls back to unsnapped if
+        the round-snap alone vaults risk past max_stop_atr (B13 anti-hunt
+        intent stands; killing the trade outright does not)."""
         traps = [min(lv.zone) if up else max(lv.zone) for lv in ctx.levels
                  if _overlaps(lv.zone, (lo, hi))
                  and any(s is LevelState.SWEPT for _, s in lv.state_history)]
         buf = Decimal(str(self.s.stops.atr_buffer)) * atr
-        stop = self.spec.quantize(min([lo, *traps]) - buf if up
-                                  else max([hi, *traps]) + buf)
-        return snap_stop_off_round(stop, ctx.levels, self.spec,
-                                   self.s.stops.round_offset_ticks, up)
+        unsnapped = self.spec.quantize(min([lo, *traps]) - buf if up
+                                       else max([hi, *traps]) + buf)
+        snapped = snap_stop_off_round(unsnapped, ctx.levels, self.spec,
+                                      self.s.stops.round_offset_ticks, up)
+        return snapped, unsnapped
 
     def _targets(self, entry, risk, up, zone, ctx, opps) -> list[Decimal] | None:
         sign = 1 if up else -1

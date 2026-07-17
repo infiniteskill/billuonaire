@@ -103,6 +103,32 @@ def test_arm_stop_too_wide_skips(fsm):
     assert fsm.state is EntryState.IDLE
 
 
+# knife-edge: un-snapped risk 2.35 <= budget 2.4, but round-snap alone
+# vaults it to 2.55 > budget => arm with the un-snapped stop instead of
+# dying stop_too_wide (trap 97.15 - buf 0.50 = 96.65; ROUND edge 96.60 is
+# within 2 ticks of 96.65 so snap would land 96.45, budget-breaching).
+def test_arm_prefers_unsnapped_stop_over_stop_too_wide(fsm):
+    levels = [lvl(LevelKind.SWING_L, "97.15", "98.50", LevelState.SWEPT, SWEPT),
+              lvl(LevelKind.ROUND, "96.60", "96.60"),
+              lvl(LevelKind.SWING_H, "103.00", "103.50")]
+    r = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000)
+    assert r.armed and r.reason is None
+    p = r.plan
+    assert p.stop == D("96.65")                      # un-snapped, not 96.45
+    assert p.meta["risk_pts"] == "2.35"
+    assert p.meta["snap_skipped"] is True
+    assert p.qty == 212                               # floor(500 / 2.35)
+
+
+# genuinely wide even un-snapped (trap 96.00 pushes stop to 95.50, risk
+# 3.50): round-snap present but irrelevant -- still skips.
+def test_arm_stop_too_wide_skips_even_with_round_nearby(fsm):
+    levels = [lvl(LevelKind.SWING_L, "96.00", "98.50", LevelState.SWEPT, SWEPT),
+              lvl(LevelKind.ROUND, "96.60", "96.60")]
+    r = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000)
+    assert (r.armed, r.reason, r.plan) == (False, "stop_too_wide", None)
+
+
 def test_arm_no_room_skips(fsm):  # only opposing level is < 1.5R away
     ctx = ctx_at(at(11, 0), calm(), [lvl(LevelKind.SWING_H, "100.50", "101.00")])
     r = fsm.arm(zone("98.00", "100.00"), ctx, 1000)
