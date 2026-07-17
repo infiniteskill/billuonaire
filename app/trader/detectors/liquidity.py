@@ -24,6 +24,8 @@ _PROXIMITY_KINDS = frozenset({
     LevelKind.EQH, LevelKind.EQL,
     LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L, LevelKind.ROUND,
 })
+_HIGH_POOLS = frozenset({LevelKind.PWH, LevelKind.PWL,
+                         LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L})
 _DEFAULTS = {"eq_tolerance": 0.001, "round_steps": [50, 100, 500],
              "round_within_pct": 2.0, "proximity_atr": 1.0, "or_minutes": 15}
 
@@ -218,6 +220,8 @@ class LiquidityDetector(Detector):
             hours = (now - level.born).total_seconds() / 3600
             recency = max(0.0, 1 - hours / 48)
             return min(level.touches / 5, 1.0) * 0.7 + recency * 0.3
+        if level.kind in _HIGH_POOLS:  # axiom 5: OR + weekly = HIGH liquidity
+            return 0.7
         if level.kind in (LevelKind.PDH, LevelKind.PDL):
             return 0.6
         return 0.4

@@ -22,6 +22,8 @@ from trader.models.level import Level, LevelKind, LevelState
 
 _DEFAULTS = {"tf": "5m", "reclaim_bonus_candles": 3, "chain_window": 20}
 _DAILY_WEEKLY = frozenset({LevelKind.PDH, LevelKind.PDL, LevelKind.PWH, LevelKind.PWL})
+_HIGH_POOLS = frozenset({LevelKind.PWH, LevelKind.PWL,
+                         LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L})
 
 
 @register
@@ -104,4 +106,6 @@ class SweepDetector(Detector):
         if lv.kind in (LevelKind.EQH, LevelKind.EQL):
             recency = max(0.0, 1 - (now - lv.born).total_seconds() / 3600 / 48)
             return min(lv.touches / 5, 1.0) * 0.7 + recency * 0.3
-        return 0.6 if lv.kind in _DAILY_WEEKLY else 0.5
+        if lv.kind in _HIGH_POOLS:  # axiom 5: OR + weekly = HIGH liquidity
+            return 0.7
+        return 0.6 if lv.kind in (LevelKind.PDH, LevelKind.PDL) else 0.5

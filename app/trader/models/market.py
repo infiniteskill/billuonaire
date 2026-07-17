@@ -3,7 +3,7 @@ size). Core code takes a spec (default NSE), so switching markets is config only
 
 import re
 from dataclasses import dataclass
-from datetime import datetime, time
+from datetime import date, datetime, time
 from decimal import Decimal, ROUND_HALF_UP
 from zoneinfo import ZoneInfo
 
@@ -24,11 +24,14 @@ class MarketSpec:
     session_open: str = "09:15"    # "00:00" for 24h markets
     session_close: str = "15:30"   # exclusive; "24:00" allowed for 24h
     tick_size: Decimal = Decimal("0.05")
+    expiry_weekday: int | None = 3  # weekly derivatives expiry (Thu); None = none
 
     def __post_init__(self):
         object.__setattr__(self, "tick_size", Decimal(str(self.tick_size)))
         if self.tick_size <= 0:
             raise ValueError(f"tick_size must be > 0, got {self.tick_size}")
+        if self.expiry_weekday is not None and not 0 <= self.expiry_weekday <= 6:
+            raise ValueError(f"expiry_weekday must be 0-6 or None, got {self.expiry_weekday}")
         if self.session_minutes <= 0:
             raise ValueError(f"session_close {self.session_close!r} must be "
                              f"after session_open {self.session_open!r}")
@@ -53,6 +56,11 @@ class MarketSpec:
         """Session open of ts's day, on ts's own wall clock."""
         return ts.replace(hour=self.open_t.hour, minute=self.open_t.minute,
                           second=0, microsecond=0)
+
+
+def is_expiry(d: date, spec: "MarketSpec") -> bool:
+    """Derivatives expiry day: weekday matches spec.expiry_weekday (None => never)."""
+    return spec.expiry_weekday is not None and d.weekday() == spec.expiry_weekday
 
 
 NSE = MarketSpec()

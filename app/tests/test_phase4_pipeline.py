@@ -66,7 +66,9 @@ def test_judas_two_day_orchestrator(tmp_path):
     must ARM, fill and close profitably. Day 2 gaps up +7: carried-over M5
     history keeps ATR/wyckoff live from the session open, so the same pivot
     re-scores above threshold (verdicts) but its cluster chains wider and
-    every arm attempt is REFUSED stop_too_wide -- journaled risk discipline."""
+    every arm attempt is REFUSED (chase guard at 11:00-11:15 -- B15's high-tier
+    OR/weekly pool strengths lift the re-score over threshold that early --
+    then stop_too_wide at the pivot) -- journaled risk discipline."""
     feed = ScenarioFeed([judas_reversal("ACME", DAY1, 100.0),
                          judas_reversal("ACME", DAY2, 107.0)])
     orch = Orchestrator(cfg(), feed, ["ACME"], capital=100000, max_qty=50,
@@ -101,7 +103,9 @@ def test_judas_two_day_orchestrator(tmp_path):
     day2 = orch.journal.read(DAY2)
     assert [e for e in day2 if e["kind"] == "verdict" and e["final"] >= threshold]
     day2_skips = [e for e in day2 if e["kind"] == "skip"]
-    assert day2_skips and all(e["reason"] == "stop_too_wide" for e in day2_skips)
+    assert day2_skips and any(e["reason"] == "stop_too_wide" for e in day2_skips)
+    assert all(e["reason"] == "stop_too_wide" or "chases" in e["reason"]
+               for e in day2_skips)
     assert not [e for e in day2 if e["kind"] == "trade_open"]
     assert set(summary) == {"trades", "wins", "losses", "pnl", "skips"}
     assert summary["skips"] == len([e for e in entries if e["kind"] == "skip"])
@@ -249,6 +253,26 @@ def test_partials_and_eod_exact_accounting(tmp_path):
     assert risk.daily_pnl_R == pytest.approx(float(expected / (D("5.05") * 50)))
     kinds = [e["kind"] for e in pipe.journal.read(t0.date())]
     assert "trade_open" in kinds and "trade_close" in kinds
+
+
+# ------------------------------------------------ 2a2. expiry sizing (B7)
+
+def test_expiry_day_halves_qty_and_journals(tmp_path):
+    """Thursday (NSE weekly expiry): effective arm qty is max_qty x
+    expiry_size_mult (50 x 0.5 = 25) and skip/verdict journal entries carry
+    an expiry flag; a non-expiry day is full size, no flag."""
+    thu = date(2026, 7, 16)                              # a Thursday
+    pipe, _ = make_pipeline(tmp_path)                    # max_qty 50
+    pipe.day = DayState(session_date=thu)
+    assert pipe._eff_qty() == 25
+    pipe._skip(datetime.combine(thu, time(11, 30), tzinfo=IST), "g", "r")
+    [skip] = pipe.journal.read(thu)
+    assert skip["expiry"] is True
+    pipe.day = DayState(session_date=DAY1)               # Tuesday
+    assert pipe._eff_qty() == 50
+    pipe._skip(datetime.combine(DAY1, time(11, 30), tzinfo=IST), "g", "r")
+    [skip2] = pipe.journal.read(DAY1)
+    assert "expiry" not in skip2
 
 
 # --------------------------------------------- 2b. stale/late pending plans

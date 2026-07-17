@@ -37,7 +37,7 @@ from trader.execution.paper import PaperBroker
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction
 from trader.models.level import TERMINAL, LevelKind
-from trader.models.market import _minutes
+from trader.models.market import _minutes, is_expiry
 from trader.models.position import Position, PositionStatus
 from trader.store.candles import CandleStore, _bucket_start
 from trader.store.journal import Journal
@@ -162,7 +162,7 @@ class SymbolPipeline:
             else:
                 opps = [z for z in zones
                         if z.direction.value == -top.direction.value]
-                res = self.fsm.arm(top, ctx, self.max_qty, opps)
+                res = self.fsm.arm(top, ctx, self._eff_qty(), opps)
                 if not res.armed:
                     self._skip(ctx.now, "fsm_arm", res.reason)
         step = self.fsm.step(ctx, evidence)      # this-candle evidence
@@ -240,11 +240,20 @@ class SymbolPipeline:
                 return Direction.SHORT
         return Direction.NEUTRAL
 
+    def _eff_qty(self) -> int:
+        """Size throttle: expiry-day mult (B7)."""
+        m = 1.0
+        if is_expiry(self.day.session_date, self.spec):
+            m *= self.s.risk.expiry_size_mult
+        return int(self.max_qty * m)
+
     def _skip(self, at, gate: str, reason: str) -> None:
         self.n_skips += 1
         self._log("skip", at=at, gate=gate, reason=reason)
 
     def _log(self, kind: str, **payload) -> None:
+        if kind in ("skip", "verdict") and is_expiry(self.day.session_date, self.spec):
+            payload["expiry"] = True
         self.journal.log(kind, {"symbol": self.symbol, **payload},
                          day=self.day.session_date, ts=payload.get("at"))
 

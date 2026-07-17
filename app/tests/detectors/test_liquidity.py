@@ -375,6 +375,20 @@ def test_proximity_evidence_for_untapped_pool_within_atr():
     assert ev.meta["event"] == "POOL_NEAR"
 
 
+@pytest.mark.parametrize("kind", [LevelKind.OPEN_RANGE_H, LevelKind.PWH])
+def test_high_tier_pool_proximity_strength(kind):
+    # B15 axiom 5: OR + weekly pools = 0.7 -> evidence strength 0.7 * 0.5
+    det = LiquidityDetector(DEFAULT_PARAMS)
+    pool = Level(id=f"X-{kind.name}-x", symbol="X", kind=kind,
+                 zone=(tick(116) - TICK, tick(116) + TICK),
+                 born=TODAY, tf=None, state=LevelState.ACTIVE)
+    ctx = _ctx_with_atr([pool])
+
+    [ev] = [e for e in det.detect(ctx) if e.meta.get("level_id") == pool.id]
+
+    assert ev.strength == pytest.approx(0.35)
+
+
 def test_eq_proximity_evidence_strength_value():
     # Two SWING_H born exactly at ctx.now -> recency = 1.0, touches = 2:
     # strength = (min(2/5, 1)*0.7 + 1.0*0.3) * 0.5 = 0.29

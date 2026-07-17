@@ -80,9 +80,11 @@ class MarketCfg(StrictModel):
     session_open: str = "09:15"
     session_close: str = "15:30"
     tick_size: float | str = "0.05"
+    expiry_weekday: int | None = Field(default=3, ge=0, le=6)
 
     def to_spec(self) -> MarketSpec:
-        return MarketSpec(self.tz, self.session_open, self.session_close, self.tick_size)
+        return MarketSpec(self.tz, self.session_open, self.session_close,
+                          self.tick_size, self.expiry_weekday)
 
     @model_validator(mode="after")
     def _valid_spec(self) -> "MarketCfg":  # MarketSpec rejects bad times / tick <= 0

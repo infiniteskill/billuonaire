@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, time
+from datetime import date, datetime, time
 from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -8,7 +8,7 @@ import pytest
 
 from trader.config import Settings, load_settings
 from trader.models.candle import Candle, Timeframe, tick
-from trader.models.market import NSE, MarketSpec
+from trader.models.market import NSE, MarketSpec, is_expiry
 from trader.store.candles import CandleStore
 
 CRYPTO = MarketSpec(tz="UTC", session_open="00:00", session_close="24:00",
@@ -35,10 +35,28 @@ def test_quantize_parity_with_legacy_tick():
     {"tick_size": "0"}, {"tick_size": "-0.05"},          # tick <= 0
     {"session_open": "9:15"}, {"session_close": "25:00"},  # malformed times
     {"session_open": "15:30", "session_close": "09:15"},   # close before open
+    {"expiry_weekday": 7}, {"expiry_weekday": -1},          # weekday out of range
 ])
 def test_invalid_spec_rejected(kw):
     with pytest.raises(ValueError):
         MarketSpec(**kw)
+
+
+def test_is_expiry():
+    assert NSE.expiry_weekday == 3                          # Thursday default
+    assert is_expiry(date(2026, 7, 16), NSE)                # a Thursday
+    assert not is_expiry(date(2026, 7, 15), NSE)            # Wednesday
+    assert not is_expiry(date(2026, 7, 16), MarketSpec(expiry_weekday=None))
+
+
+def test_expiry_weekday_config_roundtrip():
+    data = json.loads(TEMPLATE.read_text())
+    assert Settings.model_validate(data).market_spec().expiry_weekday == 3
+    data["market"]["expiry_weekday"] = None                 # spot-only market
+    assert Settings.model_validate(data).market_spec().expiry_weekday is None
+    data["market"]["expiry_weekday"] = 9
+    with pytest.raises(Exception):
+        Settings.model_validate(data)
 
 
 def test_settings_market_spec_roundtrip():

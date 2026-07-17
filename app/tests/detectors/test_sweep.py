@@ -110,6 +110,20 @@ def test_touches_bonus():
     assert ev.strength == pytest.approx(0.90)
 
 
+def test_open_range_pool_strength_high_tier():
+    # B15 axiom 5: OR pool 0.7 -> 0.4 + 0.25*0.7 = 0.575 (no daily/weekly kind bonus)
+    ctx = make_ctx(levels=[lvl(LevelKind.OPEN_RANGE_L, bar_ts(5))])
+    [ev] = SweepDetector({}).detect(ctx)
+    assert ev.strength == pytest.approx(0.575)
+
+
+def test_pwl_pool_strength_high_tier_plus_weekly_bonus():
+    # pool 0.7 + weekly kind: 0.4 + 0.25*0.7 + 0.15 = 0.725
+    ctx = make_ctx(levels=[lvl(LevelKind.PWL, bar_ts(5))])
+    [ev] = SweepDetector({}).detect(ctx)
+    assert ev.strength == pytest.approx(0.725)
+
+
 def test_eql_pool_strength_recomputed():
     # EQL touches=2 born=now: pool = 2/5*0.7 + 1.0*0.3 = 0.58 -> 0.4+0.25*0.58
     ctx = make_ctx(levels=[])
