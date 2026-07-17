@@ -112,13 +112,26 @@ def _tap(pipe, sink: list) -> None:
 
 
 def run_study(settings: Settings, feed, symbols: list[str],
-              index: str | None, out_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+              index: str | None, out_dir: Path,
+              enable_only: list[str] | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Run the study; write out_dir/evidence.parquet (csv fallback) +
-    summary.csv; return (evidence df, per-(detector,event) summary df)."""
+    summary.csv; return (evidence df, per-(detector,event) summary df).
+
+    ``enable_only``: measure EXACTLY this detector set (in this order) instead
+    of force-enabling every registered detector. Use it to avoid cross-detector
+    contamination via shared ``ctx.levels`` (e.g. ob_lux + orderblock both
+    writing OB_* levels doubles the pool); the enabled set IS saved next to the
+    output for provenance. None -> the legacy all-detectors behavior."""
     out_dir = Path(out_dir)
     s = settings.model_copy(deep=True)
-    s.detectors.enabled += [n for n in sorted(REGISTRY)
-                            if n not in s.detectors.enabled]
+    if enable_only is not None:
+        unknown = [n for n in enable_only if n not in REGISTRY]
+        if unknown:
+            raise ValueError(f"unknown detector(s): {unknown}; known: {sorted(REGISTRY)}")
+        s.detectors.enabled = list(enable_only)
+    else:
+        s.detectors.enabled += [n for n in sorted(REGISTRY)
+                                if n not in s.detectors.enabled]
     work = out_dir / "work"                       # scratch journal, wiped
     shutil.rmtree(work, ignore_errors=True)
     orch = Orchestrator(s, feed, symbols, index_symbol=index, max_qty=1,

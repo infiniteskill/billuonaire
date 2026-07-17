@@ -444,12 +444,17 @@ def study(
     to: Optional[str] = typer.Option(None, "--to", help="End date YYYY-MM-DD."),
     index: Optional[str] = typer.Option(None, "--index",
                                         help="Index symbol (default config, else NIFTY)."),
+    only: Optional[str] = typer.Option(None, "--only",
+                                       help="Comma-separated detectors to enable EXACTLY "
+                                       "(avoids cross-detector level contamination; "
+                                       "default: all registered)."),
     dir: Path = typer.Option(Path("."), "--dir", help="Config directory."),
 ) -> None:
     """Detector-accuracy study: run the real pipeline over the data with ALL
-    detectors enabled, log every evidence with forward outcomes vs a seeded
-    same-session time-bucket baseline, write out/evidence.parquet +
-    out/summary.csv, and print the per-(detector,event) edge table."""
+    detectors enabled (or exactly ``--only`` set), log every evidence with
+    forward outcomes vs a seeded same-session time-bucket baseline, write
+    out/evidence.parquet + out/summary.csv, and print the per-(detector,event)
+    edge table."""
     from datetime import date as _date
 
     from trader.tools.study import run_study
