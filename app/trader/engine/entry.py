@@ -36,9 +36,10 @@ journalling the skip/disarm reasons returned here.
   QTY      min(max_qty, floor(capital x per_trade_pct% / risk),
            floor(capital x leverage / entry)) -- the notional cap keeps
            risk-derived size fundable on intraday margin; 0 => skip
-           "qty_zero". Expected round-trip costs (2 x brokerage_flat + pct
-           turnover both legs at entry) > max_cost_risk_ratio x (qty x risk)
-           => skip "costs_dominate" (flat costs swamp micro risk amounts).
+           "qty_zero". Round-trip costs (shared PaperBroker costing: STT
+           sell-leg only, both legs at entry) > max_cost_reward_ratio x
+           expected reward to T1 (|T1 - entry| x qty) => skip
+           "costs_dominate" (the trade must PAY for its friction).
   TRIGGER  latest closed M5 enters the zone AND (rejection wick >= 60% of
            range off the far side | same-direction CHoCH/VSA evidence
            overlapping the zone, stamped in (c.ts, c.ts + 5m]).
@@ -56,6 +57,7 @@ from enum import Enum, auto
 
 from trader.config import Settings
 from trader.engine.confluence import ScoredZone
+from trader.execution.paper import round_trip_cost
 from trader.engine.context import StockContext, live_evidence
 from trader.models.candle import Timeframe
 from trader.models.evidence import Direction, Evidence
@@ -149,11 +151,9 @@ class EntryFSM:
         qty = min(max_qty, int(budget // risk), int(notional // entry))
         if qty <= 0:
             return ArmResult(False, "qty_zero")
-        c = self.s.fills.costs
-        rt = 2 * (Decimal(str(c.brokerage_flat))
-                  + (Decimal(str(c.stt_pct)) + Decimal(str(c.exchange_pct)))
-                  / 100 * entry * qty)
-        if rt > Decimal(str(self.s.risk.max_cost_risk_ratio)) * risk * qty:
+        reward = abs(targets[0] - entry) * qty       # expected reward to T1
+        if round_trip_cost(self.s.fills.costs, entry, qty) > (
+                Decimal(str(self.s.risk.max_cost_reward_ratio)) * reward):
             return ArmResult(False, "costs_dominate")
         meta = {"final": zone.final, "mults": dict(zone.mults),
                 "entry": str(entry), "risk_pts": str(risk),

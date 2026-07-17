@@ -188,18 +188,19 @@ def test_arm_notional_cap_exact_and_leverage_config():
         zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 1000).plan
     assert p.qty == 202
     s = Settings.model_validate_json(CONFIG.read_text())
-    assert (s.risk.leverage, s.risk.max_cost_risk_ratio) == (5.0, 0.2)
+    assert (s.risk.leverage, s.risk.max_cost_reward_ratio) == (5.0, 0.15)
 
 
-def test_arm_costs_dominate_boundary():
-    # qty 100, floor risk 2.00, entry 99.00, pct (0.05+0.05)% => pct legs
-    # 2 x 9.90 = 19.80; risk amount 200, cap 0.2 x 200 = 40. flat 10.1 =>
-    # rt exactly 40 (== cap, strict > so it ARMS); flat 10.11 => rt 40.02
-    # > 40 skips costs_dominate.
+def test_arm_costs_dominate_boundary_vs_reward():
+    # Viability judges costs against the REWARD to T1, not risk: qty 100,
+    # entry 99.00, T1 102.50 => reward 350; cap 0.15 x 350 = 52.50. Round
+    # trip = 2 x flat + (stt + 2 x exch)% x turnover -- STT once (sell leg
+    # only, shared broker costing) = 2f + 14.85. flat 18.825 => rt exactly
+    # 52.50 (== cap, strict > so it ARMS); 18.83 => 52.51 skips.
     base = {"fills.costs.stt_pct": 0.05, "fills.costs.exchange_pct": 0.05}
     args = (zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 100)
-    assert fsm_cfg({**base, "fills.costs.brokerage_flat": 10.1}).arm(*args).armed
-    r = fsm_cfg({**base, "fills.costs.brokerage_flat": 10.11}).arm(*args)
+    assert fsm_cfg({**base, "fills.costs.brokerage_flat": 18.825}).arm(*args).armed
+    r = fsm_cfg({**base, "fills.costs.brokerage_flat": 18.83}).arm(*args)
     assert (r.armed, r.reason) == (False, "costs_dominate")
 
 

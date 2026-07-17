@@ -21,7 +21,7 @@
     "max_correlated_positions": 2,
     "min_minutes_between_trades": 15,
     "leverage": 5.0,
-    "max_cost_risk_ratio": 0.2
+    "max_cost_reward_ratio": 0.15
   },
   "time": {
     "observe_until": "11:00",

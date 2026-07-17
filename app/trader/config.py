@@ -24,7 +24,7 @@ class RiskCfg(StrictModel):
     min_minutes_between_trades: int = Field(default=15, ge=0)  # B11 cooldown
     range_pin_size_mult: float = Field(default=0.5, gt=0)    # fade edges half-size
     leverage: float = Field(default=5.0, gt=0)               # NSE MIS notional cap
-    max_cost_risk_ratio: float = Field(default=0.2, gt=0)    # rt costs vs qty x risk
+    max_cost_reward_ratio: float = Field(default=0.15, gt=0)  # rt costs vs T1 reward
 
 
 class TimeCfg(StrictModel):

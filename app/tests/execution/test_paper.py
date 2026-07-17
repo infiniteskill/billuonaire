@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from trader.config import Settings
-from trader.execution.paper import PaperBroker
+from trader.execution.paper import PaperBroker, leg_cost, round_trip_cost
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction
 from trader.models.position import Fill, Position
@@ -109,3 +109,13 @@ def test_costs_buy_leg_no_stt_on_cover(broker):
     f = broker.exit_fill(position(Direction.SHORT, qty=1000), candle(100),
                          1000, price=D("100"))
     assert f.costs == D("22.97")
+
+
+def test_shared_costing_helpers_stt_once_per_round_trip():
+    # leg_cost is THE costing truth (broker fills + entry viability gate):
+    # SELL 47.97 / BUY 22.97 at 100 x 1000; a round trip charges STT
+    # exactly once = 70.94.
+    c = Settings.model_validate_json(CONFIG.read_text()).fills.costs
+    assert leg_cost(c, D("100"), 1000, True) == D("47.97")
+    assert leg_cost(c, D("100"), 1000, False) == D("22.97")
+    assert round_trip_cost(c, D("100"), 1000) == D("70.94")

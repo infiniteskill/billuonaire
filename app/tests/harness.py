@@ -60,7 +60,7 @@ def scenario_settings(enabled: tuple = PHASE2) -> Settings:
     economics are unit-tested in tests/engine/test_entry.py."""
     raw = json.loads(CONFIG.read_text())
     raw["detectors"]["enabled"] = list(enabled)
-    raw["risk"]["max_cost_risk_ratio"] = 1000.0
+    raw["risk"]["max_cost_reward_ratio"] = 1000.0
     return Settings.model_validate(raw)
 
 
