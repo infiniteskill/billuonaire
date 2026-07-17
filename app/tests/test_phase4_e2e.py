@@ -114,9 +114,10 @@ def test_judas_armed_zone_and_long_open(judas):
     assert opens, "no trade_open journaled on judas day"
     o = opens[0]
     assert o["direction"] == "LONG" and _at(o).time() >= POST_OBSERVE
-    # SL beyond the PIVOT swept level zone (the entry cluster's trap extreme,
-    # per diagnosis amendment) — the morning ORL zone is a different trap.
-    assert D(o["stop"]) < min(judas.scenario.truth["pivot_zone"])
+    # SL behind the TRADED zone (tightest level inside the entry cluster);
+    # the cluster itself still anchors at the swept pivot (floor = pivot lo).
+    assert D(o["stop"]) < D(o["zone"][0])
+    assert D(o["plan"]["cluster"][0]) == min(judas.scenario.truth["pivot_zone"])
     assert MULT_KEYS <= set(o["plan"]["mults"])
 
 
@@ -149,7 +150,9 @@ def test_double_trap_no_trades_before_second_reclaim(double_trap_day):
 
 
 # (5) stop_hunt_survive: wick-through survives, pinned to THE hunt bucket,
-# rides >= 1R gross and closes at target (B1: targets execute; flat brokerage
+# targets execute as partials (B1) and the runner rides >= 1R gross to EOD
+# (traded-zone entries carry tiny risk, so R-fallback targets collapse into
+# T1 and the remainder always outlives the target ladder; flat brokerage
 # swamps net r at this scenario's tiny notional, so gross price R is asserted)
 def test_stop_hunt_survive_holds_through_hunt(tmp_path):
     run = _run_day(stop_hunt_survive, tmp_path)
@@ -159,10 +162,12 @@ def test_stop_hunt_survive_holds_through_hunt(tmp_path):
     bucket = truth["hunt_minute"] - truth["hunt_minute"] % 5
     hunt_close = run.scenario.session_open() + timedelta(minutes=bucket + 5)
     assert _at(hunts[0]) == hunt_close
-    lo, hi = truth["stop_zone"]
-    assert lo <= D(hunts[0]["stop"]) <= hi
+    # stop behind the TRADED zone (the pivot level itself), hunt wick pierced
+    # it and the close-confirm held
+    assert D(hunts[0]["stop"]) < min(truth["pivot_zone"])
     o, c = _kind(run.entries, "trade_open")[0], _kind(run.entries, "trade_close")[-1]
-    assert c["reason"] == ExitReason.TARGET.value          # ran all the way to T3
+    assert _kind(run.entries, "trade_partial"), "targets did not execute"
+    assert c["reason"] == ExitReason.EOD.value             # runner squared off
     risk = D(o["price"]) - D(o["stop"])
     assert (D(c["exit_price"]) - D(o["price"])) / risk >= 1
 

@@ -256,7 +256,8 @@ class SymbolPipeline:
                 self.n_trades += 1
                 self._log("trade_open", at=fill.ts, direction=plan.direction,
                           qty=plan.qty, price=fill.price, stop=plan.stop,
-                          targets=plan.targets, costs=fill.costs, plan=plan.meta)
+                          zone=list(plan.entry_zone), targets=plan.targets,
+                          costs=fill.costs, plan=plan.meta)
         pos = self.position
         for a in self._pending_exits:
             if pos is None:

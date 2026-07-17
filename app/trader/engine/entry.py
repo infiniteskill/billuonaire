@@ -6,7 +6,12 @@ journalling the skip/disarm reasons returned here.
 
   ARM      only with price approaching (06 §4): latest closed M5 close
            within arm_proximity_atr x ATR of the zone, else skip "too_far"
-           (far zones must not arm and burn TTL).
+           (far zones must not arm and burn TTL). The TRADED zone is the
+           tightest non-terminal level overlapping the cluster (nearest the
+           last close on span ties; fallback: cluster span) -- real clusters
+           span several ATR and armed only to die stop_too_wide. The cluster
+           stays the scoring zone; entry/stop/trigger work off the traded
+           zone.
   STOP     zone far edge, pushed past any swept-trap extreme (level with
            SWEPT history overlapping the zone), buffered by atr_buffer x ATR;
            if within 2 ticks of a ROUND level edge, landed round_offset_ticks
@@ -46,7 +51,7 @@ from trader.engine.confluence import ScoredZone
 from trader.engine.context import StockContext, live_evidence
 from trader.models.candle import Timeframe
 from trader.models.evidence import Direction, Evidence
-from trader.models.level import LevelKind, LevelState
+from trader.models.level import TERMINAL, LevelKind, LevelState
 from trader.models.market import MarketSpec
 from trader.models.signal import TradePlan
 
@@ -102,14 +107,16 @@ class EntryFSM:
 
     def arm(self, zone: ScoredZone, ctx: StockContext, max_qty: int,
             opps: list[ScoredZone] = ()) -> ArmResult:
-        lo, hi = zone.zone
         up = zone.direction is Direction.LONG
         atr = ctx.atr(Timeframe.M5) or Decimal(0)
-        if last := ctx.candles.last(1, Timeframe.M5):
+        last = ctx.candles.last(1, Timeframe.M5)
+        lo, hi = self._traded_zone(zone.zone, ctx,
+                                   last[-1].close if last else None)
+        if last:
             gap = max(lo - last[-1].close, last[-1].close - hi)
             if gap > Decimal(str(self.s.entry.arm_proximity_atr)) * atr:
                 return ArmResult(False, "too_far")
-        entry = self.spec.quantize((lo + hi) / 2)    # zone CE
+        entry = self.spec.quantize((lo + hi) / 2)    # traded-zone CE
         stop, unsnapped = self._stop(lo, hi, up, atr, ctx)
         risk, max_risk = abs(entry - stop), Decimal(str(self.s.entry.max_stop_atr)) * atr
         snap_skipped = False
@@ -118,7 +125,7 @@ class EntryFSM:
             if un_risk > max_risk:
                 return ArmResult(False, "stop_too_wide")
             stop, risk, snap_skipped = unsnapped, un_risk, True  # snap vaulted past budget
-        targets = self._targets(entry, risk, up, (lo, hi), ctx, opps)
+        targets = self._targets(entry, risk, up, zone.zone, ctx, opps)
         if targets is None:
             return ArmResult(False, "no_room")
         budget = (Decimal(str(self.s.capital))
@@ -127,13 +134,32 @@ class EntryFSM:
         if qty <= 0:
             return ArmResult(False, "qty_zero")
         meta = {"final": zone.final, "mults": dict(zone.mults),
-                "entry": str(entry), "risk_pts": str(risk)}
+                "entry": str(entry), "risk_pts": str(risk),
+                "cluster": [str(zone.zone[0]), str(zone.zone[1])]}
         if snap_skipped:
             meta["snap_skipped"] = True
         plan = TradePlan(ctx.symbol, zone.direction, (lo, hi), stop, targets,
                          qty, zone.final, ctx.now, meta)
         self.state, self.plan, self._armed_ts = EntryState.ARMED, plan, ctx.now
         return ArmResult(True, plan=plan)
+
+    def _traded_zone(self, cluster, ctx, ref) -> tuple[Decimal, Decimal]:
+        """The tightest live level inside the cluster, nearest ``ref`` (last
+        close) on span ties: the actual level being traded. Only levels
+        STRICTLY tighter than the cluster qualify -- the traded zone may
+        never widen. Fallback: the cluster span itself."""
+        lo, hi = cluster
+        cands = [lv.zone for lv in ctx.levels
+                 if lv.symbol == ctx.symbol and lv.state not in TERMINAL
+                 and _overlaps(lv.zone, cluster)
+                 and max(lv.zone) - min(lv.zone) < hi - lo]
+        if not cands:
+            return lo, hi
+        mid = lambda z: (min(z) + max(z)) / 2                 # noqa: E731
+        z = min(cands, key=lambda z: (max(z) - min(z),
+                                      abs(mid(z) - ref) if ref is not None
+                                      else 0))
+        return min(z), max(z)
 
     def _stop(self, lo, hi, up, atr, ctx) -> tuple[Decimal, Decimal]:
         """Returns (snapped, unsnapped) -- caller falls back to unsnapped if

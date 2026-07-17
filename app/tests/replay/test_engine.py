@@ -38,7 +38,8 @@ def test_gate_replay_matches_scenariofeed(tmp_path):
                capital=CAPITAL, max_qty=MAX_QTY)
     live = Journal(tmp_path / "live").read(DAY)
     kinds = {e["kind"] for e in live}
-    assert {"verdict", "trade_open", "trade_close", "skip"} <= kinds  # non-vacuous
+    # non-vacuous (no skip since traded-zone stops killed stop_too_wide here)
+    assert {"verdict", "trade_open", "trade_partial", "trade_close"} <= kinds
     assert Journal(tmp_path / "replay").read(DAY) == live
 
 
@@ -53,7 +54,7 @@ def two_day_csv(tmp_path_factory):
 
 def test_replay_multi_day_sessions(two_day_csv, tmp_path):
     """One run spans both sessions: day 1 trades; day 2 is processed with
-    day-1 levels carried (its identical setup now reads stop_too_wide)."""
+    day-1 levels carried (its identical setup re-arms on the traded zone)."""
     cfg = load_settings(CONFIG)
     summary = run_replay(cfg, two_day_csv, ["ACME"], DAY, DAY2, tmp_path,
                          capital=CAPITAL, max_qty=MAX_QTY)

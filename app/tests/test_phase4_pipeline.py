@@ -69,10 +69,11 @@ def test_judas_two_day_orchestrator(tmp_path):
     """Day 1: the canonical reversal cluster (distinct>=4 LONG at the pivot)
     must ARM, fill and close profitably. Day 2 gaps up +7: carried-over M5
     history keeps ATR/wyckoff live from the session open, so the same pivot
-    re-scores above threshold (verdicts) but its cluster chains wider and
-    every arm attempt is REFUSED (chase guard at 11:00-11:15 -- B15's high-tier
-    OR/weekly pool strengths lift the re-score over threshold that early --
-    then stop_too_wide at the pivot) -- journaled risk discipline."""
+    re-scores above threshold early and the chase guard REFUSES 11:00-11:15
+    (B15's high-tier OR/weekly pool strengths lift the re-score over
+    threshold that early); at the 12:50 pivot the traded-zone stop is tight
+    enough to arm (cluster-span stops used to die stop_too_wide here) and
+    day 2 trades the same reversal."""
     feed = ScenarioFeed([judas_reversal("ACME", DAY1, 100.0),
                          judas_reversal("ACME", DAY2, 107.0)])
     orch = Orchestrator(cfg(), feed, ["ACME"], capital=100000, max_qty=50,
@@ -92,29 +93,28 @@ def test_judas_two_day_orchestrator(tmp_path):
     armable = [v for v in verdicts if v["final"] >= threshold]
     assert armable and all(v["direction"] == "LONG" and v["distinct"] >= 4
                            and v["template"] == "TRAP_REVERSAL" for v in armable)
-    # day 1 arms at the 12:50 pivot; the T2-clamp drops the 2.5R fallback
-    # (101.10, inside T1 101.20) and promotes the old T3 101.45 into the T2
-    # slot: partials 1R then T2 AT 101.45, runner rides the trail to a
-    # profitable EOD squareoff (net win even at this tiny notional)
+    # day 1 arms at the 12:50 pivot on the TRADED zone (tightest level in
+    # the cluster, stop 100.50 behind it; risk 0.10 collapses the R-fallback
+    # ladder into T1): partials 1R + 2R, runner rides to EOD squareoff
     day1 = orch.journal.read(DAY1)
     opens = [e for e in day1 if e["kind"] == "trade_open"]
     closes = [e for e in day1 if e["kind"] == "trade_close"]
     parts = [e for e in day1 if e["kind"] == "trade_partial"]
     assert len(opens) == 1 and opens[0]["direction"] == "LONG"
-    assert opens[0]["at"][11:16] == "12:50" and opens[0]["stop"] == "100.20"
-    assert [p["reason"] for p in parts] == ["1R", "T2"]
-    assert D(parts[1]["price"]) == D("101.45")
+    assert opens[0]["at"][11:16] == "12:50" and opens[0]["stop"] == "100.50"
+    assert D(opens[0]["stop"]) < D(opens[0]["zone"][0])   # behind traded zone
+    assert [p["reason"] for p in parts] == ["1R", "2R"]
     assert len(closes) == 1 and closes[0]["reason"] == ExitReason.EOD.value
     assert D(closes[0]["exit_price"]) > D(opens[0]["price"])
-    assert summary["trades"] == 1 and summary["wins"] == 1
-    # day 2: pivot re-scores above threshold, but arms are refused
+    # day 2: chase guard refuses the early over-threshold re-score, then the
+    # 12:50 pivot arms on its traded zone and wins (was stop_too_wide x3)
     day2 = orch.journal.read(DAY2)
     assert [e for e in day2 if e["kind"] == "verdict" and e["final"] >= threshold]
     day2_skips = [e for e in day2 if e["kind"] == "skip"]
-    assert day2_skips and any(e["reason"] == "stop_too_wide" for e in day2_skips)
-    assert all(e["reason"] == "stop_too_wide" or "chases" in e["reason"]
-               for e in day2_skips)
-    assert not [e for e in day2 if e["kind"] == "trade_open"]
+    assert day2_skips and all("chases" in e["reason"] for e in day2_skips)
+    day2_opens = [e for e in day2 if e["kind"] == "trade_open"]
+    assert len(day2_opens) == 1 and day2_opens[0]["at"][11:16] == "12:50"
+    assert summary["trades"] == 2 and summary["wins"] == 2
     assert set(summary) == {"trades", "wins", "losses", "pnl", "skips"}
     assert summary["skips"] == len([e for e in entries if e["kind"] == "skip"])
 

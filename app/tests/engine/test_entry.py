@@ -83,16 +83,20 @@ def test_arm_plain_far_edge_buffer_and_qty_floor(fsm):
 def test_arm_sweep_trap_round_snap_targets_decimal(fsm):
     levels = [lvl(LevelKind.SWING_L, "97.40", "98.50", LevelState.SWEPT, SWEPT),
               lvl(LevelKind.ROUND, "96.95", "96.95"),
-              lvl(LevelKind.SWING_H, "100.50", "101.00"),   # < 1.5R: not T1
+              lvl(LevelKind.SWING_H, "100.50", "101.00"),
               lvl(LevelKind.SWING_H, "102.40", "102.80"),
               lvl(LevelKind.SWING_H, "104.00", "104.50"),
               lvl(LevelKind.PDH, "106.00", "106.10")]
     p = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000).plan
-    # trap extreme 97.40 - 0.50 buffer = 96.90; within 2 ticks of round 96.95
-    # => landed 3 ticks PAST the round far edge; risk 99.00 - 96.80 = 2.20
+    # traded zone = swept SWING_L (span 1.10, the only tighter overlap):
+    # entry CE 97.95; trap extreme 97.40 - 0.50 buffer = 96.90; within
+    # 2 ticks of round 96.95 => landed 3 ticks PAST the round far edge;
+    # risk 97.95 - 96.80 = 1.15 (1.5R = 1.725 so 100.50 qualifies as T1)
+    assert p.entry_zone == (D("97.40"), D("98.50"))
+    assert p.meta["cluster"] == ["98.00", "100.00"]  # scoring zone kept intact
     assert p.stop == D("96.80")
-    assert p.targets == [D("102.40"), D("104.00"), D("106.00")]
-    assert p.qty == 227                             # floor(500 / 2.20)
+    assert p.targets == [D("100.50"), D("102.40"), D("106.00")]
+    assert p.qty == 434                             # floor(500 / 1.15)
     assert all(isinstance(x, Decimal) and x % D("0.05") == 0
                for x in [p.stop, *p.targets, *p.entry_zone])
 
@@ -107,8 +111,10 @@ def test_arm_stop_too_wide_skips(fsm):
 # vaults it to 2.55 > budget => arm with the un-snapped stop instead of
 # dying stop_too_wide (trap 97.15 - buf 0.50 = 96.65; ROUND edge 96.60 is
 # within 2 ticks of 96.65 so snap would land 96.45, budget-breaching).
+# The swept SWING_L spans 3.35 > cluster 2.00, so it is a trap extreme but
+# NOT the traded zone (traded zone never widens): entry stays CE 99.00.
 def test_arm_prefers_unsnapped_stop_over_stop_too_wide(fsm):
-    levels = [lvl(LevelKind.SWING_L, "97.15", "98.50", LevelState.SWEPT, SWEPT),
+    levels = [lvl(LevelKind.SWING_L, "97.15", "100.50", LevelState.SWEPT, SWEPT),
               lvl(LevelKind.ROUND, "96.60", "96.60"),
               lvl(LevelKind.SWING_H, "103.00", "103.50")]
     r = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000)
@@ -138,6 +144,43 @@ def test_arm_no_room_skips(fsm):  # only opposing level is < 1.5R away
 def test_arm_qty_zero_skips(fsm):
     r = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 0)
     assert (r.armed, r.reason) == (False, "qty_zero")
+
+
+# --- traded zone: tightest overlapping level, not the cluster span ---
+
+def test_arm_tightens_to_tightest_overlapping_level(fsm):
+    levels = [lvl(LevelKind.OB_BULL, "98.60", "99.20"),      # span 0.60: traded
+              lvl(LevelKind.SWING_L, "97.80", "99.00"),      # span 1.20: wider
+              t_lvl()]
+    p = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000).plan
+    assert p.entry_zone == (D("98.60"), D("99.20"))
+    assert p.meta["cluster"] == ["98.00", "100.00"]
+    assert p.meta["entry"] == "98.90"                        # traded-zone CE
+    assert p.stop == D("98.10")            # behind the TRADED zone: 98.60-0.50
+
+
+def test_traded_zone_tie_breaks_nearest_close(fsm):
+    # two span-0.60 levels; last close 100 => the nearer (higher) one wins
+    levels = [lvl(LevelKind.OB_BULL, "98.10", "98.70"),
+              lvl(LevelKind.FVG_BULL, "99.20", "99.80"), t_lvl()]
+    p = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000).plan
+    assert p.entry_zone == (D("99.20"), D("99.80"))
+
+
+def test_traded_zone_ignores_terminal_and_wider_levels(fsm):
+    levels = [lvl(LevelKind.OB_BULL, "98.60", "99.20", LevelState.DEAD),  # dead
+              lvl(LevelKind.SWING_L, "97.00", "100.50"),  # span 3.50 >= cluster
+              t_lvl()]
+    p = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000).plan
+    assert p.entry_zone == (D("98.00"), D("100.00"))      # fallback: cluster
+
+
+def test_arm_too_far_from_traded_zone_skips(fsm):
+    # close 100 touches the CLUSTER, but the traded level sits 4.00 below
+    # (> 1xATR): the level being traded is far => too_far, no TTL burn
+    levels = [lvl(LevelKind.OB_BULL, "95.60", "96.00")]
+    r = fsm.arm(zone("95.50", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000)
+    assert (r.armed, r.reason) == (False, "too_far")
 
 
 # --- arm proximity (06 §4: price must be approaching, within 1 x ATR) ---
