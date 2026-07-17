@@ -69,3 +69,37 @@ level on the cross-sectional holdout stocks before committing to production weig
 One 2026 window, 20 survivor-selected liquid names. "Validated" = validated on THIS.
 Forward accrual still required before treating as proven. But 2-axis holdout stability
 is a genuinely strong signal — much stronger than anything tuned on the time split alone.
+
+---
+# Multi-timeframe + dedicated-FVG head-to-head (2026-07-17b)
+
+## Edge GROWS with timeframe — the answer to the M5 cost-floor problem
+Same measurement across bucket sizes (holdout = validate days / cross-sect stock-set B):
+
+| concept | M3 | M5 | M10 | M15 |
+|---|---|---|---|---|
+| **LuxAlgo OB** | +9.0 | +10.4 | +11.2 | **+13.8** (val +16.6, x-B +17.8) |
+| FVG ours | −1.8 | +2.6 | **+8.7** | +5.0 |
+| Prem/Discount | +3.3 | +3.5 | +3.6 | +3.2 |
+
+Higher TF = bigger edge + WIDER (cost-viable) stops + fewer-better trades. The earlier
+M2/M4 question is answered backwards: go SLOWER. **System sweet spot ≈ M10–M15**, not M5.
+(M5 stops ~0.27×ATR were sub-cost-floor; M15 stops ~3× wider clear ₹40 flat brokerage.)
+
+## Dedicated LuxAlgo FVG (user-supplied "Fair Value Gap [LuxAlgo]") vs ours
+Its adds over ours: (a) displacement bar must CLOSE beyond the gap origin
+(`close[1] > high[2]`), (b) gap-size threshold = auto mean-bar-range-% (not 0.3×ATR).
+
+| FVG def / event | M5 retest | M5 CE-hold | M10 retest | M10 CE-hold |
+|---|---|---|---|---|
+| ours | +2.7 | +10.4 | +8.7 | +9.1 |
+| **lux-dedicated** | +6.7 | +10.7 (val +13.2) | **+12.3** (val +11.5) | **+12.4** (val +12.0, x-B +14.1) |
+
+The CLOSE-BEYOND filter is the ingredient — it discards weak gaps, lifting retest edge
+2.5×. Best at M10. **Adopt the close-beyond requirement.** (Note: differs from the
+SMC-embedded FVG which used body-% and tied — the dedicated def with close-beyond wins.)
+
+## Combined takeaway
+At **M10** both winners peak with strong holdout: LuxAlgo OB +11.2% and lux-FVG +12.4%.
+M10 also gives cost-viable stops. Strong hypothesis: **rebuild the decision TF to M10-M15**
++ adopt LuxAlgo OB anchor + FVG close-beyond. Still needs portfolio-replay economic test.

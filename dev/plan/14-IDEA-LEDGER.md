@@ -33,7 +33,7 @@ Status: `proposed` → `validating` → `validated(OOS)` → `applied` | `reject
 |---|---|---|---|---|
 | P1 | **Premium/Discount gate** (buy discount/sell premium) | **TESTED: +3.3% standalone, holdout-stable** (16-OB-VALIDATION) — modest; best as a filter on other signals | validating | test as GATE on armed signals, portfolio replay |
 | P2 | Vol-adjusted OB anchor (swap H/L on ≥2×ATR bars; extreme-of-leg, size 8) | **VALIDATED 2 axes**: +10.4% vs our +4.4%; temporal val +9.3%, x-sect both stock-sets +10.1/+10.8% (`16-OB-VALIDATION.md`) | **validated(OOS, 2 axes)** | remaining: bootstrap CI + portfolio replay + forward month |
-| P3 | FVG lux stricter gap def | **TESTED: TIE** (+2.8 lux vs +2.4 ours, same event rule) — edge is in CE-hold event not gap def | rejected | keep ours |
+| P3 | FVG: adopt CLOSE-BEYOND requirement (dedicated LuxAlgo FVG) | **TESTED: WINS** — lux-dedicated retest +6.7 vs ours +2.7 (M5), +12.3 vs +8.7 (M10); close-beyond filter is the ingredient | validating | portfolio replay |
 | P4 | EQH/EQL tolerance → ATR-relative | **TESTED: mild win** (−3.0 vs −5.5% on naive sweep, both axes) | validating | confirm on production sweep |
 | P5 | Volume-in-zone liquidity strength | **TESTED: doesn't help** (high-vol −5.0 vs low-vol −1.1). BUT touch-count is INVERTED (high −10.6 / low +6.5) — fresh levels win | rejected(volume); NEW S15 (invert touches) |
 | P6 | Strong/Weak High/Low tagging (trend-relative wall vs draw) | sharper targets + sweep direction | parked | design later |
@@ -46,7 +46,7 @@ Status: `proposed` → `validating` → `validated(OOS)` → `applied` | `reject
 | E2 | cage/options detector (needs Kite OI) | parked (Phase 6) |
 | E3 | Position/RiskState persistence (crash recovery) | proposed (live phase) |
 | E4 | NSE holiday calendar | proposed |
-| E5 | M2/M4 decision-TF | parked (study said not the constraint) |
+| E5 | Decision-TF | **TESTED multi-TF: edge GROWS with TF; M10-M15 sweet spot** (OB +13.8% M15, FVG +12.4% M10, cost-viable stops). Go SLOWER not faster. Big rebuild candidate | validating(strong) | portfolio replay at M10/M15 |
 
 ## The overriding risk
 Every S-row was tuned on ONE regime (rangebound Jun–Jul 2026, contiguous split). The
