@@ -104,6 +104,29 @@ Stacking proven NOT to lift causally (A2), and RR≠hit-edge (A3), so the grid h
 Output `runs/val50/combos.md`: ranked best (detector, exit-target, filter-set) configs by causal
 holdout expectancy. RUN ON CLEAN DATA ONLY (v2-only + F-fix) — contaminated/pre-fix evidence misleads.
 
+## A6. ECONOMIC GATE — FADE THESIS FALSIFIED (the decisive result)
+Wired the tiny SL + v2 config, ran the economic replay (₹10L, notional-cap sizing, real costs, 46 stk):
+- **net −4.73R/day, 25% WR, expectancy −1.32R/trade, PF 0.25.** Loses GROSS too (−0.99R/trade before costs).
+- Mechanism: a 0.15×ATR stop < one M1 candle's noise → fills 2–3R PAST the stop (gap-through). The RR
+  harness (`rr_outcome` exits AT the stop) never modeled fill-through → the +0.26R was a MIRAGE. The
+  `min_stop_atr=1.0` floor existed precisely to prevent this; bypassing it caused the blow-up.
+
+### Realistic-fill extraction sweep (141 stocks, 69,151 signals, honest fills) — `runs/wide/extraction.md`
+- **0 of 455 (SL×target×mgmt) configs net positive. 0 survive holdout.** Widening the stop cuts the loss
+  monotonically but NEVER crosses zero: exp R −0.46 (k=0.25) → −0.31 (k=1.5).
+- **ROOT CAUSE: MFE ≈ MAE (symmetric, ratio 0.96–1.11).** The fade signals predict TIMING (favorable-
+  before-adverse +6–12%) but NOT MAGNITUDE (winners aren't bigger than losers) → no RR to harvest. At
+  realistic exits (clean stop −1.08R, gap −1.60R, 1R win +0.94R) you need >53% WR at 1:1; detectors give 44–46%.
+- Best lever = regime (exclude RANGE_PIN): bpr −0.28→−0.033 (closest to zero, still negative). Nothing reaches +.
+- **CONCLUSION: SMC/ICT FADE signals on free NSE M1 + retail costs are NOT tradeable.** Real edge, too thin.
+  Found in dry-run, zero money lost — the validation discipline working exactly as intended.
+
+## A7. PIVOT — momentum/continuation (testing)
+Fades are symmetric by nature (mean-reversion). Profit needs MAGNITUDE asymmetry (MFE≫MAE) = momentum/
+continuation (trends persist → winners run). The regime clue (trend helped) points the same way. Testing 5
+variants (displacement-breakout, trend-pullback, ORB, BOS-continuation, ignition-retest) with the SAME
+realistic-fill harness. Discriminator = MFE/MAE asymmetry. Result pending → `runs/wide/momentum.md`.
+
 ## D. EXECUTION ORDER (remaining)
 1. Land fixers (B-1/B-2/E-1 engine safety; D-1 session-boundary) → merge → suite green.
 2. FINAL clean measurement: v2-only + F-fixed study → definitive A1 numbers + RR (A3).
