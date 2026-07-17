@@ -555,6 +555,112 @@ def _shs_candles(sc: Scenario) -> list[Candle]:
                                             _SHS_PIVOT_SWEEP_MINUTE}))
 
 
+# ------------------------------------------------------ breaker_retest script
+#
+# Judas morning (m0-79 verbatim: ORL swept m37 => TRAP_REVERSAL locks 11:30),
+# then a scripted B14 breaker walk feeding a LONG setup; ticks from base:
+# b16-b17  bridge up; m87 forced high 26 => M5 SWING_H "BK" zone (25,27)
+#          (confirms m105: every window-mate's highs clamp below 26)
+# b18-b21  down to 14 and drift back; highs stay under 25-tol (no BK touch)
+# b22      BK SWEEP m112: forced high 29 (> far edge 27, 4x volume), M5
+#          closes 23 < 25 => wick-through + close-back, SWEPT on one candle
+# b23      closes 23 < 25 inside the reclaim window => RECLAIMED
+# b24-b25  two consecutive M5 closes beyond the far edge (28 then 30) =>
+#          INVERTED at b25: the full SWEPT -> RECLAIMED -> INVERTED breaker
+#          walk by construction; price now lives above the flipped level
+# b26      forced high 34 => SWING_H "TH" (33,35), the trap pool above
+# b27      red marubozu 30->27 = demand OB (27,30) once b29-b30 displace up
+# b28      forced low 25 => pivot SWING_L (24,26); high clamped 27 = FVG c1
+# b29      BREAKER RETEST: opens 26 (range dips into (25,27)), M5 closes 31
+#          back above the far edge => breaker evidence 0.85 fires at m150,
+#          ttl 12 covers the arm tick
+# b30      low clamped 31 completes FVG_BULL (27,31); forced high 38 =>
+#          target SWING_H (37,39), the >=1.5R room above
+# b31      forced high 36 sweeps TH (M5 closes 30 < 33): the opposing sweep
+#          deepens the trap chain; close 30 holds the FVG CE 29 => CE_HOLD
+# b32-b34  pullback closes 27 inside the OB (retest evidence each candle),
+#          forced lows 26 => pivot touches 3 (sweep quality + obviousness)
+# b35      PIVOT SWEEP m177: forced low 23 under (24,26), 4x volume, M5
+#          closes 27 back above => LONG sweep clusters with breaker +
+#          orderblock + fvg (+volume) over ~(24,31)
+# b36      dips 24 and closes 28 > 26 => pivot RECLAIMED: the sweep upgrade
+#          (+0.1) and 1.15 obviousness push the cluster over the arm
+#          threshold; the 60%+ lower wick triggers; fill at the next M1 open
+# b37+     +1T/min stair rally into the close: partials + targets pay > 1R.
+
+_BRK_SWEEP_MINUTE, _BRK_PIVOT_SWEEP_MINUTE = 112, 177
+_BRK_BUCKETS: list[tuple[list[int], int, int, int]] = [
+    ([14, 16, 18, 20, 21], 13, 22, 1000),  # b16 bridge
+    ([22, 23, 23, 22, 21], 20, 24, 1000),  # b17 BK peak (forced high 26)
+    ([20, 19, 19, 18, 18], 17, 21, 900),   # b18
+    ([17, 17, 16, 16, 16], 15, 18, 900),   # b19
+    ([16, 15, 15, 15, 15], 14, 17, 900),   # b20 BK confirms m105
+    ([18, 19, 21, 22, 23], 17, 24, 1000),  # b21 approach
+    ([23, 22, 23, 23, 23], 21, 26, 1000),  # b22 BK SWEEP (forced high 29)
+    ([22, 22, 23, 23, 23], 21, 24, 900),   # b23 RECLAIMED
+    ([25, 26, 27, 28, 28], 23, 29, 1100),  # b24 closes through: invert arms
+    ([29, 29, 30, 30, 30], 28, 31, 1100),  # b25 holds beyond => INVERTED
+    ([31, 31, 31, 30, 30], 29, 32, 900),   # b26 TH peak (forced high 34)
+    ([29, 29, 28, 28, 27], 27, 30, 900),   # b27 marubozu drop = OB (27,30)
+    ([26, 25, 25, 25, 26], 25, 27, 900),   # b28 pivot low 25, FVG c1
+    ([28, 29, 30, 31, 31], 26, 32, 1100),  # b29 BREAKER RETEST fires m150
+    ([33, 34, 35, 35, 35], 31, 36, 1100),  # b30 FVG c3; forced high 38
+    ([32, 31, 31, 30, 30], 29, 35, 900),   # b31 TH sweep 36; CE_HOLD
+    ([29, 28, 27, 27, 27], 26, 30, 900),   # b32 OB retest, pivot touch 1
+    ([28, 27, 28, 27, 27], 26, 30, 900),   # b33 pivot touch 2
+    ([28, 27, 27, 27, 27], 26, 30, 900),   # b34 pivot touch 3
+    ([26, 25, 27, 27, 27], 23, 28, 1000),  # b35 PIVOT SWEEP (forced low 23)
+    ([26, 25, 27, 28, 28], 24, 29, 1000),  # b36 RECLAIM + trigger wick 24
+    ([29, 30, 31, 32, 33], 28, 34, 1100),  # b37 rally away
+]
+_BRK_FORCED = {87: ("high", 26), _BRK_SWEEP_MINUTE: ("high", 29),
+               132: ("high", 34), 142: ("low", 25), 152: ("high", 38),
+               157: ("high", 36), 162: ("low", 26), 167: ("low", 26),
+               172: ("low", 26), _BRK_PIVOT_SWEEP_MINUTE: ("low", 23),
+               182: ("low", 24)}
+
+
+def _breaker_candles(sc: Scenario) -> list[Candle]:
+    rng = sc.rng()
+    plan: list[tuple[int, int, int, int]] = []
+    for i, (closes, lo, hi) in enumerate(_JUDAS_MORNING):         # m0-79
+        plan += [(c, lo, hi, 1000 if i < 8 else 1200) for c in closes]
+    for closes, lo, hi, vol in _BRK_BUCKETS:                      # m80-189
+        plan += [(c, lo, hi, vol) for c in closes]
+    c = 33
+    for step, n in ((1, 30), (-1, 5)) * 5 + ((1, 10),):           # m190-374
+        for _ in range(n):
+            c += step
+            plan.append((c, c - 3, c + 3, 1100))
+    morning = {m: f for m, f in _JUDAS_FORCED.items() if m < 80}
+    return _plan_candles(sc, rng, plan, {**morning, **_BRK_FORCED},
+                         boosted=frozenset({_SWEEP_MINUTE, _BRK_SWEEP_MINUTE,
+                                            _BRK_PIVOT_SWEEP_MINUTE}))
+
+
+def breaker_retest(symbol: str, date: date_type, open_price: float,
+                   spec: MarketSpec = NSE) -> Scenario:
+    """Judas-style trap-reversal day whose post-11:00 LONG setup rides a B14
+    breaker: an M5 swing high is SWEPT, RECLAIMED, then INVERTED (two closes
+    through + hold) and RETESTED from above -- breaker evidence 0.85 joins
+    the sweep/orderblock/fvg cluster that arms. See commentary above."""
+    sc = Scenario("breaker_retest", symbol, date, [], open_price,
+                  script=_breaker_candles, spec=spec)
+    base, T = spec.quantize(open_price), spec.tick_size
+    sc.truth = {
+        "template": "TRAP_REVERSAL",
+        "afternoon_direction": "LONG",
+        "breaker_zone": (base + 25 * T, base + 27 * T),  # the inverted level
+        "breaker_sweep_minute": _BRK_SWEEP_MINUTE,
+        "reclaim_minute": 115,        # b23 M5 ts (transition candle)
+        "inversion_minute": 125,      # b25 M5 ts (second close-through holds)
+        "retest_minute": 145,         # b29 M5 ts (evidence at its m150 close)
+        "pivot_zone": (base + 24 * T, base + 26 * T),
+        "pivot_sweep_minute": _BRK_PIVOT_SWEEP_MINUTE,
+    }
+    return sc
+
+
 def stop_hunt_survive(symbol: str, date: date_type, open_price: float,
                       spec: MarketSpec = NSE) -> Scenario:
     """Judas-style trap-reversal day whose post-11:00 LONG entry is stop-hunted

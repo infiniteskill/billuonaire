@@ -1,7 +1,8 @@
 from datetime import date
 from trader.models.candle import Timeframe
-from trader.feed.mock import (ScenarioFeed, double_trap, judas_reversal,
-                              range_pin, stop_hunt_survive, trend_day)
+from trader.feed.mock import (ScenarioFeed, breaker_retest, double_trap,
+                              judas_reversal, range_pin, stop_hunt_survive,
+                              trend_day)
 
 def test_judas_shape():
     sc = judas_reversal("X", date(2026, 7, 15), 100.0)
@@ -69,7 +70,8 @@ def test_sweep_low_is_unique_day_low():
 
 def _all_scenarios():
     return _both_scenarios() + [range_pin("Z", D, 100.0), double_trap("W", D, 200.0),
-                                stop_hunt_survive("V", D, 100.0)]
+                                stop_hunt_survive("V", D, 100.0),
+                                breaker_retest("U", D, 100.0)]
 
 
 @pytest.mark.parametrize("sc", _all_scenarios(), ids=lambda s: s.name)
