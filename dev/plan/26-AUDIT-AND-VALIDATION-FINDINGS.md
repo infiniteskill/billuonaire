@@ -121,11 +121,24 @@ Wired the tiny SL + v2 config, ran the economic replay (₹10L, notional-cap siz
 - **CONCLUSION: SMC/ICT FADE signals on free NSE M1 + retail costs are NOT tradeable.** Real edge, too thin.
   Found in dry-run, zero money lost — the validation discipline working exactly as intended.
 
-## A7. PIVOT — momentum/continuation (testing)
-Fades are symmetric by nature (mean-reversion). Profit needs MAGNITUDE asymmetry (MFE≫MAE) = momentum/
-continuation (trends persist → winners run). The regime clue (trend helped) points the same way. Testing 5
-variants (displacement-breakout, trend-pullback, ORB, BOS-continuation, ignition-retest) with the SAME
-realistic-fill harness. Discriminator = MFE/MAE asymmetry. Result pending → `runs/wide/momentum.md`.
+## A7. MOMENTUM/CONTINUATION — ALSO FALSIFIED (`runs/wide/momentum.md`, 138 stk, 14k signals)
+Tested 5 variants (displacement-breakout, trend-pullback, ORB, BOS-continuation, ignition-retest).
+- MFE/MAE: 0.97–1.19 (bos_cont 1.19 best, marginal, dies in holdout). Symmetric, like fades.
+- **0 configs net positive, 0 survive holdout.** Best −0.018R (bos_cont wide-stop breakeven artifact) → −0.31R.
+- (Agent caught its OWN look-ahead leak: trend_pull showed 2.08 MFE/MAE via a non-causal M15-trend; fixed
+  → collapsed to 1.03. Integrity held.)
+- **DEEP CONCLUSION: ~75% of ANY signal (either direction) sees 1×ATR adverse before 2×ATR favorable.
+  The excursion symmetry is a property of the M1 NSE intraday TAPE, not signal polarity. No directional-
+  excursion edge survives retail costs, in either direction. Both fade + momentum theses dead.**
+
+## A8. PIVOT — volatility/options (non-directional), feasibility-gated before Kite spend
+The tape denies DIRECTIONAL edge, but we have two non-directional facts: timing (favorable-first) and
+compression→expansion (coil precedes bigger range). Can't monetize non-directional magnitude in LINEAR
+cash — but a long straddle profits from expansion regardless of direction (options, needs Kite).
+DISCIPLINE: measure the prerequisite FREE first — is the post-compression expansion big + holdout-stable
+enough that a modeled straddle clears plausible premium+costs? That GATES the Kite purchase. Result
+pending → `runs/wide/vol_feasibility.md`. (Note: earlier notes hint compression→expansion may test flat —
+re-measuring rigorously, not assuming.)
 
 ## D. EXECUTION ORDER (remaining)
 1. Land fixers (B-1/B-2/E-1 engine safety; D-1 session-boundary) → merge → suite green.
