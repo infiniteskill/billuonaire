@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 
 from trader.config import Settings
 from trader.engine.gates import RiskState
+from trader.learn.calibrate import analyze
 from trader.engine.pipeline import Orchestrator, SymbolPipeline
 from trader.execution.manager import PositionManager
 from trader.execution.paper import PaperBroker
@@ -70,6 +71,22 @@ def test_timestats_dir_round_trips_counts(tmp_path):
                          timestats_dir=tdir)
     ts2 = orch2.pipelines["ACME"].timestats
     assert ts2._counts["ACME"] == pipe.timestats._counts["ACME"]
+
+
+def test_journal_members_feed_calibration(tmp_path):
+    """Verdicts journal their zone members [(detector, event, strength)];
+    analyze() closes the loop on a REAL judas journal: the day-1 winning
+    trade links to a member-bearing verdict, so sweep scores a win."""
+    run_judas(tmp_path)
+    entries = Journal(tmp_path / "journal").read(DAY1)
+    verdicts = [e for e in entries if e["kind"] == "verdict"]
+    assert verdicts and all(e["members"] for e in verdicts)
+    det, event, strength = verdicts[-1]["members"][0]      # journaled shape
+    assert isinstance(det, str) and isinstance(strength, float)
+    rep = analyze(tmp_path / "journal")
+    assert rep.n_trades == 1 and rep.n_wins == 1
+    assert rep.rows["sweep"]["wins"] >= 1
+    assert rep.rows["sweep"]["appearances"] >= rep.rows["sweep"]["wins"]
 
 
 def test_gap_boundaries_record_once_per_new_bar(tmp_path):

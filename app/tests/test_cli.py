@@ -309,6 +309,40 @@ def _report_fixture(root):
     j.log("skip", {"symbol": "AAA", "gate": "fsm_arm", "reason": "y"}, day=d2)
 
 
+def test_calibrate_prints_suggestions_and_never_writes(tmp_path):
+    """calibrate: >=30 sweep appearances earn a suggestion, thin detectors
+    read insufficient, a copy-paste weights block prints -- and config.json
+    is byte-identical after (PRINT ONLY)."""
+    _init(tmp_path, ["ACME"])
+    j = Journal(tmp_path / "journal")
+    day = date(2026, 7, 14)
+    at = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
+    for m in range(30):
+        j.log("verdict", {"symbol": "ACME",
+                          "members": [["sweep", "SWEEP", 0.8]]},
+              day=day, ts=at + timedelta(minutes=5 * m))
+    j.log("trade_open", {"symbol": "ACME"}, day=day, ts=at + timedelta(hours=3))
+    j.log("trade_close", {"symbol": "ACME", "pnl": "100"}, day=day,
+          ts=at + timedelta(hours=4))
+    before = (tmp_path / "config.json").read_bytes()
+    r = runner.invoke(app, ["calibrate", "--journal", str(tmp_path / "journal"),
+                            "--dir", str(tmp_path)])
+    assert r.exit_code == 0
+    assert "sweep" in r.output and "insufficient" in r.output
+    assert "copy-paste" in r.output and '"sweep"' in r.output
+    assert (tmp_path / "config.json").read_bytes() == before
+
+
+def test_calibrate_without_config_precision_only(tmp_path):
+    j = Journal(tmp_path / "journal")
+    j.log("verdict", {"symbol": "A", "members": [["sweep", "SWEEP", 0.8]]},
+          day=date(2026, 7, 14), ts=datetime(2026, 7, 14, 11, 0, tzinfo=IST))
+    r = runner.invoke(app, ["calibrate", "--journal", str(tmp_path / "journal"),
+                            "--dir", str(tmp_path / "nowhere")])
+    assert r.exit_code == 0
+    assert "no weight suggestions" in r.output and "sweep" in r.output
+
+
 def test_report_command_renders_tables(tmp_path):
     _report_fixture(tmp_path)
     r = runner.invoke(app, ["report", "--journal", str(tmp_path)])

@@ -30,6 +30,7 @@ from trader.engine.pipeline import Orchestrator
 from trader.engine.scanner import fit, has_data
 from trader.feed.file import FileFeed
 from trader.feed.mock import ScenarioFeed, judas_reversal
+from trader.learn.calibrate import analyze
 from trader.replay.engine import run_replay
 from trader.replay.metrics import Report, compute
 from trader.store.candles import CandleStore
@@ -354,6 +355,46 @@ def report(
 ) -> None:
     """Re-render the metrics report from journal JSONL files."""
     _render_report(compute(journal, _parse_day(from_), _parse_day(to)))
+
+
+@app.command()
+def calibrate(
+    journal: Path = typer.Option(..., "--journal", help="Journal directory (JSONL days)."),
+    from_: Optional[str] = typer.Option(None, "--from", help="Start date YYYY-MM-DD."),
+    to: Optional[str] = typer.Option(None, "--to", help="End date YYYY-MM-DD."),
+    dir: Path = typer.Option(Path("."), "--dir", help="Config directory (current weights)."),
+) -> None:
+    """Per-detector precision from journaled verdict members + trade
+    outcomes, with capped weight suggestions (see learn/calibrate.py for the
+    proxy). PRINT ONLY -- config.json is never touched."""
+    weights = {}
+    cfg_path = dir / "config.json"
+    if cfg_path.exists():
+        settings = load_settings(cfg_path)
+        weights = {k: v for k, v in settings.confluence.weights.items()
+                   if k in settings.detectors.enabled}
+    else:
+        console.print(f"[yellow]no {cfg_path}: precision only, "
+                      "no weight suggestions[/yellow]")
+    rep = analyze(journal, _parse_day(from_), _parse_day(to), weights)
+    console.print(f"verdicts {rep.n_verdicts}, linked trades {rep.n_trades}, "
+                  f"wins {rep.n_wins}")
+    table = Table(title="Detector precision (win-zone share of member appearances)")
+    for col in ("detector", "weight", "members", "in wins", "precision", "suggested"):
+        table.add_column(col)
+    for det in sorted(set(rep.weights) | set(rep.rows)):
+        r = rep.rows.get(det, {"appearances": 0, "wins": 0, "precision": 0.0})
+        sug = (f"{rep.suggestions[det]:g}" if det in rep.suggestions
+               else "-" if det not in rep.weights
+               else f"insufficient data (<{rep.min_samples})")
+        table.add_row(det, _fmt(rep.weights.get(det)), str(r["appearances"]),
+                      str(r["wins"]), f"{r['precision']:.1%}", sug)
+    console.print(table)
+    if rep.weights:
+        merged = {d: rep.suggestions.get(d, w) for d, w in rep.weights.items()}
+        console.print('copy-paste "weights" for config.json confluence '
+                      "(suggestions applied; NOT auto-applied):")
+        console.print(json.dumps(merged, indent=2))
 
 
 @app.command()

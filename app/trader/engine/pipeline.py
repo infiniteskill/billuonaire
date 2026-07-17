@@ -189,7 +189,8 @@ class SymbolPipeline:
             z = zones[0]
             self._log("verdict", at=ctx.now, zone=list(z.zone), mults=z.mults,
                       direction=z.direction, final=z.final, raw=z.raw,
-                      distinct=z.distinct, template=self.day.template)
+                      distinct=z.distinct, template=self.day.template,
+                      members=z.members)    # (detector, event, strength): calibration food
         if self.position is not None:
             self._manage(ctx, zones)
         else:
