@@ -73,6 +73,21 @@ def _overlaps(a, b) -> bool:
     return min(a) <= max(b) and max(a) >= min(b)
 
 
+def snap_stop_off_round(stop: Decimal, levels, spec: MarketSpec,
+                        offset_ticks: int, up: bool) -> Decimal:
+    """Protective stop within 2 ticks of a ROUND zone edge lands
+    offset_ticks PAST the zone's far edge, never tighter (B13: shared by
+    entry stops and manager trail candidates). ``up`` = stop below price."""
+    tick = spec.tick_size
+    off = offset_ticks * tick
+    for lv in levels:
+        if (lv.kind is LevelKind.ROUND
+                and any(abs(stop - e) <= 2 * tick for e in lv.zone)):
+            stop = (min(stop, min(lv.zone) - off) if up
+                    else max(stop, max(lv.zone) + off))
+    return stop
+
+
 class EntryFSM:
     def __init__(self, settings: Settings, spec: MarketSpec):
         self.s, self.spec = settings, spec
@@ -114,14 +129,8 @@ class EntryFSM:
         buf = Decimal(str(self.s.stops.atr_buffer)) * atr
         stop = self.spec.quantize(min([lo, *traps]) - buf if up
                                   else max([hi, *traps]) + buf)
-        tick = self.spec.tick_size
-        off = self.s.stops.round_offset_ticks * tick
-        for lv in ctx.levels:                        # land PAST the round number
-            if (lv.kind is LevelKind.ROUND
-                    and any(abs(stop - e) <= 2 * tick for e in lv.zone)):
-                stop = (min(stop, min(lv.zone) - off) if up
-                        else max(stop, max(lv.zone) + off))  # never tighter
-        return stop
+        return snap_stop_off_round(stop, ctx.levels, self.spec,
+                                   self.s.stops.round_offset_ticks, up)
 
     def _targets(self, entry, risk, up, zone, ctx, opps) -> list[Decimal] | None:
         sign = 1 if up else -1

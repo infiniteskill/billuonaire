@@ -24,6 +24,7 @@ from decimal import Decimal
 
 from trader.config import Settings
 from trader.engine.context import StockContext
+from trader.engine.entry import snap_stop_off_round
 from trader.models.candle import Timeframe
 from trader.models.level import LevelKind
 from trader.models.market import MarketSpec, _minutes
@@ -102,7 +103,8 @@ class PositionManager:
 
     def _trail(self, pos: Position, ctx: StockContext, sign: int) -> None:
         """Trail behind the latest confirmed swing of the mode tf, padded by
-        0.1 x ATR(M5); ratchet only -- a widening candidate is a no-move."""
+        0.1 x ATR(M5) and snapped off ROUND zones like entry stops (B13);
+        ratchet only -- a widening candidate is a no-move."""
         tf = (Timeframe.M15 if "3R" in pos.partials
               else Timeframe.M5 if "2R" in pos.partials else None)
         if tf is None:
@@ -114,6 +116,8 @@ class PositionManager:
         zone = max(swings, key=lambda lv: lv.born).zone
         pad = _ATR_PAD * (ctx.atr(Timeframe.M5) or Decimal(0))
         cand = self.spec.quantize(min(zone) - pad if sign > 0 else max(zone) + pad)
+        cand = snap_stop_off_round(cand, ctx.levels, self.spec,
+                                   self.s.stops.round_offset_ticks, sign > 0)
         if (cand - pos.stop) * sign > 0:
             self._apply_stop(pos, cand)
 

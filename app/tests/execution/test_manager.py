@@ -232,6 +232,35 @@ def test_trail_pad_is_tenth_atr(mgr):
     assert p.stop == D("103.80")                # 104 - 0.1*2, tick-quantized
 
 
+def round_lvl(lo, hi):
+    return Level(f"X-ROUND-{lo}", "X", LevelKind.ROUND, (D(str(lo)), D(str(hi))),
+                 at(9, 30), None)
+
+
+def test_trail_snaps_off_round_long(mgr):
+    # B13: cand 104 within 2 ticks of ROUND zone (103.95, 104.05) edge ->
+    # landed round_offset_ticks (3) PAST the far edge: 103.95 - 0.15 = 103.80
+    p = pos(stop="100", partials={"1R", "2R"})
+    lvls = [swing(LevelKind.SWING_L, 104, 104.1), round_lvl("103.95", "104.05")]
+    mgr.on_candle(p, one_candle_ctx(106, 107.2, 105.8, 107, levels=lvls))
+    assert p.stop == D("103.80")
+
+
+def test_trail_snaps_off_round_short(mgr):
+    p = pos(Direction.SHORT, stop="96", partials={"1R", "2R"})
+    lvls = [swing(LevelKind.SWING_H, 92, 92.1), round_lvl("91.95", "92.05")]
+    mgr.on_candle(p, one_candle_ctx(90.5, 91.2, 89.8, 90, levels=lvls))
+    assert p.stop == D("92.20")                 # 92.05 + 3 ticks, ratchet DOWN
+
+
+def test_trail_snap_never_widens(mgr):
+    # snapped candidate 103.80 is behind the current 103.85 stop -> no move
+    p = pos(stop="103.85", partials={"1R", "2R"})
+    lvls = [swing(LevelKind.SWING_L, 104, 104.1), round_lvl("103.95", "104.05")]
+    acts = mgr.on_candle(p, one_candle_ctx(106, 107.2, 105.8, 107, levels=lvls))
+    assert acts == [] and p.stop == D("103.85")
+
+
 def test_ratchet_widen_attempt_is_no_move(mgr):
     p = pos(stop="103", partials={"1R", "2R"})
     lv = swing(LevelKind.SWING_L, 101, 101.1)
