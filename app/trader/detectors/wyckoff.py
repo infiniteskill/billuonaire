@@ -17,8 +17,11 @@ MARKUP/MARKDOWN with confidence >= 0.5 also emits ONE continuation Evidence
 0.5 ttl 12 along the phase direction, zone = the latest confirmed
 same-direction M5 swing level (SWING_L for MARKUP, SWING_H for MARKDOWN)
 from ``ctx.levels`` -- a stable pullback-to-swing entry zone that clusters
-with other evidence at that swing instead of drifting every candle; no
-such swing yet => no emission that candle. Deduped per candle.
+with other evidence at that swing instead of drifting every candle.
+Anchor swing must be ACTIVE or TESTED (never SWEPT/RECLAIMED/terminal --
+trap extremes excluded) and its zone within 1.5xATR(M5) of the latest M5
+close (pullback zone must be near price); no qualifying swing => no
+emission that candle. Deduped per candle.
 
 ``htf_phase(ctx)``: net D1 close change over the last 10 D1 candles (else
 UNCLEAR 0.0); > +2% MARKUP / < -2% MARKDOWN, confidence min(1, |pct|/5)."""
@@ -32,7 +35,7 @@ from trader.detectors.base import Detector, register
 from trader.engine.context import StockContext
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
-from trader.models.level import LevelKind
+from trader.models.level import LevelKind, LevelState
 
 _DEFAULTS = {"tf": "5m", "window": 40, "range_atr": 3.0, "vol_sma": 20}
 
@@ -76,9 +79,17 @@ class WyckoffDetector(Detector):
     def _continuation_zone(self, ctx: StockContext, name: str) -> tuple[Decimal, Decimal] | None:
         """Stable continuation zone = latest confirmed same-direction M5 swing
         (pullback-to-swing entry): SWING_L for MARKUP, SWING_H for MARKDOWN.
-        None if no such swing exists yet -- caller skips emission."""
+        Anchor must be ACTIVE/TESTED (trap extremes excluded) and its zone
+        within 1.5xATR(M5) of the latest M5 close. None if no qualifying
+        swing -- caller skips emission."""
         kind = LevelKind.SWING_L if name == "MARKUP" else LevelKind.SWING_H
-        swings = [lv for lv in ctx.levels if lv.kind is kind and lv.tf is Timeframe.M5]
+        atr, m5 = ctx.atr(Timeframe.M5), ctx.candles.last(1, Timeframe.M5)
+        if atr is None or not m5:
+            return None
+        close, max_dist = m5[-1].close, Decimal("1.5") * atr
+        swings = [lv for lv in ctx.levels if lv.kind is kind and lv.tf is Timeframe.M5
+                  and lv.state in (LevelState.ACTIVE, LevelState.TESTED)
+                  and max(lv.zone[0] - close, close - lv.zone[1], Decimal(0)) <= max_dist]
         return max(swings, key=lambda lv: lv.born).zone if swings else None
 
     def _event(self, ctx: StockContext, candles: list[Candle], atr: Decimal) -> Evidence | None:

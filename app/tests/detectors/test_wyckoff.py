@@ -39,9 +39,9 @@ def make_ctx(candles, levels=None):
                         day=DayState(session_date=now.date()))
 
 
-def swing(kind, lo, hi, born, tf=Timeframe.M5):
+def swing(kind, lo, hi, born, tf=Timeframe.M5, state=LevelState.ACTIVE):
     return Level(id=f"sw-{born.isoformat()}-{kind.name}", symbol="X", kind=kind,
-                zone=(tick(lo), tick(hi)), born=born, tf=tf, state=LevelState.ACTIVE)
+                zone=(tick(lo), tick(hi)), born=born, tf=tf, state=state)
 
 
 # 40 flat range candles: band = 101 - 99 = 2, TR = 2 -> ATR = 2; in-range
@@ -201,7 +201,8 @@ def test_phase_markdown_mirror():
 # ---- continuation evidence (A5: zone anchors to the phase's defining swing) ----
 
 def test_continuation_evidence_zone_is_swing_and_dedupe():
-    sw = swing(LevelKind.SWING_L, "97", "97.5", bar_ts(20))
+    # latest M5 close 105.85, ATR 2 -> max_dist 3; zone at 104-104.5 qualifies
+    sw = swing(LevelKind.SWING_L, "104", "104.5", bar_ts(35))
     ctx = make_ctx(_trend40(), levels=[sw])
     det = WyckoffDetector(PARAMS)
 
@@ -216,7 +217,8 @@ def test_continuation_evidence_zone_is_swing_and_dedupe():
 
 
 def test_continuation_evidence_markdown_uses_swing_h():
-    sw = swing(LevelKind.SWING_H, "103", "103.5", bar_ts(20))
+    # latest M5 close 94.15, ATR 2 -> max_dist 3; zone at 93.5-94 qualifies
+    sw = swing(LevelKind.SWING_H, "93.5", "94", bar_ts(35))
     ctx = make_ctx(_trend40(sign=-1), levels=[sw])
 
     [ev] = WyckoffDetector(PARAMS).detect(ctx)
@@ -226,8 +228,28 @@ def test_continuation_evidence_markdown_uses_swing_h():
     assert ev.meta == {"event": "PHASE", "phase": "MARKDOWN"}
 
 
-def test_continuation_zone_stable_across_consecutive_candles():
+def test_continuation_swing_excludes_swept_state():
+    # trap extreme: more recently born so it would win by recency alone, but
+    # SWEPT excludes it -> the older TESTED (non-terminal) swing wins instead
+    valid = swing(LevelKind.SWING_L, "104", "104.5", bar_ts(20), state=LevelState.TESTED)
+    trap = swing(LevelKind.SWING_L, "103.5", "103.8", bar_ts(35), state=LevelState.SWEPT)
+    ctx = make_ctx(_trend40(), levels=[valid, trap])
+
+    [ev] = WyckoffDetector(PARAMS).detect(ctx)
+
+    assert ev.zone == valid.zone
+
+
+def test_continuation_zone_excludes_far_swing():
+    # zone 97-97.5 is 8.35 from latest close 105.85, ATR 2 -> max_dist 3
     sw = swing(LevelKind.SWING_L, "97", "97.5", bar_ts(20))
+    ctx = make_ctx(_trend40(), levels=[sw])
+
+    assert WyckoffDetector(PARAMS).detect(ctx) == []
+
+
+def test_continuation_zone_stable_across_consecutive_candles():
+    sw = swing(LevelKind.SWING_L, "104.5", "105", bar_ts(35))
     candles40 = _trend40()
     candles41 = candles40 + [bar(40, "106", "107", "105", "106", 100)]
     det = WyckoffDetector(PARAMS)
