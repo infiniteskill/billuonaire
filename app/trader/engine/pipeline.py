@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
+from dataclasses import replace
 from datetime import timedelta
 from decimal import Decimal
 from itertools import groupby
@@ -36,13 +37,13 @@ from trader.engine.entry import EntryFSM, EntryState
 from trader.engine.gates import GateChain, RiskState
 from trader.engine.levels import LevelEngine, LevelStore
 from trader.engine.template import TemplateClassifier
-from trader.execution.manager import PositionManager
+from trader.execution.manager import Action, PositionManager
 from trader.execution.paper import PaperBroker
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction
 from trader.models.level import TERMINAL, LevelKind, LevelState
 from trader.models.market import _minutes, is_expiry
-from trader.models.position import Position, PositionStatus
+from trader.models.position import ExitReason, Position, PositionStatus
 from trader.store.candles import CandleStore, _bucket_start
 from trader.store.journal import Journal
 
@@ -115,9 +116,13 @@ class SymbolPipeline:
         the new day (liquidity re-creates fresh PDH/PDL/OR per session).
         Persist the pruned set (if a level_store is wired) so it survives
         into the next run. Detector instance memories (ts/level-keyed dedupe
-        sets) are pruned via the registry hook -- C10 memory bound."""
+        sets) are pruned via the registry hook -- C10 memory bound. An open
+        position is force-closed same-day (no overnight gap risk) and the
+        LevelEngine's per-run windows reset (no cross-gap trap resolution)."""
         self.registry.end_session()
         self.wyckoff.on_session_end()   # pipeline's own instance, not in registry
+        self.level_engine.on_session_end()   # reset reclaim/break/invert windows
+        self._force_close_eod(ts)            # no position/exit survives the gap
         self._prune_levels()
         self._save_levels()
         self._save_timestats()
@@ -127,6 +132,22 @@ class SymbolPipeline:
         if self.fsm.state is not EntryState.IDLE:
             self.fsm._disarm("session_end")
             self._skip(ts, "fsm_disarm", "session_end")
+
+    def _force_close_eod(self, ts) -> None:
+        """Session boundary with an open position: the next real M1 is next
+        day's candle, so a queued stop/EOD exit would fill against the
+        overnight gap (a price never reachable same-day) -- overnight risk and
+        misstated P&L. Force-close same-day AT the last observed price and drop
+        any queued exits so none can price off a different-date candle."""
+        self._pending_exits = []
+        if self.position is None:
+            return
+        last = self.store.view(self.symbol, ts).last(1, Timeframe.M1)
+        if not last:
+            return
+        c = last[-1]                    # last same-day M1: close is last price
+        self._pending_exits = [Action(ExitReason.EOD.value, None, "session_end")]
+        self._run_exits(replace(c, open=c.close))
 
     def _carry_over(self) -> list:
         """Cross-day-safe subset: live liquidity kinds, non-terminal. Dated
@@ -271,7 +292,16 @@ class SymbolPipeline:
                           qty=plan.qty, price=fill.price, stop=plan.stop,
                           zone=list(plan.entry_zone), targets=plan.targets,
                           costs=fill.costs, plan=plan.meta)
+        self._run_exits(candle)
+
+    def _run_exits(self, candle: Candle) -> None:
+        """Execute queued exits against ``candle``. Guard: never price an exit
+        off a candle whose date differs from the position's session -- an
+        overnight-gap M1 would fill a same-day stop/EOD at next day's open
+        (_end_session force-closes same-day before that candle is reached)."""
         pos = self.position
+        if pos is not None and candle.ts.date() != pos.entry.ts.date():
+            return
         for a in self._pending_exits:
             if pos is None:
                 break

@@ -332,6 +332,48 @@ class TestEngineMisc:
             t.level_id = "y"
 
 
+# --------------------------------------- session boundary reset (audit fix)
+
+class TestSessionEnd:
+    def _day2(self, o, h, l, c):
+        return Candle(symbol="TEST", tf=Timeframe.M5, ts=T0 + timedelta(days=1),
+                      open=D(str(o)), high=D(str(h)), low=D(str(l)),
+                      close=D(str(c)), volume=100)
+
+    def test_swept_at_day1_close_does_not_reclaim_on_day2_open(self, engine):
+        lvl = mk_level()                        # PDH 100-101, price origin below
+        out = engine.update([lvl], mk(99.5, 101.5, 99, 99.5, 77), None)   # SWEPT
+        assert [t.new for t in out] == [LevelState.SWEPT]
+        engine.on_session_end()                 # overnight boundary: reset windows
+        # day-2 FIRST bar closes back on the origin side: a live reclaim window
+        # would fire RECLAIMED (the overnight gap counted as "1 candle"); the
+        # reset forbids it -- SWEPT stays terminal across the gap.
+        out = engine.update([lvl], self._day2(99.5, 99.9, 99, 99.4), None)
+        assert out == []
+        assert lvl.state is LevelState.SWEPT
+
+    def test_control_without_reset_reclaims(self, engine):
+        """Same geometry WITHOUT on_session_end DOES reclaim -- proves the
+        reset (not the candle shape) is what suppresses the cross-gap reclaim."""
+        lvl = mk_level()
+        engine.update([lvl], mk(99.5, 101.5, 99, 99.5, 77), None)
+        out = engine.update([lvl], self._day2(99.5, 99.9, 99, 99.4), None)
+        assert [t.new for t in out] == [LevelState.RECLAIMED]
+
+    def test_reset_clears_every_per_run_dict(self, engine):
+        lvl = mk_level()
+        engine.update([lvl], mk(100.5, 101.6, 100, 101.5, 0), None)  # PENDING_BREAK
+        assert engine._pending_break                                 # seeded
+        engine.on_session_end()
+        assert not (engine._pending_break or engine._since_swept
+                    or engine._pending_invert or engine._round_side
+                    or engine._prev_close)
+        # the dangling break must NOT confirm DEAD off day-2's first close;
+        # it re-arms fresh instead (close beyond far edge => new pending break)
+        out = engine.update([lvl], self._day2(101.5, 102.2, 101.2, 102), None)
+        assert out == [] and lvl.state is LevelState.ACTIVE
+
+
 # -------------------------------------------------------------- LevelStore
 
 class TestLevelStore:
