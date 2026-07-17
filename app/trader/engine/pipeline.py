@@ -30,7 +30,7 @@ from trader.engine.confluence import ConfluenceEngine
 from trader.engine.context import DayState, IndexView, StockContext
 from trader.engine.entry import EntryFSM, EntryState
 from trader.engine.gates import GateChain, RiskState
-from trader.engine.levels import LevelEngine
+from trader.engine.levels import LevelEngine, LevelStore
 from trader.engine.template import TemplateClassifier
 from trader.execution.manager import PositionManager
 from trader.execution.paper import PaperBroker
@@ -56,7 +56,8 @@ class SymbolPipeline:
 
     def __init__(self, symbol: str, settings: Settings, store: CandleStore,
                  journal: Journal, broker: PaperBroker, manager: PositionManager,
-                 risk: RiskState, max_qty: int, is_index: bool = False):
+                 risk: RiskState, max_qty: int, is_index: bool = False,
+                 level_store: LevelStore | None = None):
         self.symbol, self.s, self.spec = symbol, settings, settings.market_spec()
         self.store, self.journal, self.broker = store, journal, broker
         self.manager, self.risk, self.max_qty = manager, risk, max_qty
@@ -67,7 +68,9 @@ class SymbolPipeline:
         self.confluence = ConfluenceEngine(settings)
         self.gates, self.fsm = GateChain(settings), EntryFSM(settings, self.spec)
         self.wyckoff = WyckoffDetector(settings.detectors.params.get("wyckoff", {}))
-        self.levels, self.evidence_history = [], []
+        self.level_store = level_store        # optional: cross-run level persistence
+        self.levels = level_store.load(symbol) if level_store else []
+        self.evidence_history = []
         self.day: DayState | None = None
         self.position: Position | None = None
         self.closed: list[Position] = []
@@ -98,15 +101,38 @@ class SymbolPipeline:
         and targets across the overnight gap -- drop both, journal skips.
         Prune levels to live cross-day liquidity kinds: terminal states and
         intraday micro-structure (swings, OB/FVG, OR) must not block or bias
-        the new day (liquidity re-creates fresh PDH/PDL/OR per session)."""
-        self.levels[:] = [lv for lv in self.levels
-                          if lv.kind in _CARRY and lv.state not in TERMINAL]
+        the new day (liquidity re-creates fresh PDH/PDL/OR per session).
+        Persist the pruned set (if a level_store is wired) so it survives
+        into the next run."""
+        self._prune_levels()
+        self._save_levels()
         if self._pending_plan is not None:
             self._pending_plan = None
             self._skip(ts, "fill", "session_end")
         if self.fsm.state is not EntryState.IDLE:
             self.fsm._disarm("session_end")
             self._skip(ts, "fsm_disarm", "session_end")
+
+    def _carry_over(self) -> list:
+        """Cross-day-safe subset: live liquidity kinds, non-terminal."""
+        return [lv for lv in self.levels
+               if lv.kind in _CARRY and lv.state not in TERMINAL]
+
+    def _prune_levels(self) -> None:
+        self.levels[:] = self._carry_over()
+
+    def _save_levels(self) -> None:
+        if self.level_store is not None:
+            self.level_store.save(self.symbol, self.levels)
+
+    def finalize(self) -> None:
+        """Called once when the feed is exhausted (Orchestrator.run end):
+        persist the cross-day-safe subset so it survives into the next run,
+        WITHOUT mutating in-memory levels -- unlike _end_session, no new
+        session actually started, so intraday state stays live for callers
+        that inspect the pipeline right after run()."""
+        if self.level_store is not None:
+            self.level_store.save(self.symbol, self._carry_over())
 
     # -------------------------------------------------------- closed-M5 flow
 
@@ -264,11 +290,15 @@ class SymbolPipeline:
 
 
 class Orchestrator:
-    """Routes the feed to per-symbol pipelines; index first per ts batch."""
+    """Routes the feed to per-symbol pipelines; index first per ts batch.
+
+    ``store``/``level_dir`` wire cross-run persistence for candles/levels.
+    Positions and RiskState stay memory-only (see RiskState docstring)."""
 
     def __init__(self, settings: Settings, feed, symbols: list[str],
                  index_symbol: str | None = None, *, capital: float | None = None,
-                 max_qty: int, journal_dir: Path):
+                 max_qty: int, journal_dir: Path, store: CandleStore | None = None,
+                 level_dir: Path | None = None):
         if capital is not None:
             settings = settings.model_copy(update={"capital": float(capital)},
                                            deep=True)
@@ -276,11 +306,13 @@ class Orchestrator:
         self.journal = Journal(Path(journal_dir))
         self.risk = RiskState(settings)          # ONE ledger, all symbols
         spec = settings.market_spec()
-        store = CandleStore(Path(journal_dir) / "candles", spec)
+        self.store = store if store is not None else CandleStore(
+            Path(journal_dir) / "candles", spec)
+        level_store = LevelStore(level_dir) if level_dir is not None else None
         broker, manager = PaperBroker(settings), PositionManager(settings, spec)
         mk = lambda sym, idx=False: SymbolPipeline(       # noqa: E731
-            sym, settings, store, self.journal, broker, manager, self.risk,
-            max_qty, idx)
+            sym, settings, self.store, self.journal, broker, manager, self.risk,
+            max_qty, idx, level_store=level_store)
         self.pipelines = {sym: mk(sym) for sym in symbols}
         self.index_pipe = mk(index_symbol, True) if index_symbol else None
         self._session = None
@@ -301,6 +333,8 @@ class Orchestrator:
                     self.pipelines[c.symbol].on_m1(
                         c, self.index_pipe.index_view if self.index_pipe else None)
         pipes = self.pipelines.values()
+        for p in list(pipes) + ([self.index_pipe] if self.index_pipe else []):
+            p.finalize()                      # flush levels: state survives across runs
         closed = [p for pipe in pipes for p in pipe.closed]
         return {"trades": sum(p.n_trades for p in pipes),
                 "wins": sum(1 for p in closed if p.realized > 0),

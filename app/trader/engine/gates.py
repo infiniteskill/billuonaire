@@ -26,7 +26,9 @@ class Verdict:
 
 @dataclass
 class RiskState:
-    """Mutable per-day risk ledger; reset_day() at each session open."""
+    """Mutable per-day risk ledger; reset_day() at each session open.
+    Memory-only by design, like Position -- replay-safe (state rebuilds by
+    re-running the feed from day start); crash-recovery is a live-phase concern."""
 
     settings: Settings
     trades_today: int = 0

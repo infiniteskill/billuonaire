@@ -20,6 +20,7 @@ from trader.engine.confluence import ScoredZone
 from trader.engine.context import DayState, IndexView, StockContext
 from trader.engine.entry import EntryState
 from trader.engine.gates import RiskState, Verdict
+from trader.engine.levels import LevelStore
 from trader.engine.pipeline import Orchestrator, SymbolPipeline
 from trader.execution.manager import Action, PositionManager
 from trader.execution.paper import PaperBroker
@@ -168,6 +169,55 @@ def test_end_session_prunes_stale_levels(tmp_path):
     pipe._end_session(datetime(2026, 7, 15, 9, 15, tzinfo=IST))
     assert {lv.kind for lv in pipe.levels} == {LevelKind.PDH, LevelKind.ROUND,
                                                LevelKind.EQH}
+
+
+# ------------------------------------------------------- LevelStore wiring
+
+def test_end_session_persists_and_reload_via_pipeline_init(tmp_path):
+    """_end_session prunes then persists (level_store wired); a NEW pipeline
+    built against the same store+symbol loads exactly that pruned set at
+    __init__ -- state survives across process runs."""
+    store = LevelStore(tmp_path / "levels")
+    s, spec = cfg(), cfg().market_spec()
+    mk_pipe = lambda: SymbolPipeline("X", s, CandleStore(tmp_path / "candles", spec),
+                                     Journal(tmp_path / "journal"), PaperBroker(s),
+                                     PositionManager(s, spec), RiskState(s), 50,
+                                     level_store=store)
+    pipe = mk_pipe()
+    t = datetime(2026, 7, 14, 15, 25, tzinfo=IST)
+    mk_lv = lambda kind, state: Level(f"X-{kind.name}-{state.name}", "X", kind,
+                                      (D("99"), D("101")), t, None, state)
+    pipe.levels[:] = [mk_lv(LevelKind.PDH, LevelState.ACTIVE),
+                      mk_lv(LevelKind.SWING_L, LevelState.ACTIVE)]   # intraday, dropped
+    pipe._end_session(datetime(2026, 7, 15, 9, 15, tzinfo=IST))
+
+    reloaded = mk_pipe()
+    assert [lv.kind for lv in reloaded.levels] == [LevelKind.PDH]
+    assert reloaded.levels == store.load("X")
+
+
+def test_orchestrator_level_dir_survives_across_runs(tmp_path):
+    """level_dir wires a LevelStore through the Orchestrator: run() end
+    (finalize) persists the cross-day-safe subset WITHOUT mutating the live
+    pipeline's levels in place; a second Orchestrator pointed at the same
+    level_dir loads exactly that subset at pipeline __init__."""
+    level_dir = tmp_path / "levels"
+    feed = ScenarioFeed([judas_reversal("ACME", DAY1, 100.0)])
+    orch = Orchestrator(cfg(), feed, ["ACME"], capital=100000, max_qty=50,
+                        journal_dir=tmp_path / "journal", level_dir=level_dir)
+    orch.run()
+    pipe = orch.pipelines["ACME"]
+    assert any(lv.kind is LevelKind.SWING_L for lv in pipe.levels)  # untouched in memory
+
+    persisted = LevelStore(level_dir).load("ACME")
+    carry = {LevelKind.PDH, LevelKind.PDL, LevelKind.EQH, LevelKind.EQL, LevelKind.ROUND}
+    assert persisted and {lv.kind for lv in persisted} <= carry
+    assert all(lv.state.name not in ("DEAD", "MITIGATED", "INVERTED") for lv in persisted)
+
+    feed2 = ScenarioFeed([judas_reversal("ACME", DAY2, 107.0)])
+    orch2 = Orchestrator(cfg(), feed2, ["ACME"], capital=100000, max_qty=50,
+                         journal_dir=tmp_path / "journal2", level_dir=level_dir)
+    assert orch2.pipelines["ACME"].levels == persisted     # roundtrip: init loads it back
 
 
 def _swing(kind, price, minute, tf=Timeframe.M15):

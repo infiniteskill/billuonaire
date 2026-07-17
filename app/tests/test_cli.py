@@ -137,6 +137,46 @@ def test_watch_unknown_feed(tmp_path):
     assert r.exit_code != 0
 
 
+def test_watch_loads_and_saves_candle_cache_across_runs(tmp_path):
+    """watch loads dir/journal/candles before the run and saves after --
+    a second invocation must see the first run's day merged with the new
+    day's feed data (proving load-before-run, not just save-after-run)."""
+    _init(tmp_path, ["ACME"])
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    def _csv(day, o):
+        return ("ts,open,high,low,close,volume\n"
+               f"{day}T09:15:00+05:30,{o},{o + 1},{o - 1},{o + 0.5},1000\n")
+
+    (data_dir / "ACME.csv").write_text(_csv("2026-07-14", 100))
+    r1 = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path),
+                             "--feed", "file", "--data", str(data_dir)])
+    assert r1.exit_code == 0
+    cache = tmp_path / "journal" / "candles" / "ACME"
+    assert (cache / "1d.parquet").exists()
+
+    (data_dir / "ACME.csv").write_text(_csv("2026-07-15", 110))   # a second day
+    r2 = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path),
+                             "--feed", "file", "--data", str(data_dir)])
+    assert r2.exit_code == 0
+
+    reloaded = CandleStore(tmp_path / "journal" / "candles", NSE)
+    reloaded.load("ACME")
+    d1_dates = {c.ts.date().isoformat() for c in reloaded._data["ACME"][Timeframe.D1]}
+    assert d1_dates == {"2026-07-14", "2026-07-15"}     # both days survived
+
+    r3 = runner.invoke(app, ["list", "--dir", str(tmp_path)])
+    assert r3.exit_code == 0
+    assert f"{fit('ACME', reloaded, NSE)['score']:.1f}" in r3.output
+
+
+def test_list_shows_dash_without_cache(tmp_path):
+    _init(tmp_path, ["ACME"])
+    r = runner.invoke(app, ["list", "--dir", str(tmp_path)])
+    assert r.exit_code == 0 and "-" in r.output
+
+
 def test_watch_auto_picks_top_fit(tmp_path):
     _init(tmp_path, ["GOOD", "BAD"])
     store = CandleStore(tmp_path / "journal" / "candles", NSE)

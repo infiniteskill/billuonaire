@@ -64,19 +64,31 @@ def init(
     typer.echo(f"Initialized trader workspace in {dir}")
 
 
+def _candle_store(dir: Path, spec) -> CandleStore:
+    """Shared store dir convention (watch/list/scanner alike)."""
+    return CandleStore(dir / "journal" / "candles", spec)
+
+
 @app.command(name="list")
 def list_stocks(
     dir: Path = typer.Option(Path("."), "--dir", help="Directory containing stocks.json."),
 ) -> None:
-    """Print a numbered table of configured stocks."""
+    """Print a numbered table of configured stocks (stocks.json order) with
+    a real fit() score wherever its candle cache under dir/journal/candles
+    is non-empty, else '-'."""
     stocks = load_stocks(dir / "stocks.json")
+    settings = load_settings(dir / "config.json")
+    spec = settings.market_spec()
+    store = _candle_store(dir, spec)
 
     table = Table()
     table.add_column("#")
     table.add_column("symbol")
     table.add_column("fit")
     for i, symbol in enumerate(stocks, start=1):
-        table.add_row(str(i), symbol, "-")
+        store.load(symbol)
+        score = f"{fit(symbol, store, spec)['score']:.1f}" if has_data(symbol, store, spec) else "-"
+        table.add_row(str(i), symbol, score)
 
     console.print(table)
 
@@ -95,7 +107,7 @@ def _resolve_symbols(dir: Path, stocks: list[str], numbers: list[int],
         return [stocks[n - 1] for n in numbers]
     settings = load_settings(dir / "config.json")
     spec = settings.market_spec()
-    store = CandleStore(dir / "journal" / "candles", spec)
+    store = _candle_store(dir, spec)
     scored = []
     for sym in stocks:
         store.load(sym)
@@ -148,7 +160,9 @@ def watch(
                                         help="Index symbol (overrides config index_symbol)."),
 ) -> None:
     """Run the Orchestrator against mock or file data to exhaustion, then
-    print a summary + per-symbol table once (live streaming is a later phase)."""
+    print a summary + per-symbol table once (live streaming is a later phase).
+    Candle cache (dir/journal/candles) loads before the run and saves after,
+    so fit scores and prior-day context accumulate across invocations."""
     stocks = load_stocks(dir / "stocks.json")
     symbols = _resolve_symbols(dir, stocks, numbers or [], auto)
     if not symbols:
@@ -175,9 +189,16 @@ def watch(
         raise typer.Exit(code=1)
 
     journal_dir = dir / "journal"
+    all_symbols = symbols + ([index] if index else [])
+    store = _candle_store(dir, settings.market_spec())
+    for sym in all_symbols:
+        store.load(sym)
     orch = Orchestrator(settings, data_feed, symbols, index_symbol=index,
-                        capital=capital, max_qty=max_qty, journal_dir=journal_dir)
+                        capital=capital, max_qty=max_qty, journal_dir=journal_dir,
+                        store=store, level_dir=journal_dir / "levels")
     summary = orch.run()
+    for sym in all_symbols:
+        store.save(sym)
     _print_summary("Session Summary", summary)
 
     day = _latest_day(journal_dir)
