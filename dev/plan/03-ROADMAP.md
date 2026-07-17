@@ -46,6 +46,14 @@ learn/calibrate.py (nightly self-audit 06 §10: per-detector precision, capped w
 nudges ±10%/wk, auto-bench flag — human kills, walk-forward split, all changes journaled).
 **Exit criteria:** replay over 30 stocks × N days of file data produces report;
 replay of MockFeed scenarios reproduces Phase 4 outcomes exactly (single-pipeline proof).
+**STATUS: COMPLETE** — 565 tests green. fetch/replay/report/calibrate CLI shipped;
+single-pipeline gate passed (byte-identical journals); synthetic month (2 sym × 22
+sessions) verified end-to-end: tables render, 22-day cluster stats, calibrate closes
+the loop (3105 verdicts). Detector memory session-bounded (C10), replay `--fresh`,
+stale dated-level carry pruned to newest generation. Known calibration debt for P6
+real data: arm knife-edge near round numbers (stop-snap vs max_stop_atr) suppresses
+day-2+ mock judas entries; expiry_size_mult×max_qty=1 floors to qty 0 on Thursdays;
+flat Rs-20 brokerage swamps small mock notionals (net R misleading on 100-rupee prices).
 
 ## Phase 6 — Kite Adapter (when API purchased)
 kiteconnect auth flow (daily token), KiteFeed (WebSocket ticks → M1 candles),
