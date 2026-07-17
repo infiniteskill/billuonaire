@@ -4,6 +4,9 @@ One FSM per symbol, IDLE -> ARMED -> fill/disarm. arm() builds the draft
 TradePlan; threshold/gates are the CALLER's job (GateChain), as is
 journalling the skip/disarm reasons returned here.
 
+  ARM      only with price approaching (06 §4): latest closed M5 close
+           within arm_proximity_atr x ATR of the zone, else skip "too_far"
+           (far zones must not arm and burn TTL).
   STOP     zone far edge, pushed past any swept-trap extreme (level with
            SWEPT history overlapping the zone), buffered by atr_buffer x ATR;
            if within 2 ticks of a ROUND level edge, landed round_offset_ticks
@@ -55,7 +58,7 @@ class EntryState(Enum):
 @dataclass(frozen=True)
 class ArmResult:
     armed: bool
-    reason: str | None = None    # "stop_too_wide" | "no_room" | "qty_zero"
+    reason: str | None = None    # "too_far" | "stop_too_wide" | "no_room" | "qty_zero"
     plan: TradePlan | None = None
 
 
@@ -80,6 +83,10 @@ class EntryFSM:
         lo, hi = zone.zone
         up = zone.direction is Direction.LONG
         atr = ctx.atr(Timeframe.M5) or Decimal(0)
+        if last := ctx.candles.last(1, Timeframe.M5):
+            gap = max(lo - last[-1].close, last[-1].close - hi)
+            if gap > Decimal(str(self.s.entry.arm_proximity_atr)) * atr:
+                return ArmResult(False, "too_far")
         entry = self.spec.quantize((lo + hi) / 2)    # zone CE
         stop = self._stop(lo, hi, up, atr, ctx)
         risk = abs(entry - stop)

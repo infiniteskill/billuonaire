@@ -114,6 +114,27 @@ def test_arm_qty_zero_skips(fsm):
     assert (r.armed, r.reason) == (False, "qty_zero")
 
 
+# --- arm proximity (06 §4: price must be approaching, within 1 x ATR) ---
+
+def test_arm_too_far_below_close_skips(fsm):
+    # close 100, zone hi 96: gap 4 > 1*ATR(2) => never arms, no TTL burn
+    r = fsm.arm(zone("94.00", "96.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 1000)
+    assert (r.armed, r.reason, r.plan) == (False, "too_far", None)
+    assert fsm.state is EntryState.IDLE
+
+
+def test_arm_too_far_above_close_skips_short(fsm):
+    r = fsm.arm(zone("104.00", "106.00", Direction.SHORT),
+                ctx_at(at(11, 0), calm(), []), 1000)
+    assert (r.armed, r.reason) == (False, "too_far")
+
+
+def test_arm_at_exactly_one_atr_allowed(fsm):
+    # close 100, zone hi 98: gap 2 == 1*ATR(2) => still arms (farther rejects)
+    r = fsm.arm(zone("95.00", "98.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 1000)
+    assert r.armed and r.reason is None
+
+
 # --- targets ---
 
 def test_t2_t3_fallback_prices(fsm):  # single level beyond: 2.5R / 4R fallbacks
