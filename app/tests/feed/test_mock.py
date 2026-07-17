@@ -1,7 +1,7 @@
 from datetime import date
 from trader.models.candle import Timeframe
 from trader.feed.mock import (ScenarioFeed, double_trap, judas_reversal,
-                              range_pin, trend_day)
+                              range_pin, stop_hunt_survive, trend_day)
 
 def test_judas_shape():
     sc = judas_reversal("X", date(2026, 7, 15), 100.0)
@@ -68,7 +68,8 @@ def test_sweep_low_is_unique_day_low():
 
 
 def _all_scenarios():
-    return _both_scenarios() + [range_pin("Z", D, 100.0), double_trap("W", D, 200.0)]
+    return _both_scenarios() + [range_pin("Z", D, 100.0), double_trap("W", D, 200.0),
+                                stop_hunt_survive("V", D, 100.0)]
 
 
 @pytest.mark.parametrize("sc", _all_scenarios(), ids=lambda s: s.name)
@@ -127,6 +128,24 @@ def test_range_pin_holds_the_opening_range():
     rest = candles[15:]
     assert max(c.high for c in rest) < or_high          # both edges hold,
     assert min(c.low for c in rest) > or_low            # all day
+
+
+def test_stop_hunt_survive_shape():
+    sc = stop_hunt_survive("X", D, 100.0)
+    candles = sc.candles()
+    assert len(candles) == 375 and candles == sc.candles()    # deterministic
+    slo, shi = sc.truth["stop_zone"]
+    hm = sc.truth["hunt_minute"]
+    hunt = candles[hm]
+    assert hunt.low < slo                       # wick pierces the stop zone...
+    b = hm // 5 * 5                             # ...but no M1 of the hunt M5
+    assert all(c.close > shi for c in candles[b:b + 5])   # closes at/below it
+    plo, phi = sc.truth["pivot_zone"]
+    sm = sc.truth["pivot_sweep_minute"]
+    assert candles[sm].low < plo                # pivot swept: wick through,
+    assert candles[sm // 5 * 5 + 4].close > phi  # M5 close back above the zone
+    assert min(c.low for c in candles[105:]) == hunt.low  # hunt = setup's low
+    assert candles[-1].close > candles[sm].close          # afternoon rallied
 
 
 def test_historical_m1_range_and_other_tf_rejected():
