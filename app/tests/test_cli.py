@@ -322,6 +322,25 @@ def test_replay_all_uses_every_csv_except_index(tmp_path, monkeypatch):
     assert seen["syms"] == ["AAA", "ZZZ"] and seen["index"] == "NIFTY"
 
 
+def test_replay_fresh_wipes_journal_dir(tmp_path):
+    """T3: reruns must not append duplicate day entries -- default --fresh
+    wipes dir/journal first; --no-fresh accumulates (watch-style)."""
+    _init(tmp_path, ["ACME"])
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "ACME.csv").write_text(
+        "ts,open,high,low,close,volume\n"
+        "2026-07-15T09:15:00+05:30,100,101,99,100.5,1000\n")
+    sentinel = tmp_path / "journal" / "stale.marker"
+    base = ["replay", "--data", str(data), "--from", "2026-07-15",
+            "--to", "2026-07-15", "--stocks", "1", "--dir", str(tmp_path)]
+    for extra, survives in (([], False), (["--no-fresh"], True)):
+        sentinel.parent.mkdir(exist_ok=True)
+        sentinel.write_text("")
+        assert runner.invoke(app, base + extra).exit_code == 0
+        assert sentinel.exists() is survives
+
+
 def test_replay_validation_errors(tmp_path):
     _init(tmp_path, ["ACME"])
     data = tmp_path / "data"

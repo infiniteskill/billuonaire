@@ -338,11 +338,17 @@ def replay(
     dir: Path = typer.Option(Path("."), "--dir", help="Config directory."),
     capital: Optional[float] = typer.Option(None, "--capital"),
     max_qty: int = typer.Option(1, "--max-qty"),
+    fresh: bool = typer.Option(True, "--fresh/--no-fresh",
+                               help="Wipe dir/journal (journals + candle/level/"
+                               "timestats caches) before replaying, so reruns "
+                               "never append duplicate day entries. --no-fresh "
+                               "accumulates state across runs (watch-style)."),
     verbose: bool = typer.Option(False, "--verbose", "-v",
                                  help="Console logging at DEBUG."),
 ) -> None:
     """Replay a date range of CSV data through the live pipeline (journals
-    under dir/journal), then print the metrics report for the range."""
+    under dir/journal, wiped first unless --no-fresh), then print the
+    metrics report for the range."""
     _setup_logging(dir, verbose)
     settings = load_settings(dir / "config.json")
     index = index or settings.index_symbol
@@ -369,6 +375,8 @@ def replay(
         typer.echo(f"index {index}: no data in feed, running without index context",
                    err=True)
         index = None
+    if fresh and (dir / "journal").exists():   # after validation: errors never wipe
+        shutil.rmtree(dir / "journal")
     summary = run_replay(settings, data, symbols, start, end, dir / "journal",
                          index=index, capital=capital, max_qty=max_qty)
     _print_summary("Replay Summary", summary)
