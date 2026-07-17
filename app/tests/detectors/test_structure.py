@@ -114,6 +114,30 @@ def test_fake_bos_memory_flags_later_evidence():
     assert choch.meta["fake_bos_recent"] is True
 
 
+def test_fake_bos_flag_expires_after_fake_window():
+    det, swings = StructureDetector(PARAMS), bull_swings()
+    [bos] = det.detect(make_ctx([116], swings))
+    det.detect(make_ctx([116, 114], swings, [bos]))          # fake recorded
+    assert "X" in det._fake
+    quiet = [116, 114] + [114] * 6                           # > fake_window candles
+    [choch] = det.detect(make_ctx(quiet + [104], swings, [bos]))
+    assert choch.meta["event"] == "CHOCH"
+    assert "fake_bos_recent" not in choch.meta               # flag expired
+    assert "X" not in det._fake
+
+
+def test_fake_bos_cleared_on_session_change():
+    det, swings = StructureDetector(PARAMS), bull_swings()
+    [bos] = det.detect(make_ctx([116], swings))
+    det.detect(make_ctx([116, 114], swings, [bos]))          # fake recorded day 1
+    assert det._fake
+    ctx2 = make_ctx([116, 114, 104], swings, [bos])
+    ctx2.day.session_date += timedelta(days=1)               # new session
+    [choch] = det.detect(ctx2)
+    assert "fake_bos_recent" not in choch.meta               # memory cleared
+    assert det._fake == {}
+
+
 def test_needs_swings_guard():
     assert StructureDetector(PARAMS).detect(make_ctx([116], [])) == []
     one_sided = [swing(LevelKind.SWING_H, 110, 0), swing(LevelKind.SWING_H, 115, 5)]

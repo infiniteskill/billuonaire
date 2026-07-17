@@ -3,11 +3,13 @@ of its tf. Trend = last `trend_swings` swings (HH+HL bullish, LH+LL bearish,
 else ranging -> nothing). BOS: close beyond last same-side swing mid with
 trend (0.6, ttl 12). CHoCH: close beyond last opposite swing mid against trend
 (0.8 if any SWEPT transition within last `trap_window` candles, else 0.5;
-ttl 24); wins over BOS. Fake-BOS memory is in-instance only (lost on restart).
+ttl 24); wins over BOS. Fake-BOS memory is in-instance only (lost on restart),
+expires `fake_window` candles after the fake and clears on session change.
 """
 
 from __future__ import annotations
 
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from trader.detectors.base import Detector, register
@@ -30,9 +32,13 @@ class StructureDetector(Detector):
     def __init__(self, params: dict):
         super().__init__({**_DEFAULTS, **params})
         self._pending: dict[str, list[dict]] = {}  # symbol -> unresolved BOS breaks
-        self._fake: set[str] = set()               # symbols with a recorded fake BOS
+        self._fake: dict[str, datetime] = {}       # symbol -> ts of last fake BOS
+        self._session: date | None = None
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
+        if ctx.day.session_date != self._session:  # new session: stale memories
+            self._session = ctx.day.session_date
+            self._pending, self._fake = {}, {}
         tf = Timeframe(self.params["tf"])
         last = ctx.candles.last(1, tf)
         swings = sorted(
@@ -87,7 +93,7 @@ class StructureDetector(Detector):
                and e.meta.get("swing_id") == swing.id for e in ctx.evidence_history):
             return None  # already emitted for this swing
         meta = {"event": event, "swing_id": swing.id}
-        if ctx.symbol in self._fake:
+        if ctx.symbol in self._fake:               # unexpired: pruned in detect
             meta["fake_bos_recent"] = True
         m, T = _mid(swing.zone), ctx.spec.tick_size
         return Evidence(detector=self.name, direction=direction, strength=strength,
@@ -108,7 +114,10 @@ class StructureDetector(Detector):
             since = [c for c in ctx.candles.last(fw + 1, tf) if c.ts > p["ts"]]
             if any((c.close < p["level"]) if p["up"] else (c.close > p["level"])
                    for c in since[:fw]):
-                self._fake.add(ctx.symbol)
+                self._fake[ctx.symbol] = candle.ts
             elif len(since) <= fw:
                 keep.append(p)  # still inside the watch window
         self._pending[ctx.symbol] = keep
+        ts = self._fake.get(ctx.symbol)            # expire the flag after fw candles
+        if ts is not None and candle.ts - ts > fw * timedelta(minutes=tf.minutes):
+            del self._fake[ctx.symbol]
