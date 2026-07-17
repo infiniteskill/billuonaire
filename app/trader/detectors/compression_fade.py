@@ -49,7 +49,7 @@ class CompressionFadeDetector(Detector):
             return []
         j = window[-1]
         atr = ctx.atr(tf)
-        floor = Decimal(str(self.params["sl_atr_floor"])) * atr if atr else None
+        floor = Decimal(str(self.params["sl_atr_floor"])) * atr if atr else Decimal(0)
         out = []
         for c in window[:-1]:
             if c.ts in self._emitted or not self._is_compress(c):
@@ -62,9 +62,7 @@ class CompressionFadeDetector(Detector):
                 continue
             self._emitted.add(c.ts)
             entry = j.close
-            meta = {"event": "COMPRESSION_FADE", "sl": sl, "entry": entry}
-            if floor is not None:
-                meta["sl_floor"] = floor
+            meta = {"event": "COMPRESSION_FADE", "sl": str(sl), "sl_floor": str(floor)}
             out.append(Evidence(detector=self.name, direction=direction,
                                 strength=self._strength(c),
                                 zone=(min(sl, entry), max(sl, entry)),

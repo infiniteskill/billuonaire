@@ -56,9 +56,8 @@ def test_up_break_emits_short_with_sl_at_break_high():
     [ev] = CompressionFadeDetector({}).detect(ctx_at(store, 2))
     assert ev.detector == "compression_fade"
     assert ev.direction is Direction.SHORT
-    assert ev.meta["sl"] == tick(107)
-    assert ev.meta["entry"] == tick("106.5")
-    assert ev.meta["event"] == "COMPRESSION_FADE"
+    # raw break high, no buffer; entry key dropped; atr None here -> sl_floor "0"
+    assert ev.meta == {"event": "COMPRESSION_FADE", "sl": str(tick(107)), "sl_floor": "0"}
     assert ev.zone == (tick("106.5"), tick(107))
     assert ev.ttl_candles == 2
     assert 0.0 <= ev.strength <= 1.0
@@ -68,8 +67,7 @@ def test_down_break_emits_long_with_sl_at_break_low():
     store = make_store([COMPRESS, DOWN_BREAK])
     [ev] = CompressionFadeDetector({}).detect(ctx_at(store, 2))
     assert ev.direction is Direction.LONG
-    assert ev.meta["sl"] == tick(93)
-    assert ev.meta["entry"] == tick("93.5")
+    assert ev.meta == {"event": "COMPRESSION_FADE", "sl": str(tick(93)), "sl_floor": "0"}
     assert ev.zone == (tick(93), tick("93.5"))
 
 
@@ -102,7 +100,7 @@ def test_sl_floor_annotated_when_atr_available():
     atr = ctx.atr(M5)
     [ev] = CompressionFadeDetector({}).detect(ctx)
     assert atr is not None
-    assert ev.meta["sl_floor"] == Decimal("0.15") * atr
+    assert ev.meta["sl_floor"] == str(Decimal("0.15") * atr)
 
 
 def test_no_lookahead_before_break_bar_closes():
@@ -156,4 +154,4 @@ def test_session_boundary_no_cross_day_fade():
                         day=DayState(session_date=now2.date()))
     [ev] = det.detect(ctx2)
     assert ev.direction is Direction.LONG
-    assert ev.meta["sl"] == tick(93)
+    assert ev.meta["sl"] == str(tick(93))

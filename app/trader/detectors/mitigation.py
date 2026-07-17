@@ -41,7 +41,7 @@ from trader.engine.context import StockContext
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
 
-_DEFAULTS = {"tf": "5m", "disp_atr": 1.0, "lookback": 3}
+_DEFAULTS = {"tf": "5m", "disp_atr": 1.0, "lookback": 3, "sl_atr_floor": 0.15}
 
 
 @register
@@ -61,8 +61,9 @@ class MitigationDetector(Detector):
         tf = Timeframe(self.params["tf"])
         lookback = int(self.params["lookback"])
         window = ctx.candles.today(tf)[-(lookback + 2):]
-        touches = self._touch(ctx, window)  # against blocks formed on PRIOR ticks
         atr = ctx.atr(tf)
+        floor = Decimal(str(self.params["sl_atr_floor"])) * atr if atr else Decimal(0)
+        touches = self._touch(ctx, window, floor)  # against blocks formed on PRIOR ticks
         if atr and atr > 0 and len(window) >= lookback + 2:
             need = Decimal(str(self.params["disp_atr"])) * atr
             self._form(window, lookback, need)
@@ -88,7 +89,8 @@ class MitigationDetector(Detector):
             strength = min(max(float((disp - need) / need), 0.0), 1.0) if need > 0 else 1.0
             self._blocks[blk.ts] = (sign, lo, hi, extreme, strength)
 
-    def _touch(self, ctx: StockContext, window: list[Candle]) -> list[Evidence]:
+    def _touch(self, ctx: StockContext, window: list[Candle],
+               floor: Decimal) -> list[Evidence]:
         if not window:
             return []
         touch = window[-1]
@@ -102,6 +104,6 @@ class MitigationDetector(Detector):
                 detector=self.name,
                 direction=Direction.LONG if sign == 1 else Direction.SHORT,
                 strength=strength, zone=(lo, hi), ts=ctx.now, ttl_candles=6,
-                meta={"event": "MITIGATION", "sl": sl},
+                meta={"event": "MITIGATION", "sl": str(sl), "sl_floor": str(floor)},
             ))
         return out

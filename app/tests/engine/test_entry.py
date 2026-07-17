@@ -121,6 +121,58 @@ def test_arm_floor_widened_stop_resnaps_off_round(fsm):
     assert p.qty == 232
 
 
+# --- arm(): signal-emitter tiny structural stop (meta["sl"], Wave-3 C-1) ---
+
+def sig_ev(sl, sl_floor="0.30", det="compression_fade", dirn=Direction.LONG,
+           zlo="98.40", zhi="99.00"):
+    """A signal-emitter evidence carrying the standardized meta sl contract."""
+    return Evidence(det, dirn, 0.8, (D(zlo), D(zhi)), at(10, 55), 2,
+                    meta={"event": "COMPRESSION_FADE", "sl": sl, "sl_floor": sl_floor})
+
+
+def test_arm_signal_emitter_honors_raw_meta_sl_not_min_stop_atr(fsm):
+    # The zone's driving evidence is a signal-emitter: stop = its RAW meta["sl"]
+    # (98.40, raw_risk 0.60 >= sl_floor 0.30) -- NOT widened to the 1.0xATR=2.00
+    # min_stop_atr cost floor. The tiny SL -> a much larger qty (500/0.60=833).
+    ctx = ctx_at(at(11, 0), calm(), [t_lvl()], history=[sig_ev("98.40")])
+    p = fsm.arm(zone("98.00", "100.00"), ctx, 1000).plan
+    assert p.stop == D("98.40")
+    assert p.meta["risk_pts"] == "0.60"
+    assert p.meta["sl_source"] == "compression_fade"     # journalled for replay
+    assert p.qty == 833                                  # floor(500 / 0.60)
+
+
+def test_arm_signal_emitter_floors_at_sl_floor_not_min_stop_atr(fsm):
+    # raw_risk |99.00-98.90|=0.10 < sl_floor 0.30: stop widens to CE-0.30=98.70
+    # (the 0.15xATR validated floor), NOT to min_stop_atr 2.00.
+    ctx = ctx_at(at(11, 0), calm(), [t_lvl()], history=[sig_ev("98.90")])
+    p = fsm.arm(zone("98.00", "100.00"), ctx, 1000).plan
+    assert p.stop == D("98.70")
+    assert p.meta["risk_pts"] == "0.30"
+    assert p.qty == 1000                                 # floor(500/0.30)=1666, max_qty caps
+
+
+def test_arm_signal_emitter_short_stop_sits_above_entry(fsm):
+    # SHORT mirror: entry CE 101.00, meta sl 101.60 (raw_risk 0.60) -> stop ABOVE
+    ctx = ctx_at(at(11, 0), calm(), [lvl(LevelKind.SWING_L, "97.25", "98.00")],
+                 history=[sig_ev("101.60", dirn=Direction.SHORT,
+                                 zlo="101.00", zhi="101.60")])
+    p = fsm.arm(zone("100.00", "102.00", Direction.SHORT), ctx, 1000).plan
+    assert p.stop == D("101.60") and p.meta["risk_pts"] == "0.60"
+
+
+def test_arm_non_signal_evidence_keeps_min_stop_atr_path(fsm):
+    # Evidence present but NOT a signal-emitter (no meta["sl"]): the generic
+    # _stop()/min_stop_atr path stands untouched -- natural 97.50 widens to 97.00.
+    ev = Evidence("ob_lux", Direction.LONG, 0.9, (D("98.00"), D("100.00")),
+                  at(10, 55), 6, meta={"event": "OB"})
+    ctx = ctx_at(at(11, 0), calm(), [t_lvl()], history=[ev])
+    p = fsm.arm(zone("98.00", "100.00"), ctx, 1000).plan
+    assert p.stop == D("97.00") and p.meta["risk_pts"] == "2.00"
+    assert "sl_source" not in p.meta
+    assert p.qty == 250
+
+
 def test_arm_sweep_trap_round_snap_targets_decimal(fsm):
     levels = [lvl(LevelKind.SWING_L, "97.40", "98.50", LevelState.SWEPT, SWEPT),
               lvl(LevelKind.SWING_L, "96.00", "98.00", LevelState.SWEPT, SWEPT),

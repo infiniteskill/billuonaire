@@ -22,7 +22,7 @@ from trader.engine.context import StockContext
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
 
-_DEFAULTS = {"tf": "5m", "gap_atr": 0.3}
+_DEFAULTS = {"tf": "5m", "gap_atr": 0.3, "sl_atr_floor": 0.15}
 
 
 @dataclass
@@ -55,11 +55,12 @@ class BprDetector(Detector):
         atr = ctx.atr(tf)
         if len(window) == 3 and atr:
             self._find_gap(window, atr)
+        floor = Decimal(str(self.params["sl_atr_floor"])) * atr if atr else Decimal(0)
         last = window[-1]
         for g in self._gaps:
             if not g.dead and (last.close < g.lo if g.bull else last.close > g.hi):
                 g.dead = True
-        return self._overlaps(ctx, last)
+        return self._overlaps(ctx, last, floor)
 
     def _find_gap(self, window: list[Candle], atr: Decimal) -> None:
         c1, c2, c3 = window
@@ -74,7 +75,8 @@ class BprDetector(Detector):
     def _has(self, born: datetime, bull: bool) -> bool:
         return any(g.born == born and g.bull == bull for g in self._gaps)
 
-    def _overlaps(self, ctx: StockContext, last: Candle) -> list[Evidence]:
+    def _overlaps(self, ctx: StockContext, last: Candle,
+                  floor: Decimal) -> list[Evidence]:
         bulls = [g for g in self._gaps if g.bull and not g.dead]
         bears = [g for g in self._gaps if not g.bull and not g.dead]
         out = []
@@ -91,5 +93,5 @@ class BprDetector(Detector):
                     detector=self.name,
                     direction=Direction.LONG if long_ else Direction.SHORT,
                     strength=0.8, zone=(lo, hi), ts=ctx.now, ttl_candles=4,
-                    meta={"event": "BPR", "sl": sl}))
+                    meta={"event": "BPR", "sl": str(sl), "sl_floor": str(floor)}))
         return out
