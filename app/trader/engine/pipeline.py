@@ -72,7 +72,8 @@ class SymbolPipeline:
         self.registry = DetectorRegistry(settings)
         self.level_engine = LevelEngine(settings.detectors.params.get("levels", {}))
         self.classifier = TemplateClassifier(self.spec)
-        self.confluence = ConfluenceEngine(settings)
+        self.confluence = ConfluenceEngine(
+            settings, settings.detectors.params.get("confluence"))
         self.gates, self.fsm = GateChain(settings), EntryFSM(settings, self.spec)
         self.wyckoff = WyckoffDetector(settings.detectors.params.get("wyckoff", {}))
         self.level_store = level_store        # optional: cross-run level persistence
