@@ -93,6 +93,48 @@ def test_pdh_pdl_absent_without_prev_day():
     assert not any(lv.kind in (LevelKind.PDH, LevelKind.PDL) for lv in ctx.levels)
 
 
+# ---- PWH/PWL ---------------------------------------------------------
+
+def add_day(store, day, h, l):
+    """One M1 candle for `day` -> that session's D1 aggregate is exactly h/l."""
+    store.add(m1(day.replace(hour=9, minute=15), 100, h, l, 100))
+
+
+def test_pwh_pwl_created_from_prior_iso_week():
+    det = LiquidityDetector(DEFAULT_PARAMS)
+    store = CandleStore("/nonexistent")
+    add_day(store, datetime(2026, 7, 8, tzinfo=IST), h=130, l=85)   # prior week
+    add_day(store, datetime(2026, 7, 9, tzinfo=IST), h=125, l=88)   # prior week
+    add_day(store, PREV_DAY, h=120, l=90)                           # same week
+    store.add(m1(SESSION_START, 110, 111, 109, 110))
+    ctx = ctx_at(store, SESSION_START + timedelta(minutes=1))
+
+    det.detect(ctx)
+    n = len(ctx.levels)
+    det.detect(ctx)                                # once per session/iso-week
+
+    assert len(ctx.levels) == n
+    pwh = next(lv for lv in ctx.levels if lv.kind is LevelKind.PWH)
+    pwl = next(lv for lv in ctx.levels if lv.kind is LevelKind.PWL)
+    assert pwh.zone == (tick(130) - TICK, tick(130) + TICK)  # week max, not 125
+    assert pwl.zone == (tick(85) - TICK, tick(85) + TICK)
+    y, w = ctx.day.session_date.isocalendar()[:2]
+    assert pwh.id == f"X-PWH-{y}-W{w:02d}"
+    assert pwl.id == f"X-PWL-{y}-W{w:02d}"
+
+
+def test_pwh_pwl_absent_without_prior_week_candle():
+    det = LiquidityDetector(DEFAULT_PARAMS)
+    store = CandleStore("/nonexistent")
+    add_day(store, PREV_DAY, h=120, l=90)          # same ISO week as TODAY
+    store.add(m1(SESSION_START, 110, 111, 109, 110))
+    ctx = ctx_at(store, SESSION_START + timedelta(minutes=1))
+
+    det.detect(ctx)
+
+    assert not any(lv.kind in (LevelKind.PWH, LevelKind.PWL) for lv in ctx.levels)
+
+
 # ---- Opening range -----------------------------------------------------
 
 def test_open_range_absent_before_0930():

@@ -1,4 +1,5 @@
-"""Liquidity detector ("liquidity"): creates PDH/PDL, OPEN_RANGE_H/L, ROUND
+"""Liquidity detector ("liquidity"): creates PDH/PDL, PWH/PWL (prior
+ISO-week D1 extremes, one pair per iso-week), OPEN_RANGE_H/L, ROUND
 and EQH/EQL Levels on ctx.levels (side channel, like swings.py) and emits at
 most 2 NEUTRAL proximity Evidence (nearest untapped ACTIVE/TESTED pool above
 and below price, within proximity_atr * ATR(M5); strength = pool * 0.5).
@@ -19,7 +20,8 @@ from trader.models.level import Level, LevelKind, LevelState
 
 _ACTIVE_STATES = (LevelState.ACTIVE, LevelState.TESTED)
 _PROXIMITY_KINDS = frozenset({
-    LevelKind.PDH, LevelKind.PDL, LevelKind.EQH, LevelKind.EQL,
+    LevelKind.PDH, LevelKind.PDL, LevelKind.PWH, LevelKind.PWL,
+    LevelKind.EQH, LevelKind.EQL,
     LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L, LevelKind.ROUND,
 })
 _DEFAULTS = {"eq_tolerance": 0.001, "round_steps": [50, 100, 500],
@@ -43,6 +45,7 @@ class LiquidityDetector(Detector):
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         self._create_pdh_pdl(ctx)
+        self._create_pwh_pwl(ctx)
         self._create_open_range(ctx)
         self._create_round(ctx)
         self._create_eq(ctx, LevelKind.SWING_H, LevelKind.EQH)
@@ -55,6 +58,23 @@ class LiquidityDetector(Detector):
         prev = ctx.candles.prev_day(Timeframe.M1)
         if prev:
             self._hl_pair(ctx, prev, ("PDH", LevelKind.PDH), ("PDL", LevelKind.PDL))
+
+    def _create_pwh_pwl(self, ctx: StockContext) -> None:
+        """Latest ISO week before the session's week: max D1 high / min D1
+        low. Skipped with no prior-week D1 candle; id per (symbol, iso-week)
+        so the pair persists all week."""
+        y, w = ctx.day.session_date.isocalendar()[:2]
+        days = [c for c in ctx.candles.last(15, Timeframe.D1)
+                if c.ts.isocalendar()[:2] < (y, w)]
+        if not days:
+            return
+        wk = max(c.ts.isocalendar()[:2] for c in days)
+        week = [c for c in days if c.ts.isocalendar()[:2] == wk]
+        T = ctx.spec.tick_size
+        for tag, kind, p in (("PWH", LevelKind.PWH, max(c.high for c in week)),
+                             ("PWL", LevelKind.PWL, min(c.low for c in week))):
+            self._create_once(ctx, f"{ctx.symbol}-{tag}-{y}-W{w:02d}",
+                              kind, (p - T, p + T))
 
     def _create_open_range(self, ctx: StockContext) -> None:
         """Opening range = first or_minutes of the session."""
