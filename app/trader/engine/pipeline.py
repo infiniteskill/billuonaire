@@ -25,6 +25,7 @@ from pathlib import Path
 import trader.detectors
 from trader.config import Settings
 from trader.detectors.base import DetectorRegistry
+from trader.detectors.timestats import bucket_index
 from trader.detectors.wyckoff import WyckoffDetector
 from trader.engine.confluence import ConfluenceEngine
 from trader.engine.context import DayState, IndexView, StockContext
@@ -36,7 +37,7 @@ from trader.execution.manager import PositionManager
 from trader.execution.paper import PaperBroker
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction
-from trader.models.level import TERMINAL, LevelKind
+from trader.models.level import TERMINAL, LevelKind, LevelState
 from trader.models.market import _minutes, is_expiry
 from trader.models.position import Position, PositionStatus
 from trader.store.candles import CandleStore, _bucket_start
@@ -57,7 +58,8 @@ class SymbolPipeline:
     def __init__(self, symbol: str, settings: Settings, store: CandleStore,
                  journal: Journal, broker: PaperBroker, manager: PositionManager,
                  risk: RiskState, max_qty: int, is_index: bool = False,
-                 level_store: LevelStore | None = None):
+                 level_store: LevelStore | None = None,
+                 timestats_dir: Path | None = None):
         self.symbol, self.s, self.spec = symbol, settings, settings.market_spec()
         self.store, self.journal, self.broker = store, journal, broker
         self.manager, self.risk, self.max_qty = manager, risk, max_qty
@@ -70,6 +72,10 @@ class SymbolPipeline:
         self.wyckoff = WyckoffDetector(settings.detectors.params.get("wyckoff", {}))
         self.level_store = level_store        # optional: cross-run level persistence
         self.levels = level_store.load(symbol) if level_store else []
+        self.timestats = self.registry.get("timestats")  # learning hook
+        if self.timestats is not None and timestats_dir is not None:
+            self.timestats.params["path"] = str(timestats_dir)
+            self.timestats.load(symbol)
         self.evidence_history = []
         self.day: DayState | None = None
         self.position: Position | None = None
@@ -106,6 +112,7 @@ class SymbolPipeline:
         into the next run."""
         self._prune_levels()
         self._save_levels()
+        self._save_timestats()
         if self._pending_plan is not None:
             self._pending_plan = None
             self._skip(ts, "fill", "session_end")
@@ -125,6 +132,10 @@ class SymbolPipeline:
         if self.level_store is not None:
             self.level_store.save(self.symbol, self.levels)
 
+    def _save_timestats(self) -> None:
+        if self.timestats is not None:
+            self.timestats.save(self.symbol)   # no-op without a path
+
     def finalize(self) -> None:
         """Called once when the feed is exhausted (Orchestrator.run end):
         persist the cross-day-safe subset so it survives into the next run,
@@ -133,6 +144,7 @@ class SymbolPipeline:
         that inspect the pipeline right after run()."""
         if self.level_store is not None:
             self.level_store.save(self.symbol, self._carry_over())
+        self._save_timestats()
 
     # -------------------------------------------------------- closed-M5 flow
 
@@ -149,7 +161,12 @@ class SymbolPipeline:
                            index=index, spec=self.spec)
         if c5.ts != self._last_c5:               # bar-scoped stages once per bar
             self._last_c5 = c5.ts                # (gap buckets only tick time)
-            self.level_engine.update(self.levels, c5, ctx.atr(Timeframe.M5))
+            trans = self.level_engine.update(self.levels, c5, ctx.atr(Timeframe.M5))
+            if self.timestats is not None:       # learn: sweep outcome per bar
+                self.timestats.record(
+                    self.symbol,
+                    bucket_index(now, self.spec, self.timestats.params["bucket_min"]),
+                    swept=any(t.new is LevelState.SWEPT for t in trans))
             evidence = self.registry.run_all(ctx)
             self.evidence_history.extend(evidence)   # after run_all: 1-tick lag ok
             del self.evidence_history[:-200]
@@ -292,13 +309,14 @@ class SymbolPipeline:
 class Orchestrator:
     """Routes the feed to per-symbol pipelines; index first per ts batch.
 
-    ``store``/``level_dir`` wire cross-run persistence for candles/levels.
-    Positions and RiskState stay memory-only (see RiskState docstring)."""
+    ``store``/``level_dir``/``timestats_dir`` wire cross-run persistence for
+    candles/levels/time-bucket sweep stats. Positions and RiskState stay
+    memory-only (see RiskState docstring)."""
 
     def __init__(self, settings: Settings, feed, symbols: list[str],
                  index_symbol: str | None = None, *, capital: float | None = None,
                  max_qty: int, journal_dir: Path, store: CandleStore | None = None,
-                 level_dir: Path | None = None):
+                 level_dir: Path | None = None, timestats_dir: Path | None = None):
         if capital is not None:
             settings = settings.model_copy(update={"capital": float(capital)},
                                            deep=True)
@@ -312,7 +330,7 @@ class Orchestrator:
         broker, manager = PaperBroker(settings), PositionManager(settings, spec)
         mk = lambda sym, idx=False: SymbolPipeline(       # noqa: E731
             sym, settings, self.store, self.journal, broker, manager, self.risk,
-            max_qty, idx, level_store=level_store)
+            max_qty, idx, level_store=level_store, timestats_dir=timestats_dir)
         self.pipelines = {sym: mk(sym) for sym in symbols}
         self.index_pipe = mk(index_symbol, True) if index_symbol else None
         self._session = None

@@ -197,7 +197,8 @@ def watch(
         store.load(sym)
     orch = Orchestrator(settings, data_feed, symbols, index_symbol=index,
                         capital=capital, max_qty=max_qty, journal_dir=journal_dir,
-                        store=store, level_dir=journal_dir / "levels")
+                        store=store, level_dir=journal_dir / "levels",
+                        timestats_dir=journal_dir / "timestats")
     summary = orch.run()
     for sym in all_symbols:
         store.save(sym)

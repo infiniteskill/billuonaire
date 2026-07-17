@@ -105,6 +105,12 @@ def test_registry_instantiates_only_enabled():
     assert GammaDetector.instantiated == 0  # registered but not enabled
 
 
+def test_registry_get_returns_enabled_instance_or_none():
+    reg = DetectorRegistry(make_settings(["alpha", "beta"]))
+    assert reg.get("beta") is reg.detectors[1]
+    assert reg.get("gamma") is None  # registered but not enabled
+
+
 def test_registry_unknown_name_raises_listing_known():
     with pytest.raises(ValueError) as exc:
         DetectorRegistry(make_settings(["no_such_detector"]))

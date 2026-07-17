@@ -89,6 +89,10 @@ class DetectorRegistry:
             for name in settings.detectors.enabled
         ]
 
+    def get(self, name: str) -> Detector | None:
+        """The enabled instance named ``name`` (pipeline hooks), else None."""
+        return next((d for d in self.detectors if d.name == name), None)
+
     def run_all(self, ctx: StockContext) -> list[Evidence]:
         """Run every enabled detector against ctx, in config order.
         Unmet ``requires`` -> silent skip. A raising detector is logged and

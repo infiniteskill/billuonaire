@@ -171,6 +171,15 @@ def test_watch_loads_and_saves_candle_cache_across_runs(tmp_path):
     assert f"{fit('ACME', reloaded, NSE)['score']:.1f}" in r3.output
 
 
+def test_watch_persists_timestats(tmp_path):
+    """watch wires timestats_dir: learned sweep counts land under
+    dir/journal/timestats per symbol."""
+    _init(tmp_path, ["ACME"])
+    r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--feed", "mock"])
+    assert r.exit_code == 0
+    assert (tmp_path / "journal" / "timestats" / "timestats-ACME.json").exists()
+
+
 def test_list_shows_dash_without_cache(tmp_path):
     _init(tmp_path, ["ACME"])
     r = runner.invoke(app, ["list", "--dir", str(tmp_path)])

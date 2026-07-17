@@ -1,7 +1,8 @@
 """Replay: the SAME Orchestrator driven over FileFeed for a date range.
 
 No forked logic -- multi-day handling is the pipeline's own session resets.
-Candle cache and levels persist under journal_dir (load before, save after).
+Candle cache, levels and timestats persist under journal_dir (load before,
+save after).
 """
 
 from __future__ import annotations
@@ -43,7 +44,8 @@ def run_replay(settings: Settings, data_dir: Path, symbols: list[str],
     feed = _RangeFeed(FileFeed(Path(data_dir), settings.market_spec()), start, end)
     orch = Orchestrator(settings, feed, symbols, index_symbol=index,
                         capital=capital, max_qty=max_qty, journal_dir=journal_dir,
-                        store=store, level_dir=journal_dir / "levels")
+                        store=store, level_dir=journal_dir / "levels",
+                        timestats_dir=journal_dir / "timestats")
     summary = orch.run()
     for sym in all_syms:
         store.save(sym)
