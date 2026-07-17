@@ -3,8 +3,10 @@ from pathlib import Path
 import pytest
 from trader.config import load_settings, load_stocks
 from trader.detectors.base import DetectorRegistry
+import trader.detectors.bpr  # noqa: F401
 import trader.detectors.breaker  # noqa: F401  -- register all implemented detectors
 import trader.detectors.compression  # noqa: F401
+import trader.detectors.compression_fade  # noqa: F401
 import trader.detectors.fvg  # noqa: F401
 import trader.detectors.index  # noqa: F401
 import trader.detectors.liquidity  # noqa: F401
@@ -17,6 +19,7 @@ import trader.detectors.volume  # noqa: F401
 import trader.detectors.wyckoff  # noqa: F401
 
 SHIPPED_CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.json"
+V2_CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.v2.json"
 
 def write(tmp_path, cfg):
     p = tmp_path / "config.json"
@@ -78,3 +81,32 @@ def test_shipped_config_registry_constructs():
     settings = load_settings(SHIPPED_CONFIG)
     registry = DetectorRegistry(settings)
     assert {d.name for d in registry.detectors} == set(settings.detectors.enabled)
+
+
+def test_v2_config_loads_and_no_free_rider():
+    # E-2: every ENABLED detector must carry a confluence weight, else it is a
+    # free-rider (counts toward distinct/min_zone_detectors while scoring 0).
+    s = load_settings(V2_CONFIG)
+    missing = [d for d in s.detectors.enabled if d not in s.confluence.weights]
+    assert missing == [], f"enabled detectors without a weight: {missing}"
+    assert all(w > 0 for w in s.enabled_weights().values())
+    # the two RR-profitable entry signals carry NONZERO weight
+    assert s.confluence.weights["compression_fade"] > 0
+    assert s.confluence.weights["bpr"] > 0
+
+
+def test_v2_config_elite_solo_settings():
+    s = load_settings(V2_CONFIG)
+    # a single compression_fade/bpr signal at a fresh zone must be armable
+    assert s.detectors.params["confluence"]["min_zone_detectors"] == 1
+    assert s.time.no_entry_after == "14:45"          # release-window end
+    assert s.exits.target_r_by_source == {"compression_fade": 2.0, "bpr": 1.5}
+    # baseline orderblock/fvg dropped (C-2: they clobber ob_lux/fvg_cb levels)
+    assert "orderblock" not in s.detectors.enabled
+    assert "fvg" not in s.detectors.enabled
+
+
+def test_v2_config_registry_constructs():
+    s = load_settings(V2_CONFIG)
+    registry = DetectorRegistry(s)
+    assert {d.name for d in registry.detectors} == set(s.detectors.enabled)

@@ -66,6 +66,13 @@ class ConfluenceCfg(StrictModel):
     weights: dict[str, float]
 
 
+class ExitsCfg(StrictModel):
+    # Per-signal profit target R, keyed by a plan's meta["sl_source"] detector.
+    # A plan whose sl_source is present takes profit (full remainder) at that R
+    # instead of the default 3R/T3 ladder; absent/unmapped => default behavior.
+    target_r_by_source: dict[str, float] = Field(default_factory=dict)
+
+
 class DetectorsCfg(StrictModel):
     enabled: list[str]
     disabled: list[str]
@@ -109,6 +116,7 @@ class Settings(StrictModel):
     confluence: ConfluenceCfg
     detectors: DetectorsCfg
     fills: FillsCfg
+    exits: ExitsCfg = Field(default_factory=ExitsCfg)
     entry: EntryCfg = Field(default_factory=EntryCfg)
     events: EventsCfg = Field(default_factory=EventsCfg)
     market: MarketCfg = Field(default_factory=MarketCfg)  # absent => NSE

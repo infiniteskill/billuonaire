@@ -5,9 +5,12 @@ close-confirmed ONLY: a wick through the stop, however many in a row, never
 exits; it just flags ``hunt_survived`` for the journal, (3) R/target ladder
 (1R close: 33% off + breakeven -- T1 >= 1.5R by construction so 1R is always
 nearer; T2 touch or 2R close, whichever first: 33% off + M5 trail; 3R:
-promote trail to M15; T3 touch: final third exits AT the target), (4)
-swing-trail ratchet, (5) counter-zone exit, (6) stall exit. Target touches
-fill at the target price (limit semantics, ``Action.price``).
+promote trail to M15; T3 touch: final third exits AT the target). A
+signal-driven plan (meta["sl_source"] mapped in exits.target_r_by_source)
+instead takes profit on the whole remainder AT its per-signal R close (the
+1R breakeven/stealth-stop machinery still runs; only the take-profit R
+changes), (4) swing-trail ratchet, (5) counter-zone exit, (6) stall exit.
+Target touches fill at the target price (limit semantics, ``Action.price``).
 
 The manager mutates only ``pos.stop`` / ``pos.partials`` /
 ``pos.hunt_survived``; the caller executes the returned Actions through the
@@ -64,7 +67,7 @@ class PositionManager:
         if (pos.stop - (c.low if sign > 0 else c.high)) * sign >= 0:
             pos.hunt_survived = True                    # wick-through: journal only
         r = pos.r_multiple(c.close)
-        actions = self._ladder(pos, r, sign, c)
+        actions = self._ladder(pos, r, sign, c, self._target_r(pos))
         self._trail(pos, ctx, sign)
         if (counter_zone_score is not None
                 and counter_zone_score >= self.s.confluence.threshold):
@@ -74,11 +77,19 @@ class PositionManager:
             actions.append(_exit(ExitReason.STALL, "stall"))
         return actions
 
-    def _ladder(self, pos: Position, r: Decimal, sign: int, c) -> list[Action]:
-        """1R close: 33% off + stop -> breakeven. T2 touch (limit AT T2) or
-        2R close, whichever first: 33% off (engages M5 trail). 3R: promotes
-        trail to M15. T3 touch: final third exits AT T3 (no T3 => trail/EOD
-        run it). Marks in ``partials`` gate each rung once."""
+    def _target_r(self, pos: Position) -> Decimal | None:
+        """Per-signal profit-target R (exits.target_r_by_source keyed by the
+        plan's meta["sl_source"] detector), else None => default 3R/T3 ladder."""
+        src = pos.plan.meta.get("sl_source")
+        tr = self.s.exits.target_r_by_source.get(src) if src else None
+        return Decimal(str(tr)) if tr is not None else None
+
+    def _ladder(self, pos: Position, r: Decimal, sign: int, c,
+                target_r: Decimal | None = None) -> list[Action]:
+        """1R close: 33% off + stop -> breakeven. Then, when ``target_r`` is set
+        (signal-driven plan), the whole remainder takes profit AT that R close
+        -- replacing the default tail (T2 touch/2R close 33% + M5 trail; 3R M15
+        trail; T3 touch final third). Marks in ``partials`` gate each rung once."""
         tg, fav = pos.plan.targets, c.high if sign > 0 else c.low
         hit = lambda t: (fav - t) * sign >= 0                    # noqa: E731
         out, q = [], pos.plan.qty * 33 // 100
@@ -88,6 +99,10 @@ class PositionManager:
                 out.append(Action("PARTIAL", q, "1R"))
             if (pos.entry.price - pos.stop) * sign > 0:
                 self._apply_stop(pos, pos.entry.price)  # breakeven
+        if target_r is not None:                        # per-signal take-profit
+            if r >= target_r:
+                out.append(_exit(ExitReason.TARGET, f"{target_r:g}R"))
+            return out
         if "2R" not in pos.partials:
             t2 = len(tg) > 1 and hit(tg[1])
             if t2 or r >= 2:

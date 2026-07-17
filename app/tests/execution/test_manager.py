@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from trader.config import Settings
+from trader.config import ExitsCfg, Settings
 from trader.engine.context import DayState, StockContext
 from trader.execution.manager import Action, PositionManager
 from trader.models.candle import Candle, Timeframe
@@ -296,6 +296,64 @@ def test_short_ladder_and_trail_mirror(mgr):
                                            ts=at(10, 5), levels=[lv]))
     assert acts == [Action("PARTIAL", 33, "T2", D("90"))]    # low touched T2 90
     assert p.stop == D("92.10")                 # swing hi + pad, ratchet DOWN
+
+
+# -- per-signal profit target R (exits.target_r_by_source) -------------
+
+@pytest.fixture
+def mgr_sig():
+    """Manager whose exits map keys the per-signal profit target R off a
+    plan's meta["sl_source"] detector (compression_fade -> 2R, bpr -> 1.5R)."""
+    s = Settings.model_validate_json(CONFIG.read_text()).model_copy(
+        update={"exits": ExitsCfg(target_r_by_source={
+            "compression_fade": 2.0, "bpr": 1.5})})
+    return PositionManager(s, s.market_spec())
+
+
+def sig_pos(source, targets=None):
+    """LONG entry 100, stop 95 (risk 5), 1R already banked (stop at breakeven);
+    the plan is tagged with meta["sl_source"]=source."""
+    p = pos(stop="100", partials={"1R"}, targets=targets)
+    p.plan.meta["sl_source"] = source
+    return p
+
+
+def test_compression_fade_plan_takes_profit_at_2r(mgr_sig):
+    # sl_source=compression_fade => whole remainder exits AT the 2R close (110),
+    # NOT the default 33% 2R partial / 3R M15-trail / T3 tail.
+    p = sig_pos("compression_fade")
+    acts = mgr_sig.on_candle(p, one_candle_ctx(109, 110.2, 108.8, 110))
+    assert acts == [Action("EXIT_TARGET", None, "2.0R")]
+
+
+def test_compression_fade_holds_below_2r(mgr_sig):
+    # r = 1.9 (< 2): no take-profit yet, and the default 2R partial never fires
+    p = sig_pos("compression_fade")
+    acts = mgr_sig.on_candle(p, one_candle_ctx(109, 109.6, 108.8, 109.5))
+    assert acts == []
+
+
+def test_bpr_plan_takes_profit_at_1_5r(mgr_sig):
+    # sl_source=bpr => whole remainder exits AT the 1.5R close (107.5)
+    p = sig_pos("bpr")
+    acts = mgr_sig.on_candle(p, one_candle_ctx(106, 107.6, 105.8, 107.5))
+    assert acts == [Action("EXIT_TARGET", None, "1.5R")]
+
+
+def test_non_mapped_source_keeps_default_ladder(mgr_sig):
+    # sl_source present but NOT in the map => untouched default behavior: at
+    # r=2 with T2 farther/untouched the ladder fires its 33% "2R" partial.
+    p = sig_pos("inducement", targets=("105", "112", "118"))
+    acts = mgr_sig.on_candle(p, one_candle_ctx(109, 110.5, 108.8, 110.2))
+    assert acts == [Action("PARTIAL", 33, "2R")]
+
+
+def test_absent_exits_map_defaults_to_existing_behavior(mgr):
+    # default config carries no exits.target_r_by_source: even a
+    # compression_fade plan runs the unchanged 3R/T3 ladder.
+    p = sig_pos("compression_fade", targets=("105", "112", "118"))
+    acts = mgr.on_candle(p, one_candle_ctx(109, 110.5, 108.8, 110.2))
+    assert acts == [Action("PARTIAL", 33, "2R")]
 
 
 # -- (5) counter-zone / (6) stall --------------------------------------
