@@ -25,6 +25,7 @@ Status: `proposed` → `validating` → `validated(OOS)` → `applied` | `reject
 | S12 | timestats priors flatten [.55/.50/.45/.45/.55], prior_weight 20→10 | measured danger curve far flatter | proposed | confirm |
 | S13 | compression/PO3 weight 12→0 (PO3_DIST −15..29% even loosened) | park; structurally late | parked | redesign entry (manipulation-reclaim) before revisit |
 | S14 | BOX_ON_LEVEL zero-weight | −3.7/−1.1% n=956 | proposed | confirm |
+| S15 | INVERT level strength: fade FRESH (low-touch) levels, penalize heavily-touched | measured high-touch sweep −10.6% vs low-touch +6.5% (17pt spread) | proposed | confirm on production sweep + holdout |
 
 ## From the Pine reference comparison (theory-backed, UNMEASURED on our data)
 
@@ -33,8 +34,8 @@ Status: `proposed` → `validating` → `validated(OOS)` → `applied` | `reject
 | P1 | **Premium/Discount gate** (buy discount/sell premium) | **TESTED: +3.3% standalone, holdout-stable** (16-OB-VALIDATION) — modest; best as a filter on other signals | validating | test as GATE on armed signals, portfolio replay |
 | P2 | Vol-adjusted OB anchor (swap H/L on ≥2×ATR bars; extreme-of-leg, size 8) | **VALIDATED 2 axes**: +10.4% vs our +4.4%; temporal val +9.3%, x-sect both stock-sets +10.1/+10.8% (`16-OB-VALIDATION.md`) | **validated(OOS, 2 axes)** | remaining: bootstrap CI + portfolio replay + forward month |
 | P3 | FVG lux stricter gap def | **TESTED: TIE** (+2.8 lux vs +2.4 ours, same event rule) — edge is in CE-hold event not gap def | rejected | keep ours |
-| P4 | EQH/EQL tolerance → ATR-relative (0.1×ATR) | LuxAlgo; ours over-groups high-priced | proposed | measure EQ-sweep edge before/after |
-| P5 | Volume-in-zone liquidity strength (Liquidity Swings) | replaces useless touch-count | proposed | does volume-strength predict? measure |
+| P4 | EQH/EQL tolerance → ATR-relative | **TESTED: mild win** (−3.0 vs −5.5% on naive sweep, both axes) | validating | confirm on production sweep |
+| P5 | Volume-in-zone liquidity strength | **TESTED: doesn't help** (high-vol −5.0 vs low-vol −1.1). BUT touch-count is INVERTED (high −10.6 / low +6.5) — fresh levels win | rejected(volume); NEW S15 (invert touches) |
 | P6 | Strong/Weak High/Low tagging (trend-relative wall vs draw) | sharper targets + sweep direction | parked | design later |
 
 ## Earlier deferred (from gap audits — engineering, not signal science)

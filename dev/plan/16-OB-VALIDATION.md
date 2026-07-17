@@ -12,6 +12,9 @@ Scripts: scratchpad `luxob.py`, `h2h.py`.
 | **FVG** (same retest rule) | +2.4% | +2.8% | +3.4 / +3.6 | +2.7 / +2.8 | **TIE — keep ours.** Gap def barely matters; FVG edge lives in the CE-hold event (+8.8% in study), not the gap criteria |
 | **Structure BOS/CHoCH** | −18.6% | −17.1% | −18.4 / −17.1 | −16.8 / −17.5 | **BOTH anti-signal** — inherent to SMC, not our bug. Demote structure to context/direction-only (confirms S3) |
 | **Premium/Discount** (buy discount / sell premium, tight f=.15) | — (we lack it) | +3.3% | val +2.5 | +3.4 / +3.3 | **NEW, modest, holdout-stable.** Fade-extension as a positional FILTER, not standalone entry |
+| **EQH/EQL tolerance** | %-relative (ours) −5.5% | ATR-relative (lux) −3.0% | val −6.9 / −3.1 | −7.7 / −3.3 | ATR-relative less-bad on both axes — mild win, but note both negative on naive swing-pivot sweeps |
+| **Liquidity strength** (swing-pivot sweep bucketed) | touch-count HIGH −10.6% / LOW +6.5% | volume-in-zone HIGH −5.0% / LOW −1.1% | — | — | **TOUCHES INVERTED**: fade FRESH levels not heavily-touched ones (axiom-22 measured). LuxAlgo volume idea doesn't help. Our pool-strength is WRONG-SIGNED |
+
 
 Reads: OB is the one decisive definitional win. FVG's value is the event rule we already
 have, not LuxAlgo's stricter gap. Structure is a dead entry-signal by concept (both
