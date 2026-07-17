@@ -113,6 +113,18 @@ def test_no_displacement_no_level():
     assert levels == []
 
 
+def test_auto_threshold_gate_rejects_valid_shape_below_mean_range_pct():
+    """Coverage for the auto mean-bar-range% gate itself: the bull triple has
+    valid 3-bar shape AND valid close-beyond displacement (both pass), but an
+    inflated thr_mult pushes the auto threshold (~2.2% * mult) far above the
+    gap's own size (~5%), so creation is rejected purely on `(hi-lo)/lo <=
+    thr` -- previously zero coverage of this branch."""
+    store = make_store(bull_bars())
+    det, levels = FvgCbDetector({"thr_mult": 1000.0}), []
+    assert det.detect(ctx_at(store, 19, levels)) == []
+    assert levels == []
+
+
 # --------------------------------------------------------------- retest/hold
 
 def test_retest_fires_once_before_ce_hold():
@@ -145,6 +157,48 @@ def test_no_lookahead_same_tick_redetect_is_idempotent():
     assert len(levels) == 1
     assert det.detect(ctx_at(store, 19, levels)) == []      # same tick again: no dup level, no evidence
     assert len(levels) == 1
+
+
+# ------------------------------------------------------------ session gap
+
+def test_c3_across_session_boundary_not_eligible_on_creation_tick():
+    """Regression for the CRITICAL: c1/c2 close out day 1, c3 (the
+    gap-confirming bar) is the FIRST bar of day 2. Level.born (=c2.ts) +
+    tf.minutes lands mid-day-1 -- nowhere near the real c3 -- so the OLD
+    born+tf gate would treat the creation tick's `last` (c3 itself) as
+    already eligible and fire retest/CE-hold against the zone c3 just
+    defined. The fix stores c3's actual ts per level and gates on that."""
+    day1 = datetime(2026, 7, 15, 9, 15, tzinfo=IST)
+    day2 = datetime(2026, 7, 16, 9, 15, tzinfo=IST)
+    store = CandleStore("/nonexistent")
+    for i, (o, h, l, c) in enumerate([FLAT] * 16):
+        store.add(Candle("X", Timeframe.M1, day1 + timedelta(minutes=5 * i),
+                         tick(o), tick(h), tick(l), tick(c), 10))
+    c1_ts = day1 + timedelta(minutes=5 * 16)
+    store.add(Candle("X", Timeframe.M1, c1_ts, *(tick(x) for x in C1), 10))
+    c2_ts = c1_ts + timedelta(minutes=5)
+    store.add(Candle("X", Timeframe.M1, c2_ts, *(tick(x) for x in C2), 10))
+    c3_ts = day2                                    # next session's first bar
+    store.add(Candle("X", Timeframe.M1, c3_ts, *(tick(x) for x in C3), 10))
+
+    det, levels = FvgCbDetector({}), []
+    now = c3_ts + timedelta(minutes=M5.minutes)      # c3 just closed
+    ctx = StockContext(symbol="X", now=now, candles=store.view("X", now),
+                       levels=levels, evidence_history=[],
+                       day=DayState(session_date=now.date()))
+    assert det.detect(ctx) == []                     # creation tick: c3 excluded, no evidence
+    [lv] = levels
+    assert lv.born == c2_ts
+    assert det._c3_ts[lv.id] == c3_ts                # gated on real c3.ts, not born+tf
+
+    touch_ts = c3_ts + timedelta(minutes=M5.minutes)  # strictly after c3
+    store.add(Candle("X", Timeframe.M1, touch_ts, *(tick(x) for x in TOUCH), 10))
+    now2 = touch_ts + timedelta(minutes=M5.minutes)
+    ctx2 = StockContext(symbol="X", now=now2, candles=store.view("X", now2),
+                        levels=levels, evidence_history=[],
+                        day=DayState(session_date=now2.date()))
+    [ev] = det.detect(ctx2)                          # first eligible tick: retest fires
+    assert ev.meta["event"] == "FVG_RETEST"
 
 
 # --------------------------------------------------------------- session end
