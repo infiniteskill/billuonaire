@@ -37,7 +37,7 @@
     "round_offset_ticks": 3
   },
   "confluence": {
-    "threshold": 20,
+    "threshold": 18,
     "weights": {
       "sweep": 20,
       "structure": 15,

@@ -27,7 +27,7 @@ from trader.config import Settings
 from trader.detectors.base import DetectorRegistry
 from trader.detectors.wyckoff import WyckoffDetector
 from trader.engine.confluence import ConfluenceEngine
-from trader.engine.context import DayState, IndexView, StockContext, live_evidence
+from trader.engine.context import DayState, IndexView, StockContext
 from trader.engine.entry import EntryFSM, EntryState
 from trader.engine.gates import GateChain, RiskState
 from trader.engine.levels import LevelEngine
@@ -46,7 +46,6 @@ for _m in pkgutil.iter_modules(trader.detectors.__path__):    # @register all
     importlib.import_module(f"trader.detectors.{_m.name}")
 
 _M5 = timedelta(minutes=5)
-_STRUCTURE = ("BOS", "CHOCH")
 _VERDICT_MIN = 3.0
 _CARRY = frozenset({LevelKind.PDH, LevelKind.PDL, LevelKind.EQH,
                     LevelKind.EQL, LevelKind.ROUND})  # cross-day liquidity
@@ -73,14 +72,21 @@ class SymbolPipeline:
         self.position: Position | None = None
         self.closed: list[Position] = []
         self.n_trades = self.n_skips = 0
-        self._last_bucket = self._pending_plan = None
+        self._last_bucket = self._last_c5 = self._pending_plan = None
         self._pending_exits, self._hunt_logged = [], False
         self._cutoff = _minutes(settings.time.no_entry_after)
 
     def on_m1(self, candle: Candle, index: IndexView | None = None) -> None:
         bucket = _bucket_start(candle.ts, Timeframe.M5, self.spec)
         if self._last_bucket is not None and bucket != self._last_bucket:
-            self._on_m5_close(self._last_bucket + _M5, index)
+            # gap-safe: close EVERY missed boundary in order, clamped to the
+            # old bucket's session close (overnight jumps end there)
+            t = self._last_bucket + _M5
+            stop = min(bucket, self.spec.session_open_dt(self._last_bucket)
+                       + timedelta(minutes=self.spec.session_minutes))
+            while t <= stop:
+                self._on_m5_close(t, index)
+                t += _M5
         if self.day is not None and candle.ts.date() != self.day.session_date:
             self._end_session(candle.ts)    # no stale intent across the gap
         self._fill_pending(candle)          # fills at this M1's open
@@ -114,19 +120,23 @@ class SymbolPipeline:
         ctx = StockContext(self.symbol, now, view, self.levels,
                            self.evidence_history, self.day,
                            index=index, spec=self.spec)
-        self.level_engine.update(self.levels, c5, ctx.atr(Timeframe.M5))
-        evidence = self.registry.run_all(ctx)
-        self.evidence_history.extend(evidence)   # after run_all: 1-tick lag ok
-        del self.evidence_history[:-200]
-        self.classifier.update(ctx)
+        if c5.ts != self._last_c5:               # bar-scoped stages once per bar
+            self._last_c5 = c5.ts                # (gap buckets only tick time)
+            self.level_engine.update(self.levels, c5, ctx.atr(Timeframe.M5))
+            evidence = self.registry.run_all(ctx)
+            self.evidence_history.extend(evidence)   # after run_all: 1-tick lag ok
+            del self.evidence_history[:-200]
+            self.classifier.update(ctx)
+        else:
+            evidence = []
         if self.is_index:
             self.wyckoff.detect(ctx)  # prime spring/upthrust memory so phase() can reach ACC/DIST
-            self.index_view = IndexView(self._m15_trend(now),
+            self.index_view = IndexView(self._m15_trend(),
                                         *self.wyckoff.phase(ctx))
             return
         htf = self.wyckoff.htf_phase(ctx)
         zones = self.confluence.score(ctx, self.evidence_history, htf,
-                                      self._m15_trend(now))
+                                      self._m15_trend())
         # verdicts are OBSERVATIONS: journal any zone scoring >= 3, raw or
         # final (final is forced 0 below min_zone_detectors; near-misses and
         # armed zones alike must land in the journal, so the bar sits far
@@ -215,12 +225,19 @@ class SymbolPipeline:
 
     # --------------------------------------------------------------- helpers
 
-    def _m15_trend(self, now) -> Direction:
-        """Latest LIVE structure event: this session only, ttl unexpired."""
-        for e in reversed(live_evidence(self.evidence_history, now,
-                                        self.day.session_date)):
-            if e.detector == "structure" and e.meta.get("event") in _STRUCTURE:
-                return e.direction
+    def _m15_trend(self) -> Direction:
+        """Real M15 structure: HH+HL / LH+LL over the last 4 confirmed M15
+        swing levels (swings detector writes them; pruned at session end)."""
+        swings = sorted((lv for lv in self.levels if lv.tf is Timeframe.M15
+                         and lv.kind in (LevelKind.SWING_H, LevelKind.SWING_L)),
+                        key=lambda lv: lv.born)[-4:]
+        hs = [lv.zone[0] for lv in swings if lv.kind is LevelKind.SWING_H]
+        ls = [lv.zone[0] for lv in swings if lv.kind is LevelKind.SWING_L]
+        if len(hs) >= 2 and len(ls) >= 2:
+            if hs[-1] > hs[-2] and ls[-1] > ls[-2]:
+                return Direction.LONG
+            if hs[-1] < hs[-2] and ls[-1] < ls[-2]:
+                return Direction.SHORT
         return Direction.NEUTRAL
 
     def _skip(self, at, gate: str, reason: str) -> None:
@@ -229,7 +246,7 @@ class SymbolPipeline:
 
     def _log(self, kind: str, **payload) -> None:
         self.journal.log(kind, {"symbol": self.symbol, **payload},
-                         day=self.day.session_date)
+                         day=self.day.session_date, ts=payload.get("at"))
 
 
 class Orchestrator:

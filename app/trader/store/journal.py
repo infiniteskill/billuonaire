@@ -23,13 +23,16 @@ class Journal:
             return obj.isoformat()
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
-    def log(self, kind: str, payload: dict, day: date | None = None) -> None:
+    def log(self, kind: str, payload: dict, day: date | None = None,
+            ts: datetime | None = None) -> None:
         """Append a log entry to the daily JSONL file.
 
         Args:
             kind: Log entry kind (e.g., "trade_open", "skip", "verdict")
             payload: Dictionary of data to log
             day: Date for the file; defaults to today
+            ts: Entry timestamp; defaults to wall-clock UTC now (pass
+                sim-time for reproducible replay journals)
 
         Raises:
             ValueError: If payload contains reserved keys "ts" or "kind"
@@ -46,7 +49,9 @@ class Journal:
             )
 
         # Prepare entry; metadata written last so it always wins
-        entry = {**payload, "ts": datetime.now(ZoneInfo("UTC")).isoformat(), "kind": kind}
+        entry = {**payload,
+                 "ts": (ts or datetime.now(ZoneInfo("UTC"))).isoformat(),
+                 "kind": kind}
 
         # Determine file path
         file_path = self.root / f"{day.isoformat()}.jsonl"

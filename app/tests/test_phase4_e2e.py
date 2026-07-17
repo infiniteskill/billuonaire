@@ -187,12 +187,13 @@ def test_eod_squareoff_by_1510(tmp_path):
     assert (_at(c).hour, _at(c).minute) <= SQUAREOFF
 
 
-# (8) determinism: same judas day twice => identical journals sans wall-clock ts
+# (8) determinism: same judas day twice => byte-identical journals, sim-time
+# ts included (A7: Journal.log ts = pipeline event time, not wall clock)
 def test_judas_journal_deterministic(judas, tmp_path):
     rerun = _run_day(judas_reversal, tmp_path)
-    strip = lambda es: [{k: v for k, v in e.items() if k != "ts"} for e in es]
     assert judas.entries, "judas day journaled nothing (vacuous determinism)"
-    assert strip(rerun.entries) == strip(judas.entries)
+    assert rerun.entries == judas.entries
+    assert all(e["ts"] == e["at"] for e in judas.entries if "at" in e)
 
 
 # (9) every fill journaled anywhere carries positive costs

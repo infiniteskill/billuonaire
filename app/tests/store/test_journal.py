@@ -19,6 +19,16 @@ def test_appends_not_overwrites(tmp_path):
     j.log("a", {}); j.log("b", {})
     assert [r["kind"] for r in j.read(date.today())] == ["a", "b"]
 
+def test_ts_override_sim_time(tmp_path):
+    j = Journal(tmp_path)
+    d = date(2026, 7, 15)
+    at = datetime(2026, 7, 15, 10, 0, tzinfo=ZoneInfo("Asia/Kolkata"))
+    j.log("verdict", {"symbol": "X"}, day=d, ts=at)     # sim-time
+    j.log("skip", {"symbol": "X"}, day=d)               # wall-clock fallback
+    sim, wall = j.read(d)
+    assert sim["ts"] == at.isoformat()
+    assert datetime.fromisoformat(wall["ts"]).tzinfo is not None
+
 def test_reserved_keys_rejected(tmp_path):
     j = Journal(tmp_path)
     with pytest.raises(ValueError):

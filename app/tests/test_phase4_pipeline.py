@@ -22,7 +22,7 @@ from trader.execution.manager import Action, PositionManager
 from trader.execution.paper import PaperBroker
 from trader.feed.mock import ScenarioFeed, judas_reversal, trend_day
 from trader.models.candle import Candle, Timeframe
-from trader.models.evidence import Direction, Evidence
+from trader.models.evidence import Direction
 from trader.models.level import Level, LevelKind, LevelState
 from trader.models.position import Fill, Position
 from trader.models.signal import TradePlan
@@ -105,14 +105,19 @@ def test_judas_two_day_orchestrator(tmp_path):
 
 
 def test_judas_two_day_no_gap_day2_reforms(tmp_path, monkeypatch):
-    """Day 2 repeats day 1 at the SAME open (no gap): session-scoped evidence
-    (A1) keeps day-2's pre-structure m15_trend NEUTRAL instead of day-1's
-    LONG, and session-end level pruning (A2) lets day-2 swings re-form at
-    day-1's exact prices -- the pivot swing-low included -- instead of being
-    dedupe-blocked by day-1 corpses."""
-    trends, orig = [], SymbolPipeline._m15_trend
-    monkeypatch.setattr(SymbolPipeline, "_m15_trend", lambda self, now: trends
-                        .append((now, r := orig(self, now))) or r)
+    """Day 2 repeats day 1 at the SAME open (no gap): session-end level
+    pruning (A2) drops day-1 M15 swings, so day-2's pre-structure m15_trend
+    (A9: swing-derived) reads NEUTRAL instead of day-1's LONG, and day-2
+    swings re-form at day-1's exact prices -- the pivot swing-low included --
+    instead of being dedupe-blocked by day-1 corpses."""
+    trends, orig = [], SymbolPipeline._on_m5_close
+
+    def spy(self, now, index):
+        r = orig(self, now, index)
+        trends.append((now, self._m15_trend()))
+        return r
+
+    monkeypatch.setattr(SymbolPipeline, "_on_m5_close", spy)
     sc2 = judas_reversal("ACME", DAY2, 100.0)
     feed = ScenarioFeed([judas_reversal("ACME", DAY1, 100.0), sc2])
     orch = Orchestrator(cfg(), feed, ["ACME"], capital=100000, max_qty=50,
@@ -151,19 +156,43 @@ def test_end_session_prunes_stale_levels(tmp_path):
                                                LevelKind.EQH}
 
 
-def test_m15_trend_only_live_session_evidence(tmp_path):
-    """_m15_trend ignores prior-day structure evidence and expired ttl."""
+def _swing(kind, price, minute, tf=Timeframe.M15):
+    born = datetime.combine(DAY1, time(10, 0), tzinfo=IST) + timedelta(minutes=minute)
+    p = D(str(price))
+    return Level(f"X-{kind.name}-{tf.value}-{born.isoformat()}", "X", kind,
+                 (p - D("0.05"), p + D("0.05")), born, tf)
+
+
+def test_m15_trend_from_swing_structure(tmp_path):
+    """A9: trend is read from the last 4 confirmed M15 swing levels --
+    HH+HL LONG, LH+LL SHORT, anything mixed or thin NEUTRAL."""
     pipe, _ = make_pipeline(tmp_path)
-    pipe.day = DayState(session_date=DAY2)
-    t2 = datetime(2026, 7, 15, 9, 30, tzinfo=IST)
-    ev = lambda dirn, ts: Evidence("structure", dirn, 0.6, (D("99"), D("101")),
-                                   ts, 12, {"event": "BOS"})
-    pipe.evidence_history.append(
-        ev(Direction.LONG, datetime(2026, 7, 14, 14, 0, tzinfo=IST)))
-    assert pipe._m15_trend(t2) is Direction.NEUTRAL      # day-1: dead
-    pipe.evidence_history.append(ev(Direction.SHORT, t2 - timedelta(minutes=10)))
-    assert pipe._m15_trend(t2) is Direction.SHORT        # live this session
-    assert pipe._m15_trend(t2 + timedelta(minutes=65)) is Direction.NEUTRAL  # ttl
+    SH, SL = LevelKind.SWING_H, LevelKind.SWING_L
+    cases = [
+        ([(SL, 99, 0), (SH, 102, 15), (SL, 100, 30), (SH, 104, 45)], Direction.LONG),
+        ([(SH, 104, 0), (SL, 100, 15), (SH, 102, 30), (SL, 98, 45)], Direction.SHORT),
+        ([(SL, 99, 0), (SH, 104, 15), (SL, 100, 30), (SH, 102, 45)],
+         Direction.NEUTRAL),                                   # HL but LH: mixed
+        ([(SL, 99, 0), (SH, 102, 15)], Direction.NEUTRAL),     # <2 highs+lows
+        ([], Direction.NEUTRAL)]
+    for seq, want in cases:
+        pipe.levels[:] = [_swing(k, p, m) for k, p, m in seq]
+        assert pipe._m15_trend() is want, seq
+
+
+def test_m15_trend_windows_last_4_and_ignores_m5(tmp_path):
+    pipe, _ = make_pipeline(tmp_path)
+    SH, SL = LevelKind.SWING_H, LevelKind.SWING_L
+    # unwindowed this reads LH(110>104)+LL => SHORT; the last-4 window keeps
+    # one high only => NEUTRAL
+    seq = [(SH, 110, 0), (SL, 101, 15), (SL, 100, 30), (SL, 99, 45), (SH, 104, 60)]
+    pipe.levels[:] = [_swing(k, p, m) for k, p, m in seq]
+    assert pipe._m15_trend() is Direction.NEUTRAL
+    long_seq = [(SL, 99, 0), (SH, 102, 15), (SL, 100, 30), (SH, 104, 45)]
+    pipe.levels[:] = [_swing(k, p, m, Timeframe.M5) for k, p, m in long_seq]
+    assert pipe._m15_trend() is Direction.NEUTRAL          # M5 swings don't count
+    pipe.levels[:] = [_swing(k, p, m) for k, p, m in long_seq]
+    assert pipe._m15_trend() is Direction.LONG
 
 
 def test_index_pipeline_runs_own_wyckoff_detect(tmp_path, monkeypatch):
@@ -259,6 +288,42 @@ def test_fill_after_no_entry_cutoff_dropped(tmp_path):
     assert any(e["reason"] == "too_late" for e in skips)
 
 
+# ------------------------------------------------------- 2c. feed gaps (A6)
+
+def _spy_closes(monkeypatch):
+    closes, orig = [], SymbolPipeline._on_m5_close
+    monkeypatch.setattr(SymbolPipeline, "_on_m5_close",
+                        lambda self, now, index:
+                        closes.append(now) or orig(self, now, index))
+    return closes
+
+
+def test_multi_bucket_gap_closes_each_boundary(tmp_path, monkeypatch):
+    """A6: an M1 jumping >1 M5 bucket evaluates every missed boundary in
+    order; bar-scoped stages (levels/detectors) still run once per new bar."""
+    closes = _spy_closes(monkeypatch)
+    pipe, _ = make_pipeline(tmp_path)
+    bars = []
+    monkeypatch.setattr(pipe.level_engine, "update",
+                        lambda levels, c5, atr: bars.append(c5.ts) or [])
+    t0 = datetime.combine(DAY1, time(10, 0), tzinfo=IST)
+    for m in range(5):
+        pipe.on_m1(m1("X", t0 + timedelta(minutes=m), 100, 101, 99, 100))
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=17), 100, 101, 99, 100))   # gap
+    assert closes == [t0 + timedelta(minutes=m) for m in (5, 10, 15)]
+    assert bars == [t0]                    # one new closed M5, evaluated once
+
+
+def test_overnight_gap_stops_at_session_close(tmp_path, monkeypatch):
+    """Overnight jumps close out the old session only -- no phantom
+    boundary evaluations through the night."""
+    closes = _spy_closes(monkeypatch)
+    pipe, _ = make_pipeline(tmp_path)
+    pipe.on_m1(m1("X", datetime(2026, 7, 14, 15, 25, tzinfo=IST), 100, 100, 100, 100))
+    pipe.on_m1(m1("X", datetime(2026, 7, 15, 9, 15, tzinfo=IST), 100, 100, 100, 100))
+    assert closes == [datetime(2026, 7, 14, 15, 30, tzinfo=IST)]
+
+
 # ------------------------------------------------------ 3. shared RiskState
 
 def test_risk_state_shared_across_symbols(tmp_path):
@@ -302,4 +367,7 @@ def test_index_view_reaches_stock_ctx(tmp_path, monkeypatch):
     views = [v for v in seen if v is not None]
     assert views, "IndexView never reached the stock pipeline"
     assert all(isinstance(v, IndexView) for v in views)
-    assert any(v.trend is Direction.LONG for v in views)   # index trend day
+    # real content flows through: the trend day reads MARKUP at full strength
+    # (trend stays NEUTRAL -- a monotonic mock day confirms no M15 swings,
+    # and A9's m15_trend only speaks from real M15 swing structure)
+    assert any(v.phase == "MARKUP" and v.strength >= 0.5 for v in views)
