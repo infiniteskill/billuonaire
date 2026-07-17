@@ -135,10 +135,22 @@ Tested 5 variants (displacement-breakout, trend-pullback, ORB, BOS-continuation,
 The tape denies DIRECTIONAL edge, but we have two non-directional facts: timing (favorable-first) and
 compression→expansion (coil precedes bigger range). Can't monetize non-directional magnitude in LINEAR
 cash — but a long straddle profits from expansion regardless of direction (options, needs Kite).
-DISCIPLINE: measure the prerequisite FREE first — is the post-compression expansion big + holdout-stable
-enough that a modeled straddle clears plausible premium+costs? That GATES the Kite purchase. Result
-pending → `runs/wide/vol_feasibility.md`. (Note: earlier notes hint compression→expansion may test flat —
-re-measuring rigorously, not assuming.)
+DISCIPLINE: measured the prerequisite FREE first. **VERDICT: NO-GO** (`runs/wide/vol_feasibility.md`).
+Compression→expansion lift is sign-positive holdout-stable but ECONOMICALLY NEGLIGIBLE: forward-vol only
+×1.02–1.08 vs a random same-bucket bar, DECAYING with horizon; tightening the coil makes it WORSE; 20.6%
+of bars qualify (it's "small-body bar", not selective). Modeled straddle: the signal adds only +0.04–0.08
+ATR of breakeven room — a RANDOM bar captures ~95% of the payoff. Plus theta+spread+variance-risk-premium
+favor the SELLER. Don't buy Kite for this.
+
+## A9. COMPLETE INTRADAY VERDICT (all three hypotheses eliminated)
+1. Directional FADE — falsified (symmetric MFE/MAE, sub-cost).
+2. Directional MOMENTUM — falsified (same symmetric tape, either polarity).
+3. Non-directional VOLATILITY (compression straddle) — NO-GO (negligible + non-selective expansion).
+**Free-data NSE M1 INTRADAY, with technical signals + retail costs, offers NO edge that survives.** The
+M1 tape is efficient at this granularity. This is comprehensive + honest + zero money lost.
+UNTESTED edge classes (genuine re-scopes, better data): DAILY-timeframe swing/overnight drift, or
+cross-sectional pairs/relative-strength — both on FREE DAILY data (years, multi-regime — vastly better
+validation than the 30-day M1 cap). Or accept the null.
 
 ## D. EXECUTION ORDER (remaining)
 1. Land fixers (B-1/B-2/E-1 engine safety; D-1 session-boundary) → merge → suite green.
