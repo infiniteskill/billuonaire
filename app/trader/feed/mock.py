@@ -232,6 +232,7 @@ def _plan_candles(sc: Scenario, rng: random.Random,
 # above for >=1.5R room. The afternoon (m225+) stair-steps +1T/min with
 # shallow alternating dips: no bearish OB/FVG, LONG close near the high.
 
+# shared with _shs_candles (stop_hunt inherits morning m<80 rows/pins) -- edits here must keep both scenarios' invariants
 _JUDAS_MORNING: list[tuple[list[int], int, int]] = [
     ([2, 5, 8, 6, 4], -1, 8), ([3, 2, 1, 1, 0], -1, 4), ([0, -1, -1, 0, -1], -1, 1),
     ([-1, 0, -1, 1, 2], -1, 3), ([3, 4, 5, 5, 4], 0, 5), ([3, 3, 2, 1, 1], 0, 4),

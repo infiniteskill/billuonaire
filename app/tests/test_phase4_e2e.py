@@ -1,19 +1,5 @@
-"""Phase-4 gate: 9 e2e assertions against the Orchestrator/Journal interfaces.
+"""Phase-4 gate: 9 e2e assertions against the Orchestrator/Journal interfaces."""
 
-PRE-MERGE SKELETON -- reconciliation notes for the controller:
-- ARM_THRESHOLD / VERDICT_MIN below are the calibration targets from the
-  task-7 diagnosis. This worktree still ships config threshold 65 and
-  pipeline._VERDICT_MIN 30, so _run_day applies both locally (config copy +
-  module-constant patch, restored after the run). Once Agent A lands the
-  recalibration in source, drop the patch block and read both from config.
-- range_pin's best zone scores raw 3.5 by construction (NEUTRAL cluster), so
-  VERDICT_MIN must stay <= 3.5 for assertion 3's "observed" leg; if the
-  landed _VERDICT_MIN is higher, that assertion needs a decision.
-- XFAIL_PARALLEL marks assertions whose shapes land with the parallel agents
-  (A: judas enrichment; B: stop_hunt_survive). Flip them off at merge.
-"""
-
-import json
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -22,15 +8,14 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-import trader.engine.pipeline as pipeline
-import trader.feed.mock as mock
-from trader.config import Settings
+from trader.config import Settings, load_settings
 from trader.engine.context import DayState, StockContext
 from trader.engine.gates import GateChain, RiskState
 from trader.engine.pipeline import Orchestrator, SymbolPipeline
 from trader.execution.manager import PositionManager
 from trader.execution.paper import PaperBroker
-from trader.feed.mock import ScenarioFeed, double_trap, judas_reversal, range_pin
+from trader.feed.mock import (ScenarioFeed, double_trap, judas_reversal,
+                              range_pin, stop_hunt_survive)
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction
 from trader.models.position import ExitReason
@@ -38,9 +23,7 @@ from trader.models.signal import TradePlan
 from trader.store.candles import CandleStore
 from trader.store.journal import Journal
 
-# ---------------------------------------------------- reconciliation constants
-ARM_THRESHOLD = 20.0          # target config confluence.threshold (diagnosis A)
-VERDICT_MIN = 3.0             # target pipeline._VERDICT_MIN (<= 3.5, see module doc)
+# --------------------------------------------------------------- gate constants
 SYMBOL, DAY, OPEN_PRICE = "ACME", date(2026, 7, 14), 100.0
 CAPITAL, MAX_QTY = 100000, 50
 POST_OBSERVE = time(11, 0)    # config time.observe_until
@@ -62,20 +45,17 @@ class DayRun(NamedTuple):
 
 
 def _cfg() -> Settings:
-    raw = json.loads(CONFIG.read_text())
-    raw["confluence"]["threshold"] = ARM_THRESHOLD
-    return Settings.model_validate(raw)
+    return load_settings(CONFIG)
+
+
+ARM_THRESHOLD = _cfg().confluence.threshold  # shipped config.json calibration
 
 
 def _run_day(make, tmp: Path) -> DayRun:
     sc = make(SYMBOL, DAY, OPEN_PRICE)
     orch = Orchestrator(_cfg(), ScenarioFeed([sc]), [SYMBOL],
                         capital=CAPITAL, max_qty=MAX_QTY, journal_dir=tmp)
-    old, pipeline._VERDICT_MIN = pipeline._VERDICT_MIN, VERDICT_MIN
-    try:
-        summary = orch.run()
-    finally:
-        pipeline._VERDICT_MIN = old
+    summary = orch.run()
     return DayRun(summary, orch.journal.read(DAY), sc)
 
 
@@ -159,21 +139,27 @@ def test_range_pin_zero_trades_but_observed(range_pin_day):
 # (4) double_trap: no trade before the second sweep's reclaim completes
 def test_double_trap_no_trades_before_second_reclaim(double_trap_day):
     truth = double_trap_day.scenario.truth
-    reclaim_min = truth.get("reclaim_high_minute",
-                            truth["sweep_high_minute"] + DT_RECLAIM_END_OFFSET)
+    # no scenario sets reclaim_high_minute; the reclaim bucket always closes
+    # DT_RECLAIM_END_OFFSET minutes after the sweep (mock.py double_trap)
+    reclaim_min = truth["sweep_high_minute"] + DT_RECLAIM_END_OFFSET
     cutoff = double_trap_day.scenario.session_open() + timedelta(minutes=reclaim_min)
     early = [o for o in _kind(double_trap_day.entries, "trade_open")
              if _at(o) < cutoff]
     assert not early, f"trade(s) opened before 2nd reclaim {cutoff:%H:%M}: {early}"
 
 
-# (5) stop_hunt_survive: wick-through survives, exits >= 1R realized
+# (5) stop_hunt_survive: wick-through survives, pinned to THE hunt bucket,
+# exits >= 1R realized
 def test_stop_hunt_survive_holds_through_hunt(tmp_path):
-    make = getattr(mock, "stop_hunt_survive", None)
-    if make is None:
-        pytest.skip("stop_hunt_survive scenario not landed yet (Agent B)")
-    run = _run_day(make, tmp_path)
-    assert _kind(run.entries, "hunt_survived"), "hunt candle did not journal"
+    run = _run_day(stop_hunt_survive, tmp_path)
+    truth = run.scenario.truth
+    hunts = _kind(run.entries, "hunt_survived")
+    assert hunts, "hunt candle did not journal"
+    bucket = truth["hunt_minute"] - truth["hunt_minute"] % 5
+    hunt_close = run.scenario.session_open() + timedelta(minutes=bucket + 5)
+    assert _at(hunts[0]) == hunt_close
+    lo, hi = truth["stop_zone"]
+    assert lo <= D(hunts[0]["stop"]) <= hi
     assert sum(c["r"] for c in _kind(run.entries, "trade_close")) >= 1.0
 
 
