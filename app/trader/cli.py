@@ -34,7 +34,7 @@ from trader.engine.scanner import fit, has_data
 from trader.feed.file import FileFeed
 from trader.feed.mock import ScenarioFeed, judas_reversal
 from trader.learn.calibrate import analyze
-from trader.replay.engine import run_replay
+from trader.replay.engine import _RangeFeed, run_replay
 from trader.replay.metrics import Report, compute
 from trader.store.candles import CandleStore
 from trader.store.journal import Journal
@@ -431,6 +431,63 @@ def calibrate(
         console.print('copy-paste "weights" for config.json confluence '
                       "(suggestions applied; NOT auto-applied):")
         console.print(json.dumps(merged, indent=2))
+
+
+@app.command()
+def study(
+    data: Path = typer.Option(..., "--data", help="CSV root (FileFeed schema)."),
+    out: Path = typer.Option(..., "--out", help="Output directory."),
+    symbols: Optional[str] = typer.Option(None, "--symbols",
+                                          help="Comma-separated symbol names."),
+    all_: bool = typer.Option(False, "--all", help="Study every CSV in --data."),
+    from_: Optional[str] = typer.Option(None, "--from", help="Start date YYYY-MM-DD."),
+    to: Optional[str] = typer.Option(None, "--to", help="End date YYYY-MM-DD."),
+    index: Optional[str] = typer.Option(None, "--index",
+                                        help="Index symbol (default config, else NIFTY)."),
+    dir: Path = typer.Option(Path("."), "--dir", help="Config directory."),
+) -> None:
+    """Detector-accuracy study: run the real pipeline over the data with ALL
+    detectors enabled, log every evidence with forward outcomes vs a seeded
+    same-session time-bucket baseline, write out/evidence.parquet +
+    out/summary.csv, and print the per-(detector,event) edge table."""
+    from datetime import date as _date
+
+    from trader.tools.study import run_study
+
+    cfg = dir / "config.json"
+    settings = load_settings(cfg if cfg.exists() else _TEMPLATE_DIR / "config.json")
+    index = index or settings.index_symbol or "NIFTY"
+    if not (data / f"{index}.csv").exists():
+        index = None
+    if all_ == bool(symbols):
+        typer.echo("pass exactly one of --symbols A,B or --all", err=True)
+        raise typer.Exit(code=1)
+    syms = (sorted(p.stem for p in data.glob("*.csv") if p.stem != index)
+            if all_ else [s.strip() for s in symbols.split(",") if s.strip()])
+    missing = [s for s in syms if not (data / f"{s}.csv").exists()]
+    if not syms or missing:
+        typer.echo(f"no data for symbol(s): {missing or syms}", err=True)
+        raise typer.Exit(code=1)
+    start = _parse_day(from_) or _date.min
+    end = _parse_day(to) or _date.max
+    if start > end:
+        typer.echo(f"--from {start} is after --to {end}", err=True)
+        raise typer.Exit(code=1)
+    feed = _RangeFeed(FileFeed(data, settings.market_spec()), start, end)
+    df, sdf = run_study(settings, feed, syms, index, out)
+    table = Table(title=f"Detector accuracy ({len(df)} evidences, "
+                        f"{df['symbol'].nunique()} symbols)")
+    for col in ("detector", "event", "n", "hit%", "base%", "edge", "fwd12",
+                "mfe", "mae", "edge t1/t2/t3"):
+        table.add_column(col)
+    pc = lambda v: "-" if v != v else f"{v:.1%}"  # noqa: E731  NaN-safe
+    for r in sdf.itertuples(index=False):
+        table.add_row(r.detector, r.event, str(r.n), pc(r.hit), pc(r.base),
+                      pc(r.edge), _fmt(None if r.fwd12 != r.fwd12 else r.fwd12),
+                      _fmt(None if r.mfe != r.mfe else r.mfe),
+                      _fmt(None if r.mae != r.mae else r.mae), r.edge_by_strength)
+    console.print(table)
+    typer.echo(f"wrote {out}/evidence.parquet + {out}/summary.csv")
 
 
 @app.command()
