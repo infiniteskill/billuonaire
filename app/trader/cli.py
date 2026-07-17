@@ -15,14 +15,17 @@ formats the result as rich tables.
 from __future__ import annotations
 
 import json
+import logging
 import shutil
 from datetime import date
 from decimal import Decimal
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Optional
 
 import typer
 from rich.console import Console
+from rich.logging import RichHandler
 from rich.table import Table
 
 from trader.config import load_settings, load_stocks
@@ -41,6 +44,25 @@ console = Console()
 
 _TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "config"
 _DEFAULT_STOCKS: dict = {"stocks": []}
+
+
+def _setup_logging(dir: Path, verbose: bool) -> None:
+    """C7: one root-logger setup per run — rich console at INFO (DEBUG with
+    --verbose) + rotating DEBUG file at --dir/logs/trader.log, so detector
+    exceptions (logged by DetectorRegistry.run_all) are actually visible.
+    Handlers are REPLACED, keeping repeat CLI invocations idempotent."""
+    logs = dir / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    file = RotatingFileHandler(logs / "trader.log",
+                               maxBytes=5_000_000, backupCount=3)
+    file.setLevel(logging.DEBUG)
+    file.setFormatter(logging.Formatter(
+        "%(asctime)s %(levelname)s %(name)s %(message)s"))
+    rich = RichHandler(console=console, show_path=False, rich_tracebacks=True)
+    rich.setLevel(logging.DEBUG if verbose else logging.INFO)
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    root.handlers[:] = [rich, file]
 
 
 @app.command()
@@ -161,11 +183,14 @@ def watch(
     auto: Optional[int] = typer.Option(None, "--auto", help="Auto-pick top K by fit score."),
     index: Optional[str] = typer.Option(None, "--index",
                                         help="Index symbol (overrides config index_symbol)."),
+    verbose: bool = typer.Option(False, "--verbose", "-v",
+                                 help="Console logging at DEBUG."),
 ) -> None:
     """Run the Orchestrator against mock or file data to exhaustion, then
     print a summary + per-symbol table once (live streaming is a later phase).
     Candle cache (dir/journal/candles) loads before the run and saves after,
     so fit scores and prior-day context accumulate across invocations."""
+    _setup_logging(dir, verbose)
     stocks = load_stocks(dir / "stocks.json")
     symbols = _resolve_symbols(dir, stocks, numbers or [], auto)
     if not symbols:
@@ -313,9 +338,12 @@ def replay(
     dir: Path = typer.Option(Path("."), "--dir", help="Config directory."),
     capital: Optional[float] = typer.Option(None, "--capital"),
     max_qty: int = typer.Option(1, "--max-qty"),
+    verbose: bool = typer.Option(False, "--verbose", "-v",
+                                 help="Console logging at DEBUG."),
 ) -> None:
     """Replay a date range of CSV data through the live pipeline (journals
     under dir/journal), then print the metrics report for the range."""
+    _setup_logging(dir, verbose)
     settings = load_settings(dir / "config.json")
     index = index or settings.index_symbol
     start, end = _parse_day(from_), _parse_day(to)

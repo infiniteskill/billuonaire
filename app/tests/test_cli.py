@@ -109,6 +109,47 @@ def test_watch_file_feed_index_without_data_dropped(tmp_path, monkeypatch):
     assert r.exit_code == 0 and seen["index"] is None         # no NIFTY.csv
 
 
+# -------------------------------------------------------------- logging (C7)
+
+def test_watch_creates_debug_log_file(tmp_path):
+    _init(tmp_path, ["ACME"])
+    r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--feed", "mock"])
+    assert r.exit_code == 0
+    assert (tmp_path / "logs" / "trader.log").exists()
+
+
+def test_detector_exception_lands_in_log_file(tmp_path, monkeypatch):
+    """A raising detector must not crash the run AND its traceback must land
+    in --dir/logs/trader.log (registry logs it; _setup_logging makes it land)."""
+    from trader.detectors.breaker import BreakerDetector
+
+    def boom(self, ctx):
+        raise RuntimeError("kaboom-for-log-test")
+
+    monkeypatch.setattr(BreakerDetector, "detect", boom)
+    _init(tmp_path, ["ACME"])
+    r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--feed", "mock"])
+    assert r.exit_code == 0                       # run_all swallowed it
+    text = (tmp_path / "logs" / "trader.log").read_text()
+    assert "detector 'breaker' failed" in text
+    assert "kaboom-for-log-test" in text          # full traceback in the file
+
+
+def test_verbose_flag_flips_console_to_debug(tmp_path):
+    import logging as _logging
+
+    from rich.logging import RichHandler
+
+    _init(tmp_path, ["ACME"])
+    runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--feed", "mock"])
+    rich = [h for h in _logging.getLogger().handlers if isinstance(h, RichHandler)]
+    assert rich and rich[0].level == _logging.INFO
+    runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--feed", "mock",
+                        "--verbose"])
+    rich = [h for h in _logging.getLogger().handlers if isinstance(h, RichHandler)]
+    assert rich and rich[0].level == _logging.DEBUG
+
+
 def test_watch_requires_symbols(tmp_path):
     _init(tmp_path, ["ACME"])
     r = runner.invoke(app, ["watch", "--dir", str(tmp_path)])
