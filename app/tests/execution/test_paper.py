@@ -65,6 +65,20 @@ def test_short_exit_pays_up(broker):
     assert broker.exit_fill(position(Direction.SHORT), candle(100), 33).price == D("100.05")
 
 
+def test_target_exit_limit_fill_half_spread_only(broker):
+    # limit AT target: half_spread 2 bps adverse, slippage NOT applied
+    f = broker.exit_fill(position(), candle(100), 34, price=D("500"))
+    assert f.price == D("499.90")               # 500 x (1 - 2/10000)
+    assert f.ts == TS
+    assert f.costs == D("20") + D("0.0002797") * D("499.90") * 34
+
+
+def test_target_exit_limit_fill_short_pays_up(broker):
+    f = broker.exit_fill(position(Direction.SHORT), candle(100), 33,
+                         price=D("500"))
+    assert f.price == D("500.10")               # cover: 500 x (1 + 2/10000)
+
+
 def test_fill_price_tick_quantized(broker):
     # 100.03 x 1.0005 = 100.080015 -> nearest 0.05 tick (half-up) = 100.10
     f = broker.entry_fill(plan(), candle("100.03"))

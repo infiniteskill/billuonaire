@@ -24,7 +24,7 @@ from trader.feed.mock import ScenarioFeed, judas_reversal, trend_day
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction
 from trader.models.level import Level, LevelKind, LevelState
-from trader.models.position import Fill, Position
+from trader.models.position import ExitReason, Fill, Position
 from trader.models.signal import TradePlan
 from trader.store.candles import CandleStore
 from trader.store.journal import Journal
@@ -86,14 +86,17 @@ def test_judas_two_day_orchestrator(tmp_path):
     armable = [v for v in verdicts if v["final"] >= threshold]
     assert armable and all(v["direction"] == "LONG" and v["distinct"] >= 4
                            and v["template"] == "TRAP_REVERSAL" for v in armable)
-    # day 1 arms at the 12:50 pivot and the trade closes profitably
+    # day 1 arms at the 12:50 pivot; targets now execute: the trade rides to
+    # T3 and closes EXIT_TARGET above entry (gross win; 4x flat brokerage
+    # can still swamp net pnl at this scenario's tiny notional)
     day1 = orch.journal.read(DAY1)
     opens = [e for e in day1 if e["kind"] == "trade_open"]
     closes = [e for e in day1 if e["kind"] == "trade_close"]
     assert len(opens) == 1 and opens[0]["direction"] == "LONG"
     assert opens[0]["at"][11:16] == "12:50" and opens[0]["stop"] == "100.20"
-    assert len(closes) == 1 and Decimal(closes[0]["pnl"]) > 0
-    assert summary["trades"] == 1 and summary["wins"] == 1
+    assert len(closes) == 1 and closes[0]["reason"] == ExitReason.TARGET.value
+    assert D(closes[0]["exit_price"]) > D(opens[0]["price"])
+    assert summary["trades"] == 1 and summary["wins"] + summary["losses"] == 1
     # day 2: pivot re-scores above threshold, but arms are refused
     day2 = orch.journal.read(DAY2)
     assert [e for e in day2 if e["kind"] == "verdict" and e["final"] >= threshold]
@@ -215,9 +218,10 @@ def test_index_pipeline_runs_own_wyckoff_detect(tmp_path, monkeypatch):
 # --------------------------------------------- 2. broker+manager integration
 
 def test_partials_and_eod_exact_accounting(tmp_path):
-    """Scripted LONG 50 @ ~100 stop 95: 1R and 2R shave 16 each through the
-    broker, EOD squares off the remaining 18; realized is the exact Decimal
-    sum including entry + exit costs, and RiskState records the close."""
+    """Scripted LONG 50 @ ~100 stop 95: 1R (market) and T2-touch (limit AT
+    110) shave 16 each through the broker, EOD squares off the remaining 18;
+    realized is the exact Decimal sum including entry + exit costs, and
+    RiskState records the close."""
     pipe, risk = make_pipeline(tmp_path)
     t0 = datetime(2026, 7, 14, 9, 55, tzinfo=IST)
     pipe.on_m1(m1("X", t0, 100, 100, 100, 100))                    # warm-up M5
@@ -231,14 +235,14 @@ def test_partials_and_eod_exact_accounting(tmp_path):
     assert pos.entry.price == D("100.05")                          # adverse open
     pipe.on_m1(m1("X", t0 + timedelta(minutes=10), 106, 111, 106, 111))  # 1R seen
     assert pos.remaining_qty == 34 and "1R" in pos.partials
-    pipe.on_m1(m1("X", t0 + timedelta(minutes=15), 111, 112, 110, 111))  # 2R seen
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=15), 111, 112, 110, 111))  # T2 touch
     assert pos.remaining_qty == 18 and "2R" in pos.partials
     pipe.on_m1(m1("X", t0.replace(hour=15, minute=10), 111, 111, 110, 111))
     pipe.on_m1(m1("X", t0.replace(hour=15, minute=15), 111, 111, 110, 111))  # EOD
     assert pipe.position is None and pos.remaining_qty == 0
-    expected = (-cost(D("100.05"), 50)
+    expected = (-cost(D("100.05"), 50)   # T2=110 touched: limit fill AT 110
                 + (D("105.95") - D("100.05")) * 16 - cost(D("105.95"), 16)
-                + (D("110.95") - D("100.05")) * 16 - cost(D("110.95"), 16)
+                + (D("110.00") - D("100.05")) * 16 - cost(D("110.00"), 16)
                 + (D("110.95") - D("100.05")) * 18 - cost(D("110.95"), 18))
     assert pos.realized == expected
     assert risk.trades_today == 1 and risk.consecutive_losses == 0

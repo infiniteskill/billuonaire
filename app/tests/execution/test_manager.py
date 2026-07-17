@@ -55,10 +55,15 @@ def one_candle_ctx(o, h, lo, c, ts=None, levels=()):
     return ctx_at(ts + timedelta(minutes=5), [m1(ts, o, h, lo, c)], levels)
 
 
-def pos(direction=Direction.LONG, stop=None, qty=100, opened=None, partials=()):
-    plan_stop = D("95") if direction is Direction.LONG else D("105")
+def pos(direction=Direction.LONG, stop=None, qty=100, opened=None, partials=(),
+        targets=None):
+    long = direction is Direction.LONG
+    plan_stop = D("95") if long else D("105")
+    tg = ([D(t) for t in targets] if targets is not None
+          else [D("105"), D("110"), D("115")] if long
+          else [D("95"), D("90"), D("85")])
     plan = TradePlan("X", direction, (D("98"), D("100")), plan_stop,
-                     [D("105"), D("110"), D("115")], qty, 70.0, TODAY, {})
+                     tg, qty, 70.0, TODAY, {})
     p = Position(plan=plan, entry=Fill(D("100"), qty, opened or at(10, 0), D("20")),
                  remaining_qty=qty, stop=D(stop) if stop else plan_stop)
     p.partials.update(partials)
@@ -144,10 +149,10 @@ def test_1r_fires_once(mgr):
 
 
 def test_gap_to_2r_fires_both_rungs(mgr):
-    p = pos()
+    p = pos()                    # high 110.2 touches T2 110: limit fill AT T2
     acts = mgr.on_candle(p, one_candle_ctx(109, 110.2, 108.8, 110))
-    assert [(a.kind, a.qty, a.reason) for a in acts] == \
-        [("PARTIAL", 33, "1R"), ("PARTIAL", 33, "2R")]
+    assert [(a.kind, a.qty, a.reason, a.price) for a in acts] == \
+        [("PARTIAL", 33, "1R", None), ("PARTIAL", 33, "T2", D("110"))]
     assert p.stop == D("100") and p.partials == {"1R", "2R"}
 
 
@@ -155,17 +160,57 @@ def test_2r_engages_m5_trail(mgr):
     p = pos(stop="100", partials={"1R"})
     lv = swing(LevelKind.SWING_L, 104, 104.1)
     acts = mgr.on_candle(p, one_candle_ctx(109, 110.2, 108.8, 110, levels=[lv]))
-    assert acts == [Action("PARTIAL", 33, "2R")]
+    assert acts == [Action("PARTIAL", 33, "T2", D("110"))]   # T2 touched
     assert p.stop == D("104")    # swing lo - 0.1*ATR; ATR None => pad 0
 
 
 def test_3r_promotes_to_m15_no_third_partial(mgr):
-    p = pos(stop="104", partials={"1R", "2R"})
+    p = pos(stop="104", partials={"1R", "2R"}, targets=("105", "110"))
     lvls = [swing(LevelKind.SWING_L, 104, 104.1, tf=Timeframe.M5),
             swing(LevelKind.SWING_L, 108, 108.1, tf=Timeframe.M15)]
     acts = mgr.on_candle(p, one_candle_ctx(114, 115.2, 113.8, 115, levels=lvls))
-    assert acts == []
+    assert acts == []            # no T3 in plan => runner rides trail/EOD
     assert "3R" in p.partials and p.stop == D("108")   # M15 swing, not M5
+
+
+# -- target exits merged into the ladder (06 §6) -----------------------
+
+def test_t2_touch_partial_exact_fill_long(mgr):
+    p = pos(stop="100", partials={"1R"})   # close 108 => r 1.6 < 2: touch wins
+    acts = mgr.on_candle(p, one_candle_ctx(107, 110.2, 106.8, 108))
+    assert acts == [Action("PARTIAL", 33, "T2", D("110"))]
+    assert "2R" in p.partials
+
+
+def test_t2_touch_partial_exact_fill_short(mgr):
+    p = pos(Direction.SHORT, stop="100", partials={"1R"})  # T2 90
+    acts = mgr.on_candle(p, one_candle_ctx(93, 93.5, 89.9, 92))
+    assert acts == [Action("PARTIAL", 33, "T2", D("90"))]
+
+
+def test_2r_close_fires_when_t2_farther_untouched(mgr):
+    p = pos(stop="100", partials={"1R"}, targets=("105", "112", "118"))
+    acts = mgr.on_candle(p, one_candle_ctx(109, 110.5, 108.8, 110.2))
+    assert acts == [Action("PARTIAL", 33, "2R")]    # market, no limit price
+
+
+def test_t3_touch_exits_final_third_long(mgr):
+    p = pos(stop="104", partials={"1R", "2R"})      # T3 115; close r 2.9 < 3
+    acts = mgr.on_candle(p, one_candle_ctx(114, 115.2, 113.8, 114.5))
+    assert acts == [Action("EXIT_TARGET", None, "T3", D("115"))]
+
+
+def test_t3_touch_exits_final_third_short(mgr):
+    p = pos(Direction.SHORT, stop="96", partials={"1R", "2R"})   # T3 85
+    acts = mgr.on_candle(p, one_candle_ctx(86, 87, 84.8, 85.5))
+    assert acts == [Action("EXIT_TARGET", None, "T3", D("85"))]
+
+
+def test_t2_and_t3_same_candle_partial_then_full(mgr):
+    p = pos(stop="100", partials={"1R"})            # spike through 110 AND 115
+    acts = mgr.on_candle(p, one_candle_ctx(109, 115.5, 108.8, 114))
+    assert [(a.kind, a.reason, a.price) for a in acts] == \
+        [("PARTIAL", "T2", D("110")), ("EXIT_TARGET", "T3", D("115"))]
 
 
 # -- (4) trailing ratchet ----------------------------------------------
@@ -210,7 +255,7 @@ def test_short_ladder_and_trail_mirror(mgr):
     lv = swing(LevelKind.SWING_H, 92, 92.1)
     acts = mgr.on_candle(p, one_candle_ctx(90.5, 91.2, 89.8, 90,
                                            ts=at(10, 5), levels=[lv]))
-    assert acts == [Action("PARTIAL", 33, "2R")]
+    assert acts == [Action("PARTIAL", 33, "T2", D("90"))]    # low touched T2 90
     assert p.stop == D("92.10")                 # swing hi + pad, ratchet DOWN
 
 

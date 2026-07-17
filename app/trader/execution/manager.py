@@ -2,10 +2,12 @@
 
 Check order per M5 close: (1) EOD squareoff, (2) stealth stop --
 close-confirmed ONLY: a wick through the stop, however many in a row, never
-exits (tolerance counts closes); it just flags ``hunt_survived`` for the
-journal, (3) R-ladder (1R: 33% off + breakeven; 2R: 33% off + M5 trail;
-3R: promote trail to M15), (4) swing-trail ratchet, (5) counter-zone exit,
-(6) stall exit.
+exits; it just flags ``hunt_survived`` for the journal, (3) R/target ladder
+(1R close: 33% off + breakeven -- T1 >= 1.5R by construction so 1R is always
+nearer; T2 touch or 2R close, whichever first: 33% off + M5 trail; 3R:
+promote trail to M15; T3 touch: final third exits AT the target), (4)
+swing-trail ratchet, (5) counter-zone exit, (6) stall exit. Target touches
+fill at the target price (limit semantics, ``Action.price``).
 
 The manager mutates only ``pos.stop`` / ``pos.partials`` /
 ``pos.hunt_survived``; the caller executes the returned Actions through the
@@ -38,6 +40,7 @@ class Action:
     kind: str                  # "PARTIAL" | ExitReason.*.value
     qty: int | None            # PARTIAL share; None = full remaining qty
     reason: str
+    price: Decimal | None = None   # limit fill override (target exits)
 
 
 def _exit(reason: ExitReason, why: str) -> Action:
@@ -60,7 +63,7 @@ class PositionManager:
         if (pos.stop - (c.low if sign > 0 else c.high)) * sign >= 0:
             pos.hunt_survived = True                    # wick-through: journal only
         r = pos.r_multiple(c.close)
-        actions = self._ladder(pos, r, sign)
+        actions = self._ladder(pos, r, sign, c)
         self._trail(pos, ctx, sign)
         if (counter_zone_score is not None
                 and counter_zone_score >= self.s.confluence.threshold):
@@ -70,9 +73,13 @@ class PositionManager:
             actions.append(_exit(ExitReason.STALL, "stall"))
         return actions
 
-    def _ladder(self, pos: Position, r: Decimal, sign: int) -> list[Action]:
-        """1R: 33% off + stop -> breakeven. 2R: 33% off (engages M5 trail).
-        3R: promotes trail to M15. Marks in ``partials`` gate each rung once."""
+    def _ladder(self, pos: Position, r: Decimal, sign: int, c) -> list[Action]:
+        """1R close: 33% off + stop -> breakeven. T2 touch (limit AT T2) or
+        2R close, whichever first: 33% off (engages M5 trail). 3R: promotes
+        trail to M15. T3 touch: final third exits AT T3 (no T3 => trail/EOD
+        run it). Marks in ``partials`` gate each rung once."""
+        tg, fav = pos.plan.targets, c.high if sign > 0 else c.low
+        hit = lambda t: (fav - t) * sign >= 0                    # noqa: E731
         out, q = [], pos.plan.qty * 33 // 100
         if r >= 1 and "1R" not in pos.partials:
             pos.partials.add("1R")
@@ -80,12 +87,17 @@ class PositionManager:
                 out.append(Action("PARTIAL", q, "1R"))
             if (pos.entry.price - pos.stop) * sign > 0:
                 self._apply_stop(pos, pos.entry.price)  # breakeven
-        if r >= 2 and "2R" not in pos.partials:
-            pos.partials.add("2R")
-            if q:
-                out.append(Action("PARTIAL", q, "2R"))
+        if "2R" not in pos.partials:
+            t2 = len(tg) > 1 and hit(tg[1])
+            if t2 or r >= 2:
+                pos.partials.add("2R")
+                if q:
+                    out.append(Action("PARTIAL", q, "T2", tg[1]) if t2
+                               else Action("PARTIAL", q, "2R"))
         if r >= 3 and "3R" not in pos.partials:
             pos.partials.add("3R")
+        if len(tg) > 2 and hit(tg[2]):
+            out.append(Action(ExitReason.TARGET.value, None, "T3", tg[2]))
         return out
 
     def _trail(self, pos: Position, ctx: StockContext, sign: int) -> None:

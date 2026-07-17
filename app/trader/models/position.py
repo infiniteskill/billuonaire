@@ -23,7 +23,7 @@ class PositionStatus(Enum):
 
 class ExitReason(Enum):
     STOP = "EXIT_STOP"; COUNTER = "EXIT_COUNTER"
-    STALL = "EXIT_STALL"; EOD = "EXIT_EOD"
+    STALL = "EXIT_STALL"; EOD = "EXIT_EOD"; TARGET = "EXIT_TARGET"
 
 
 @dataclass(frozen=True)

@@ -149,7 +149,8 @@ def test_double_trap_no_trades_before_second_reclaim(double_trap_day):
 
 
 # (5) stop_hunt_survive: wick-through survives, pinned to THE hunt bucket,
-# exits >= 1R realized
+# rides >= 1R gross and closes at target (B1: targets execute; flat brokerage
+# swamps net r at this scenario's tiny notional, so gross price R is asserted)
 def test_stop_hunt_survive_holds_through_hunt(tmp_path):
     run = _run_day(stop_hunt_survive, tmp_path)
     truth = run.scenario.truth
@@ -160,7 +161,10 @@ def test_stop_hunt_survive_holds_through_hunt(tmp_path):
     assert _at(hunts[0]) == hunt_close
     lo, hi = truth["stop_zone"]
     assert lo <= D(hunts[0]["stop"]) <= hi
-    assert sum(c["r"] for c in _kind(run.entries, "trade_close")) >= 1.0
+    o, c = _kind(run.entries, "trade_open")[0], _kind(run.entries, "trade_close")[-1]
+    assert c["reason"] == ExitReason.TARGET.value          # ran all the way to T3
+    risk = D(o["price"]) - D(o["stop"])
+    assert (D(c["exit_price"]) - D(o["price"])) / risk >= 1
 
 
 # (6) two consecutive losses lock RiskState; third arm is gate-blocked
@@ -185,6 +189,34 @@ def test_eod_squareoff_by_1510(tmp_path):
     c = closes[0]
     assert c["reason"] == ExitReason.EOD.value
     assert (_at(c).hour, _at(c).minute) <= SQUAREOFF
+
+
+# (7b) targets: a spike M5 through T2+T3 partials AT T2 and closes EXIT_TARGET
+def test_target_ladder_exit_journaled(tmp_path):
+    s = _cfg()
+    spec = s.market_spec()
+    pipe = SymbolPipeline(SYMBOL, s, CandleStore(tmp_path / "candles", spec),
+                          Journal(tmp_path / "journal"), PaperBroker(s),
+                          PositionManager(s, spec), RiskState(s), MAX_QTY)
+    t0 = datetime.combine(DAY, time(11, 0), tzinfo=IST)
+    bar = lambda m, o, h, lo, c: Candle(          # noqa: E731
+        SYMBOL, Timeframe.M1, t0 + timedelta(minutes=m),
+        D(str(o)), D(str(h)), D(str(lo)), D(str(c)), 1000)
+    pipe.on_m1(bar(0, 100, 100, 100, 100))
+    pipe._pending_plan = TradePlan(               # scripted arm, T = 104/106/108
+        SYMBOL, Direction.LONG, (D("99"), D("101")), D("95"),
+        [D("104"), D("106"), D("108")], MAX_QTY, ARM_THRESHOLD, t0,
+        {"final": ARM_THRESHOLD, "mults": {"align": 1.0}})
+    pipe.on_m1(bar(5, 100, 101, 99, 100))         # entry fills 11:05 @ ~100.05
+    pipe.on_m1(bar(10, 110, 112, 109, 111))       # spike M5 through T2 and T3
+    pipe.on_m1(bar(15, 111, 111, 111, 111))       # close evaluates the spike
+    entries = pipe.journal.read(DAY)
+    parts, closes = _kind(entries, "trade_partial"), _kind(entries, "trade_close")
+    assert [p["reason"] for p in parts] == ["1R", "T2"]
+    assert D(parts[1]["price"]) == D("106.00")    # limit AT T2 (2bps < half tick)
+    assert pipe.position is None and len(closes) == 1
+    assert closes[0]["reason"] == ExitReason.TARGET.value and closes[0]["why"] == "T3"
+    assert D(closes[0]["exit_price"]) == D("108.00")
 
 
 # (8) determinism: same judas day twice => byte-identical journals, sim-time

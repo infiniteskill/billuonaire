@@ -24,22 +24,29 @@ class PaperBroker:
     def __init__(self, settings: Settings):
         f = settings.fills
         self.spec = settings.market_spec()
-        self._adverse = (Decimal(str(f.half_spread_bps))
-                         + Decimal(str(f.slippage_bps))) / 10000
+        self._half = Decimal(str(f.half_spread_bps)) / 10000
+        self._adverse = self._half + Decimal(str(f.slippage_bps)) / 10000
         self._flat = Decimal(str(f.costs.brokerage_flat))
         self._pct = (Decimal(str(f.costs.stt_pct))
                      + Decimal(str(f.costs.exchange_pct))) / 100
 
     def entry_fill(self, plan: TradePlan, next_candle: Candle) -> Fill:
         """Fill the whole plan at next_candle.open, adverse in trade direction."""
-        return self._fill(next_candle, plan.qty, plan.direction.value)
+        return self._fill(next_candle.open, next_candle.ts, plan.qty,
+                          plan.direction.value, self._adverse)
 
-    def exit_fill(self, position: Position, candle: Candle, qty: int) -> Fill:
-        """Exit qty at candle.open, adverse against the position (reversed)."""
-        return self._fill(candle, qty, -position.plan.direction.value)
+    def exit_fill(self, position: Position, candle: Candle, qty: int,
+                  price: Decimal | None = None) -> Fill:
+        """Exit qty at candle.open, adverse against the position (reversed).
+        ``price`` = limit fill AT that price (target exits): half-spread
+        adverse only, no slippage -- limit orders don't slip."""
+        sign = -position.plan.direction.value
+        return (self._fill(candle.open, candle.ts, qty, sign, self._adverse)
+                if price is None
+                else self._fill(price, candle.ts, qty, sign, self._half))
 
-    def _fill(self, candle: Candle, qty: int, sign: int) -> Fill:
+    def _fill(self, base: Decimal, ts, qty: int, sign: int, rate: Decimal) -> Fill:
         """sign +1 pays up (LONG buy / SHORT cover), -1 receives down."""
-        price = self.spec.quantize(candle.open * (1 + sign * self._adverse))
-        return Fill(price=price, qty=qty, ts=candle.ts,
+        price = self.spec.quantize(base * (1 + sign * rate))
+        return Fill(price=price, qty=qty, ts=ts,
                     costs=self._flat + self._pct * price * qty)

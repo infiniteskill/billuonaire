@@ -205,7 +205,7 @@ class SymbolPipeline:
             qty = min(a.qty or pos.remaining_qty, pos.remaining_qty)
             if qty <= 0:
                 continue
-            fill = self.broker.exit_fill(pos, candle, qty)
+            fill = self.broker.exit_fill(pos, candle, qty, a.price)
             pos.realized += ((fill.price - pos.entry.price)
                              * pos.plan.direction.value * qty - fill.costs)
             pos.remaining_qty -= qty
