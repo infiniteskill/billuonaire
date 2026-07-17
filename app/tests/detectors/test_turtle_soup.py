@@ -34,6 +34,7 @@ PRIOR_D = (100, 105, 95, 100)
 PRIOR_E = (100, 103, 95, 100)
 PRIOR_F = (100, 102, 95, 100)
 BREAK_SHORT = (106, 110, 103, 104)  # high=110>105 (new high), close=104<105 (reclaim) -> SHORT
+NO_RECLAIM_SHORT = (106, 110, 103, 108)  # high=110>105 (new high), close=108>=105 -> genuine breakout, no signal
 
 
 def bar_ts(i):
@@ -82,6 +83,11 @@ def test_failed_breakout_fades_short_with_sl_at_swept_high():
 
 def test_new_low_without_reclaim_is_genuine_breakout_no_signal():
     store = make_store([PRIOR_A, PRIOR_B, PRIOR_C, NO_RECLAIM])
+    assert TurtleSoupDetector(PARAMS).detect(ctx_at(store, 4)) == []
+
+
+def test_new_high_without_reclaim_is_genuine_breakout_no_signal():
+    store = make_store([PRIOR_D, PRIOR_E, PRIOR_F, NO_RECLAIM_SHORT])
     assert TurtleSoupDetector(PARAMS).detect(ctx_at(store, 4)) == []
 
 

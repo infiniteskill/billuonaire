@@ -131,6 +131,7 @@ def test_no_lookahead():
 def test_dedupe_one_fire_per_block():
     store = make_store(long_bars())
     det = MitigationDetector({})
+    det.detect(ctx_at(store, 19))  # block forms here
     [ev] = det.detect(ctx_at(store, 20))
     assert det.detect(ctx_at(store, 20)) == []  # same tick again: no duplicate
 
@@ -138,8 +139,39 @@ def test_dedupe_one_fire_per_block():
 def test_on_session_end_clears_state():
     store = make_store(long_bars())
     det = MitigationDetector({})
+    det.detect(ctx_at(store, 19))
     det.detect(ctx_at(store, 20))
     det.on_session_end()
-    [ev] = det.detect(ctx_at(store, 20))  # re-forms and re-fires after reset
+    det.detect(ctx_at(store, 19))         # re-forms (state cleared)
+    [ev] = det.detect(ctx_at(store, 20))  # re-fires after reset
     assert ev.direction is Direction.LONG
     assert ev.meta["sl"] == tick(97)
+
+
+def test_atr_spike_ages_out_no_stale_touch():
+    """A volatility spike inflates ATR so the block candidate fails its
+    displacement check at its one true formation tick (disp=3 < need~5.4).
+    Later the spike ages out of the ATR(14) window and ATR relaxes back to
+    2 (need=2 < disp=3) -- old (bounded-rescan) behaviour would retry the
+    stale candle then and stamp a ~40-min-old touch with ts=ctx.now. Fixed
+    behaviour: that one tick was the block's only shot: reject-once is
+    permanent, so no signal -- stale or otherwise -- ever appears, even
+    though a real overlapping "touch" candle (DIP_TOUCH) is sitting right
+    there in history the whole time."""
+    FLAT2 = (100, 101, 99, 100)          # TR=2, primes ATR=2
+    SPIKE = (100, 140, 90, 100)          # TR=50 -- temporarily inflates ATR
+    BLOCK = (100, "100.5", "98.5", 99)   # bearish, body/zone (99, 100)
+    SEG1 = (99, "100.5", "98.5", 100)
+    SEG2 = (100, "101.5", "99.5", 101)
+    SEG3 = (101, "102.5", "100.5", 102)  # max disp = 3 vs blk.close
+    COAST = (102, 103, 101, 102)
+    DIP_TOUCH = (102, "102.5", "99.5", 102)  # overlaps zone (99, 100)
+
+    bars = ([FLAT2] * 14 + [SPIKE] + [BLOCK] + [SEG1, SEG2, SEG3]
+             + [COAST] + [DIP_TOUCH] + [COAST] * 9)  # spike ages out of ATR(14) by n=30
+    store = make_store(bars)
+    det = MitigationDetector({})
+
+    for n in range(15, len(bars) + 1):
+        assert det.detect(ctx_at(store, n)) == []
+        assert det._blocks == {}  # never persisted -> never a late/stale touch
