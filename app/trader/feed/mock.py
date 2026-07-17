@@ -222,7 +222,11 @@ def _plan_candles(sc: Scenario, rng: random.Random,
 # b11's high to 4T so the (b11,b12,b13) morning gap reads (4,7)T and its CE
 # 5.5T sits above that close: no morning CE_HOLD can drag a day-2 cluster
 # below the pivot -- day 2 carries live ATR/wyckoff from the open); b38
-# single-candle SWEEP of PL (forced low 3T, 4x volume, M5 closes 9T) =>
+# single-candle SWEEP of PL (forced low 2T, 4x volume, M5 closes 9T; the
+# trap extreme confirms a (1,3)T M5 swing low that keeps structure's
+# falling-lows CHoCH alive, and sits a full merge-gap below the pivot so
+# the swing-anchored wyckoff PHASE zone can NOT drag the arm cluster's lo
+# under PL and blow the 1.2xATR stop budget) =>
 # SWEPT, reclaimed b39 (sweep upgrade); b38-40 displacement (8T off the b37
 # close => OB_BULL) leaves a bullish FVG (9,11)T; b41 retest closes 10T:
 # holds the FVG CE (CE_HOLD) inside the OB (OB_RETEST); b42 closes 13T >
@@ -266,7 +270,7 @@ _JUDAS_FORCED = {2: ("high", 9), 12: ("low", -2), 17: ("low", -3), 22: ("high", 
                  143: ("low", 16), 148: ("low", 14), 153: ("low", 12),
                  158: ("low", 10), 163: ("low", 8), 168: ("low", 7),
                  173: ("low", 6), 176: ("low", 6), 182: ("high", 12),
-                 185: ("high", 11), 191: ("low", 3)}
+                 185: ("high", 11), 191: ("low", 2)}
 _SWEEP_MINUTE = 37
 _PIVOT_SWEEP_MINUTE = 191
 _SWEEP_VOLUME_MULT = 4
