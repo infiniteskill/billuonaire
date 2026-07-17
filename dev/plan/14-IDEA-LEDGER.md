@@ -31,7 +31,7 @@ Status: `proposed` → `validating` → `validated(OOS)` → `applied` | `reject
 | # | Hypothesis | Rationale | Status | Bar to clear |
 |---|---|---|---|---|
 | P1 | **Premium/Discount gate** (reject longs in top-5% swing range, shorts in bottom) | LuxAlgo canonical + study "against-move carries all edge" | proposed | MEASURE edge as a filter first, then holdout |
-| P2 | Vol-adjusted OB anchor (swap H/L on ≥2×ATR bars; extreme-of-leg) | LuxAlgo + explains "small OBs win" | proposed | measure vs current OB def |
+| P2 | Vol-adjusted OB anchor (swap H/L on ≥2×ATR bars; extreme-of-leg, size 8) | **VALIDATED 2 axes**: +10.4% vs our +4.4%; temporal val +9.3%, x-sect both stock-sets +10.1/+10.8% (`16-OB-VALIDATION.md`) | **validated(OOS, 2 axes)** | remaining: bootstrap CI + portfolio replay + forward month |
 | P3 | FVG requires displacement bar CLOSE-beyond + adaptive body-% threshold | LuxAlgo stricter FVG | proposed | measure edge lift on our best detector |
 | P4 | EQH/EQL tolerance → ATR-relative (0.1×ATR) | LuxAlgo; ours over-groups high-priced | proposed | measure EQ-sweep edge before/after |
 | P5 | Volume-in-zone liquidity strength (Liquidity Swings) | replaces useless touch-count | proposed | does volume-strength predict? measure |
