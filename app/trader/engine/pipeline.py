@@ -300,12 +300,16 @@ class SymbolPipeline:
         return Direction.NEUTRAL
 
     def _eff_qty(self) -> int:
-        """Size throttles: expiry-day (B7) x day-after-TREND (B5, axiom 16)."""
+        """Size throttles, composed multiplicatively: expiry-day (B7) x
+        day-after-TREND (B5, axiom 16) x RANGE_PIN half-size (fade edges
+        half-size: score stays full, discipline lives here)."""
         m = 1.0
         if is_expiry(self.day.session_date, self.spec):
             m *= self.s.risk.expiry_size_mult
         if self.day.prev_template == "TREND":
             m *= self.s.risk.day_after_trend_mult
+        if self.day.template == "RANGE_PIN":
+            m *= self.s.risk.range_pin_size_mult
         return int(self.max_qty * m)
 
     def _skip(self, at, gate: str, reason: str) -> None:

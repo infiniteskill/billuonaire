@@ -13,8 +13,10 @@ ScoredZones, then multiplies in cross-TF alignment and session context:
            m15_trend are ARGUMENTS -- the orchestrator supplies them, the
            engine stays pure.
   CONTEXT  time (latest live timestats strength, default 0.5) x template
-           (matched play 1.0 / off-template 0.5 / RANGE_PIN always 0.5 /
-           UNCLASSIFIED 0) x obviousness (unswept obvious level in zone 0.85,
+           (matched play 1.0 / off-template 0.5 / RANGE_PIN 1.0 when the zone
+           fades a range edge else 0.5 -- discipline moves to SIZE, pipeline
+           halves qty on RANGE_PIN days / UNCLASSIFIED 0) x obviousness
+           (unswept obvious level in zone 0.85,
            swept+reclaimed 1.15; obvious = ROUND kind or touches >= 3) x index
            (axiom 11: zone opposing a non-NEUTRAL ctx.index trend with
            strength >= 0.5 is halved, else 1.0).
@@ -112,7 +114,8 @@ class ConfluenceEngine:
         distinct = 0 if dirn is Direction.NEUTRAL else sum(
             1 for d, e in best.items() if d != "volume" and e.direction is dirn)
         mults = {"align": self._align(dirn, htf, m15), "time": time_mult,
-                 "template": self._template_mult(dirn, ctx.day.template, play),
+                 "template": self._template_mult(dirn, ctx.day.template, play,
+                                                 lo, hi, ctx),
                  "obviousness": self._obviousness(lo, hi, ctx),
                  "index": self._index_mult(dirn, ctx.index)}
         final = 0.0
@@ -155,12 +158,29 @@ class ConfluenceEngine:
                             else Direction.SHORT)
         return None
 
-    def _template_mult(self, dirn, template, play) -> float:
+    def _template_mult(self, dirn, template, play, lo, hi, ctx) -> float:
         if template == "UNCLASSIFIED":
             return 0.0
-        if template == "RANGE_PIN":
-            return 0.5
+        if template == "RANGE_PIN":     # fade edges full score, half SIZE
+            return 1.0 if self._fades_edge(dirn, lo, hi, ctx) else 0.5
         return 1.0 if play is dirn and play is not Direction.NEUTRAL else 0.5
+
+    @staticmethod
+    def _fades_edge(dirn, lo, hi, ctx) -> bool:
+        """RANGE_PIN design table: "fade edges half-size or skip". A zone
+        within 1xATR of a range edge (OR_H/OR_L level or the session
+        high/low) pointing AWAY from that edge is the legitimate range fade:
+        full score here, the pipeline takes the discipline out of SIZE."""
+        atr = ctx.atr(Timeframe.M5) or Decimal(0)
+        edges = [(lv.zone, Direction.SHORT if lv.kind is LevelKind.OPEN_RANGE_H
+                  else Direction.LONG) for lv in ctx.levels
+                 if lv.symbol == ctx.symbol and lv.kind in _OR_EDGES]
+        if today := (ctx.candles.today(Timeframe.M5) if ctx.candles else []):
+            dh, dl = max(c.high for c in today), min(c.low for c in today)
+            edges += [((dh, dh), Direction.SHORT), ((dl, dl), Direction.LONG)]
+        return any(fade is dirn
+                   and max(min(z) - hi, lo - max(z), Decimal(0)) <= atr
+                   for z, fade in edges)
 
     @staticmethod
     def _obviousness(lo, hi, ctx) -> float:

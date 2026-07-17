@@ -335,6 +335,19 @@ def test_expiry_day_halves_qty_and_journals(tmp_path):
     assert "expiry" not in skip2
 
 
+# -------------------------------------- 2a2b. RANGE_PIN half-size (fade edges)
+
+def test_range_pin_day_halves_qty_composes_with_expiry(tmp_path):
+    """RANGE_PIN discipline lives in SIZE: qty x range_pin_size_mult (0.5),
+    composed multiplicatively with the expiry throttle."""
+    pipe, _ = make_pipeline(tmp_path)                    # max_qty 50
+    pipe.day = DayState(session_date=DAY1, template="RANGE_PIN")   # Tuesday
+    assert pipe._eff_qty() == 25
+    pipe.day = DayState(session_date=date(2026, 7, 16),  # Thursday expiry
+                        template="RANGE_PIN")
+    assert pipe._eff_qty() == 12                         # 50 x 0.5 x 0.5
+
+
 # ------------------------------------------- 2a3. day-after-TREND (B5)
 
 def test_day_after_trend_scales_qty(tmp_path):

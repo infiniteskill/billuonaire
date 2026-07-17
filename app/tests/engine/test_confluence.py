@@ -148,7 +148,36 @@ def test_time_mult_from_latest_timestats_default_half():
 def test_template_unclassified_zeroes_range_pin_halves():
     assert score(TRIO, template="UNCLASSIFIED")[0].final == 0.0
     assert score(TRIO, template="RANGE_PIN")[0].final == pytest.approx(
-        score(TRIO)[0].final * 0.5, abs=0.06)
+        score(TRIO)[0].final * 0.5, abs=0.06)  # no edge nearby: not a fade
+
+
+def test_range_pin_fade_of_or_edge_full_score():
+    # zone 100-101, OR_L 98-98.5: gap 1.5 <= 1xATR(2), LONG points away => 1.0
+    orl = level(LevelKind.OPEN_RANGE_L, lo="98", hi="98.5")
+    assert score(TRIO, template="RANGE_PIN",
+                 levels=[orl])[0].mults["template"] == 1.0
+    # LONG INTO the upper edge is a breakout attempt, not a fade => 0.5
+    orh = level(LevelKind.OPEN_RANGE_H, lo="101.2", hi="101.5")
+    assert score(TRIO, template="RANGE_PIN",
+                 levels=[orh])[0].mults["template"] == 0.5
+    # right direction but edge 9.5 away > 1xATR => 0.5
+    far = level(LevelKind.OPEN_RANGE_L, lo="90", hi="90.5")
+    assert score(TRIO, template="RANGE_PIN",
+                 levels=[far])[0].mults["template"] == 0.5
+
+
+def test_range_pin_fade_of_day_extreme_full_score():
+    from types import SimpleNamespace
+    day = lambda h, lo: SimpleNamespace(today=lambda tf: [    # noqa: E731
+        SimpleNamespace(high=Decimal(h), low=Decimal(lo))])
+    c = ctx(template="RANGE_PIN")
+    c.candles = day("110", "99")       # day low 99 inside zone: LONG fades it
+    assert engine().score(c, TRIO, ("UNCLEAR", 0.0),
+                          LONG)[0].mults["template"] == 1.0
+    c2 = ctx(template="RANGE_PIN")
+    c2.candles = day("101.5", "95")    # near edge is the HIGH: LONG not a fade
+    assert engine().score(c2, TRIO, ("UNCLEAR", 0.0),
+                          LONG)[0].mults["template"] == 0.5
 
 
 def test_trap_reversal_play_away_from_swept_edge():
