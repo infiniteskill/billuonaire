@@ -29,7 +29,7 @@ from trader.detectors.base import Detector, register
 from trader.engine.context import StockContext
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Evidence
-from trader.models.level import Level, LevelKind, LevelState
+from trader.models.level import TERMINAL, Level, LevelKind, LevelState
 
 _DEFAULT_STRENGTH = 3
 _DEFAULT_TIMEFRAMES = ("5m", "15m")
@@ -79,7 +79,8 @@ class SwingsDetector(Detector):
         if any(lv.id == level_id for lv in ctx.levels):
             return
         if any(
-            lv.kind is kind and lv.tf is tf and self._overlaps(lv.zone, zone)
+            lv.kind is kind and lv.tf is tf and lv.state not in TERMINAL
+            and self._overlaps(lv.zone, zone)   # dead levels don't block re-formation
             for lv in ctx.levels
         ):
             return

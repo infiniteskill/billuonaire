@@ -27,7 +27,7 @@ from trader.config import Settings
 from trader.detectors.base import DetectorRegistry
 from trader.detectors.wyckoff import WyckoffDetector
 from trader.engine.confluence import ConfluenceEngine
-from trader.engine.context import DayState, IndexView, StockContext
+from trader.engine.context import DayState, IndexView, StockContext, live_evidence
 from trader.engine.entry import EntryFSM, EntryState
 from trader.engine.gates import GateChain, RiskState
 from trader.engine.levels import LevelEngine
@@ -36,6 +36,7 @@ from trader.execution.manager import PositionManager
 from trader.execution.paper import PaperBroker
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction
+from trader.models.level import TERMINAL, LevelKind
 from trader.models.market import _minutes
 from trader.models.position import Position, PositionStatus
 from trader.store.candles import CandleStore, _bucket_start
@@ -47,6 +48,8 @@ for _m in pkgutil.iter_modules(trader.detectors.__path__):    # @register all
 _M5 = timedelta(minutes=5)
 _STRUCTURE = ("BOS", "CHOCH")
 _VERDICT_MIN = 3.0
+_CARRY = frozenset({LevelKind.PDH, LevelKind.PDL, LevelKind.EQH,
+                    LevelKind.EQL, LevelKind.ROUND})  # cross-day liquidity
 
 
 class SymbolPipeline:
@@ -86,7 +89,12 @@ class SymbolPipeline:
 
     def _end_session(self, ts) -> None:
         """New session: a pending plan or armed FSM carries day-old stops
-        and targets across the overnight gap -- drop both, journal skips."""
+        and targets across the overnight gap -- drop both, journal skips.
+        Prune levels to live cross-day liquidity kinds: terminal states and
+        intraday micro-structure (swings, OB/FVG, OR) must not block or bias
+        the new day (liquidity re-creates fresh PDH/PDL/OR per session)."""
+        self.levels[:] = [lv for lv in self.levels
+                          if lv.kind in _CARRY and lv.state not in TERMINAL]
         if self._pending_plan is not None:
             self._pending_plan = None
             self._skip(ts, "fill", "session_end")
@@ -112,12 +120,12 @@ class SymbolPipeline:
         del self.evidence_history[:-200]
         self.classifier.update(ctx)
         if self.is_index:
-            self.index_view = IndexView(self._m15_trend(),
+            self.index_view = IndexView(self._m15_trend(now),
                                         *self.wyckoff.phase(ctx))
             return
         htf = self.wyckoff.htf_phase(ctx)
         zones = self.confluence.score(ctx, self.evidence_history, htf,
-                                      self._m15_trend())
+                                      self._m15_trend(now))
         # verdicts are OBSERVATIONS: journal any zone scoring >= 3, raw or
         # final (final is forced 0 below min_zone_detectors; near-misses and
         # armed zones alike must land in the journal, so the bar sits far
@@ -206,8 +214,10 @@ class SymbolPipeline:
 
     # --------------------------------------------------------------- helpers
 
-    def _m15_trend(self) -> Direction:
-        for e in reversed(self.evidence_history):
+    def _m15_trend(self, now) -> Direction:
+        """Latest LIVE structure event: this session only, ttl unexpired."""
+        for e in reversed(live_evidence(self.evidence_history, now,
+                                        self.day.session_date)):
             if e.detector == "structure" and e.meta.get("event") in _STRUCTURE:
                 return e.direction
         return Direction.NEUTRAL

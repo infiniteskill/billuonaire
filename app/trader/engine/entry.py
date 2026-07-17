@@ -33,7 +33,7 @@ from enum import Enum, auto
 
 from trader.config import Settings
 from trader.engine.confluence import ScoredZone
-from trader.engine.context import StockContext
+from trader.engine.context import StockContext, live_evidence
 from trader.models.candle import Timeframe
 from trader.models.evidence import Direction, Evidence
 from trader.models.level import LevelKind, LevelState
@@ -132,8 +132,8 @@ class EntryFSM:
                   self.spec.quantize(entry + sign * Decimal("2.5") * risk))
         t3 = next((p for p, k in cands if k in _EXTERNAL and (p - t2) * sign > 0),
                   self.spec.quantize(entry + sign * 4 * risk))
-        for e in ctx.evidence_history:               # compression energy cap
-            if "energy" in e.meta and _overlaps(e.zone, zone):
+        for e in live_evidence(ctx.evidence_history, ctx.now):  # energy cap
+            if "energy" in e.meta and _overlaps(e.zone, zone):  # (unexpired)
                 cap = self.spec.quantize(entry + sign * Decimal(e.meta["energy"]))
                 t3 = min(t3, cap) if up else max(t3, cap)
         return [t1, t2, t3] if (t3 - t2) * sign > 0 else [t1, t2]

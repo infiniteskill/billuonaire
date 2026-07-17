@@ -15,6 +15,8 @@ class LevelState(Enum):
     ACTIVE = auto(); TESTED = auto(); SWEPT = auto(); RECLAIMED = auto()
     INVERTED = auto(); MITIGATED = auto(); DEAD = auto()
 
+TERMINAL = frozenset({LevelState.DEAD, LevelState.MITIGATED, LevelState.INVERTED})
+
 @dataclass
 class Level:
     id: str

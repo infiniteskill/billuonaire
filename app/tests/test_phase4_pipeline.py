@@ -6,7 +6,7 @@ EOD remainder, exact Decimal accounting incl costs); the shared RiskState
 blocking a third symbol after two losses; and IndexView reaching stock ctx.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -22,7 +22,8 @@ from trader.execution.manager import Action, PositionManager
 from trader.execution.paper import PaperBroker
 from trader.feed.mock import ScenarioFeed, judas_reversal, trend_day
 from trader.models.candle import Candle, Timeframe
-from trader.models.evidence import Direction
+from trader.models.evidence import Direction, Evidence
+from trader.models.level import Level, LevelKind, LevelState
 from trader.models.position import Fill, Position
 from trader.models.signal import TradePlan
 from trader.store.candles import CandleStore
@@ -101,6 +102,68 @@ def test_judas_two_day_orchestrator(tmp_path):
     assert not [e for e in day2 if e["kind"] == "trade_open"]
     assert set(summary) == {"trades", "wins", "losses", "pnl", "skips"}
     assert summary["skips"] == len([e for e in entries if e["kind"] == "skip"])
+
+
+def test_judas_two_day_no_gap_day2_reforms(tmp_path, monkeypatch):
+    """Day 2 repeats day 1 at the SAME open (no gap): session-scoped evidence
+    (A1) keeps day-2's pre-structure m15_trend NEUTRAL instead of day-1's
+    LONG, and session-end level pruning (A2) lets day-2 swings re-form at
+    day-1's exact prices -- the pivot swing-low included -- instead of being
+    dedupe-blocked by day-1 corpses."""
+    trends, orig = [], SymbolPipeline._m15_trend
+    monkeypatch.setattr(SymbolPipeline, "_m15_trend", lambda self, now: trends
+                        .append((now, r := orig(self, now))) or r)
+    sc2 = judas_reversal("ACME", DAY2, 100.0)
+    feed = ScenarioFeed([judas_reversal("ACME", DAY1, 100.0), sc2])
+    orch = Orchestrator(cfg(), feed, ["ACME"], capital=100000, max_qty=50,
+                        journal_dir=tmp_path)
+    orch.run()
+    pipe = orch.pipelines["ACME"]
+    early = [r for now, r in trends
+             if now.date() == DAY2 and now.time() < time(10, 0)]
+    assert early and all(r is Direction.NEUTRAL for r in early)   # A1
+    pz = tuple(sc2.truth["pivot_zone"])                           # A2
+    assert any(lv.kind is LevelKind.SWING_L and lv.zone == pz
+               and lv.born.date() == DAY2 for lv in pipe.levels)
+    threshold = cfg().confluence.threshold
+    assert [v for v in orch.journal.read(DAY2)                    # re-scored
+            if v["kind"] == "verdict" and v["final"] >= threshold
+            and v["direction"] == "LONG"]
+
+
+def test_end_session_prunes_stale_levels(tmp_path):
+    """Session end keeps only live cross-day liquidity (PDH/PDL/EQ/ROUND,
+    non-terminal); terminal states and intraday micro-structure go."""
+    pipe, _ = make_pipeline(tmp_path)
+    t = datetime(2026, 7, 14, 15, 25, tzinfo=IST)
+    mk = lambda kind, state: Level(f"X-{kind.name}-{state.name}", "X", kind,
+                                   (D("99"), D("101")), t, None, state)
+    pipe.levels[:] = [mk(LevelKind.PDH, LevelState.ACTIVE),
+                      mk(LevelKind.ROUND, LevelState.TESTED),
+                      mk(LevelKind.EQH, LevelState.SWEPT),        # not terminal
+                      mk(LevelKind.PDL, LevelState.DEAD),         # terminal
+                      mk(LevelKind.SWING_L, LevelState.ACTIVE),   # intraday
+                      mk(LevelKind.OB_BULL, LevelState.ACTIVE),
+                      mk(LevelKind.FVG_BEAR, LevelState.ACTIVE),
+                      mk(LevelKind.OPEN_RANGE_H, LevelState.SWEPT)]
+    pipe._end_session(datetime(2026, 7, 15, 9, 15, tzinfo=IST))
+    assert {lv.kind for lv in pipe.levels} == {LevelKind.PDH, LevelKind.ROUND,
+                                               LevelKind.EQH}
+
+
+def test_m15_trend_only_live_session_evidence(tmp_path):
+    """_m15_trend ignores prior-day structure evidence and expired ttl."""
+    pipe, _ = make_pipeline(tmp_path)
+    pipe.day = DayState(session_date=DAY2)
+    t2 = datetime(2026, 7, 15, 9, 30, tzinfo=IST)
+    ev = lambda dirn, ts: Evidence("structure", dirn, 0.6, (D("99"), D("101")),
+                                   ts, 12, {"event": "BOS"})
+    pipe.evidence_history.append(
+        ev(Direction.LONG, datetime(2026, 7, 14, 14, 0, tzinfo=IST)))
+    assert pipe._m15_trend(t2) is Direction.NEUTRAL      # day-1: dead
+    pipe.evidence_history.append(ev(Direction.SHORT, t2 - timedelta(minutes=10)))
+    assert pipe._m15_trend(t2) is Direction.SHORT        # live this session
+    assert pipe._m15_trend(t2 + timedelta(minutes=65)) is Direction.NEUTRAL  # ttl
 
 
 # --------------------------------------------- 2. broker+manager integration

@@ -6,7 +6,7 @@ no-lookahead CandleView from CandleStore.view()."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from trader.models.candle import Timeframe
@@ -14,6 +14,17 @@ from trader.models.evidence import Direction, Evidence
 from trader.models.level import Level
 from trader.models.market import NSE, MarketSpec
 from trader.store.candles import CandleView
+
+_M5 = timedelta(minutes=5)
+
+
+def live_evidence(history: list[Evidence], now: datetime | None = None,
+                  session_date: date | None = None) -> list[Evidence]:
+    """Evidence still in play: unexpired ttl at ``now`` (ttl_candles are M5)
+    and/or stamped in the ``session_date`` session. None skips that filter."""
+    return [e for e in history
+            if (now is None or e.ts + e.ttl_candles * _M5 >= now)
+            and (session_date is None or e.ts.date() == session_date)]
 
 
 @dataclass(frozen=True)

@@ -25,18 +25,16 @@ Zones with distinct winning detectors < min_zone_detectors are unarmable
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import timedelta
 from decimal import Decimal
 
 from trader.config import Settings
-from trader.engine.context import StockContext
+from trader.engine.context import StockContext, live_evidence
 from trader.models.evidence import Direction, Evidence
 from trader.models.level import LevelKind, LevelState
 from trader.models.candle import Timeframe
 
 _DEFAULTS = {"merge_atr": 0.25, "min_zone_detectors": 3, "opposition": 0.8,
              "neutral_pool": 0.5, "volume_boost": 3.0, "time_default": 0.5}
-_M5 = timedelta(minutes=5)
 _SWEPT = (LevelState.SWEPT, LevelState.RECLAIMED)
 _OR_EDGES = (LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L)
 
@@ -64,7 +62,7 @@ class ConfluenceEngine:
     def score(self, ctx: StockContext, evidence: list[Evidence],
               htf_phase: tuple[str, float], m15_trend: Direction,
               ) -> list[ScoredZone]:
-        live = [e for e in evidence if e.ts + e.ttl_candles * _M5 >= ctx.now]
+        live = live_evidence(evidence, ctx.now)
         gap = self.merge_atr * (ctx.atr(Timeframe.M5) or Decimal(0))
         stats = [e for e in live if e.detector == "timestats"]
         time_mult = (max(stats, key=lambda e: (e.ts, e.strength)).strength if stats

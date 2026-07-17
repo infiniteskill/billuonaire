@@ -71,7 +71,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from trader.models.candle import Candle, Timeframe
-from trader.models.level import Level, LevelKind, LevelState
+from trader.models.level import TERMINAL, Level, LevelKind, LevelState
 
 logger = logging.getLogger("trader.engine.levels")
 
@@ -88,7 +88,6 @@ _SIDE_BY_KIND: dict[LevelKind, str] = {
     LevelKind.FVG_BULL: "above",
 }
 
-_TERMINAL = frozenset({LevelState.DEAD, LevelState.MITIGATED, LevelState.INVERTED})
 _OB_KINDS = frozenset({LevelKind.OB_BULL, LevelKind.OB_BEAR})
 
 
@@ -140,7 +139,7 @@ class LevelEngine:
         prev_close = self._prev_close.get((candle.symbol, candle.tf))
         transitions = []
         for level in levels:
-            if level.symbol != candle.symbol or level.state in _TERMINAL:
+            if level.symbol != candle.symbol or level.state in TERMINAL:
                 continue
             t = self._step(level, candle, tol, prev_close)
             if t is not None:

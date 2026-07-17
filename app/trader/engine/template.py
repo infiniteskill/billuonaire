@@ -28,7 +28,7 @@ from __future__ import annotations
 from collections import Counter
 from datetime import date, timedelta
 
-from trader.engine.context import StockContext
+from trader.engine.context import StockContext, live_evidence
 from trader.models.evidence import Evidence
 from trader.models.level import Level, LevelKind, LevelState
 from trader.models.market import MarketSpec
@@ -87,14 +87,16 @@ class TemplateClassifier:
         orl = edges.get(LevelKind.OPEN_RANGE_L)
         swept_high, swept_low = _swept(orh), _swept(orl)
 
-        bos = _structure(ctx.evidence_history, "BOS")
+        history = live_evidence(ctx.evidence_history,      # this session only
+                                session_date=ctx.day.session_date)
+        bos = _structure(history, "BOS")
         bos_same = max(Counter(e.direction for e in bos).values(), default=0)
 
         if swept_high and swept_low:
             return "DOUBLE_TRAP"
         if swept_high != swept_low:
             edge = orh if swept_high else orl
-            if _reclaimed(edge) and _structure(ctx.evidence_history, "CHOCH"):
+            if _reclaimed(edge) and _structure(history, "CHOCH"):
                 return "TRAP_REVERSAL"
         if not _reclaimed(orh) and not _reclaimed(orl) and bos_same >= 2:
             return "TREND"

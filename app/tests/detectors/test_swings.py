@@ -216,6 +216,25 @@ def test_dedupe_against_existing_overlapping_zone_different_id():
     assert ctx.levels[0] is existing
 
 
+def test_terminal_overlapping_level_does_not_block_reformation():
+    """A DEAD/MITIGATED/INVERTED level at the same price must not stop a
+    fresh swing from forming there (A2 root cause)."""
+    det = SwingsDetector({"strength": 3, "timeframes": ["5m"]})
+    store = CandleStore("/nonexistent")
+    for i, (o, h, l, c) in enumerate(bars_with_high_peak()):
+        add_bar(store, Timeframe.M5, i, o, h, l, c)
+    now = bar_close(Timeframe.M5, 6)
+    extreme = tick(110)
+    dead = Level(id="X-SWING_H-5m-OLD", symbol="X", kind=LevelKind.SWING_H,
+                 zone=(extreme - TICK, extreme + TICK), born=now,
+                 tf=Timeframe.M5, state=LevelState.DEAD)
+    ctx = ctx_at(store, now, levels=[dead])
+    det.detect(ctx)
+    assert len(ctx.levels) == 2  # fresh swing formed alongside the dead one
+    assert any(lv.state is LevelState.ACTIVE and lv.kind is LevelKind.SWING_H
+               for lv in ctx.levels)
+
+
 def test_multi_timeframe_param_respected_m15():
     det = SwingsDetector({"strength": 3, "timeframes": ["15m"]})
     store = CandleStore("/nonexistent")
