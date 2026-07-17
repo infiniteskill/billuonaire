@@ -53,8 +53,6 @@ EXIT_REASONS = {r.value for r in ExitReason}
 IST = ZoneInfo("Asia/Kolkata")
 CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.json"
 D = Decimal
-XFAIL_PARALLEL = pytest.mark.xfail(
-    strict=False, reason="shape lands with parallel agents; controller flips off")
 
 
 class DayRun(NamedTuple):
@@ -112,7 +110,8 @@ def _scripted_position_day(tmp: Path):
     pipe = SymbolPipeline(SYMBOL, s, CandleStore(tmp / "candles", spec),
                           Journal(tmp / "journal"), PaperBroker(s),
                           PositionManager(s, spec), RiskState(s), MAX_QTY)
-    t0 = datetime.combine(DAY, time(14, 50), tzinfo=IST)
+    # fill must land BEFORE the 14:30 late-fill cutoff (pipeline drops later fills)
+    t0 = datetime.combine(DAY, time(14, 20), tzinfo=IST)
     bar = lambda m, o, h, lo, c: Candle(          # noqa: E731
         SYMBOL, Timeframe.M1, t0 + timedelta(minutes=m),
         D(str(o)), D(str(h)), D(str(lo)), D(str(c)), 1000)
@@ -121,13 +120,12 @@ def _scripted_position_day(tmp: Path):
         SYMBOL, Direction.LONG, (D("99"), D("101")), D("95"),
         [D("107"), D("110")], MAX_QTY, ARM_THRESHOLD, t0,
         {"final": ARM_THRESHOLD, "mults": {"align": 1.0}})
-    for m in (5, 10, 15, 20):                                 # fill, hold, EOD
+    for m in range(5, 60, 5):                # fill 14:25, hold to 15:15 (EOD 15:10)
         pipe.on_m1(bar(m, 100, 101, 99, 100))
     return pipe, pipe.journal.read(DAY)
 
 
 # (1) judas: armed zone post-11:00, LONG open, SL below swept zone, mults
-@XFAIL_PARALLEL
 def test_judas_armed_zone_and_long_open(judas):
     armable = [v for v in _kind(judas.entries, "verdict")
                if v["final"] >= ARM_THRESHOLD and _at(v).time() >= POST_OBSERVE]
@@ -136,12 +134,13 @@ def test_judas_armed_zone_and_long_open(judas):
     assert opens, "no trade_open journaled on judas day"
     o = opens[0]
     assert o["direction"] == "LONG" and _at(o).time() >= POST_OBSERVE
-    assert D(o["stop"]) < min(judas.scenario.truth["swept_zone"])
+    # SL beyond the PIVOT swept level zone (the entry cluster's trap extreme,
+    # per diagnosis amendment) — the morning ORL zone is a different trap.
+    assert D(o["stop"]) < min(judas.scenario.truth["pivot_zone"])
     assert MULT_KEYS <= set(o["plan"]["mults"])
 
 
 # (2) judas lifecycle completes: every open has a close with a known reason
-@XFAIL_PARALLEL
 def test_judas_lifecycle_completes(judas):
     opens, closes = (_kind(judas.entries, k) for k in ("trade_open", "trade_close"))
     assert closes and len(closes) == len(opens)
@@ -158,7 +157,6 @@ def test_range_pin_zero_trades_but_observed(range_pin_day):
 
 
 # (4) double_trap: no trade before the second sweep's reclaim completes
-@XFAIL_PARALLEL
 def test_double_trap_no_trades_before_second_reclaim(double_trap_day):
     truth = double_trap_day.scenario.truth
     reclaim_min = truth.get("reclaim_high_minute",
@@ -170,7 +168,6 @@ def test_double_trap_no_trades_before_second_reclaim(double_trap_day):
 
 
 # (5) stop_hunt_survive: wick-through survives, exits >= 1R realized
-@XFAIL_PARALLEL
 def test_stop_hunt_survive_holds_through_hunt(tmp_path):
     make = getattr(mock, "stop_hunt_survive", None)
     if make is None:
