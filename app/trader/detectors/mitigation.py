@@ -13,7 +13,8 @@ for SHORT.
 it), so formation does NOT rescan history: each tick evaluates only the one
 newly-eligible block candidate -- the candle whose ``lookback``-bar
 displacement window just closed, i.e. ``window[-(lookback + 1)]`` on a
-``ctx.candles.last(lookback + 2, tf)`` window -- against the *current*
+session-scoped ``ctx.candles.today(tf)[-(lookback + 2):]`` window (never
+crosses into the prior session) -- against the *current*
 ``ctx.atr(tf)`` as its formation ATR, then persists it (once) in instance
 state. A candle that fails its displacement check at that single tick is
 rejected forever; it is never retried against a later (e.g. post-spike,
@@ -59,7 +60,7 @@ class MitigationDetector(Detector):
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
         lookback = int(self.params["lookback"])
-        window = ctx.candles.last(lookback + 2, tf)
+        window = ctx.candles.today(tf)[-(lookback + 2):]
         touches = self._touch(ctx, window)  # against blocks formed on PRIOR ticks
         atr = ctx.atr(tf)
         if atr and atr > 0 and len(window) >= lookback + 2:

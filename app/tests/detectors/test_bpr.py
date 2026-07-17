@@ -134,3 +134,42 @@ def test_on_session_end_clears():
     assert det._gaps == [] and det._fired == set()
     [ev] = run_to(det, store, 24)  # replay: fires again after reset
     assert ev.direction is Direction.SHORT
+
+
+def test_session_boundary_no_cross_day_bear_gap():
+    """Same candle content/order as BARS_A, except C1_BEAR/C2_BEAR close out
+    day 1 and C3_BEAR/TOUCH are day 2's first two candles. The old
+    ctx.candles.last(3, tf) window would span the boundary and form the bear
+    FVG from a mixed day1+day2 triad, then TOUCH would fire a false SHORT
+    BPR (byte-identical to test_bull_older_bear_newer_fires_short_sl_hi,
+    just split across the session boundary). Session-scoped
+    ctx.candles.today(tf) means day 2 never reaches 3 today-only bars during
+    this sequence, so the bear gap never forms and nothing fires."""
+    day1 = SESSION_START
+    day2 = day1 + timedelta(days=1)
+    day1_bars = [FLAT] * 16 + [C1_BULL, C2_BULL, C3_BULL, FILLER, C1_BEAR, C2_BEAR]
+    day2_bars = [C3_BEAR, TOUCH]
+    store = CandleStore("/nonexistent")
+    for i, (o, h, l, c) in enumerate(day1_bars):
+        store.add(Candle("X", Timeframe.M1, day1 + timedelta(minutes=5 * i),
+                         tick(o), tick(h), tick(l), tick(c), 10))
+    for i, (o, h, l, c) in enumerate(day2_bars):
+        store.add(Candle("X", Timeframe.M1, day2 + timedelta(minutes=5 * i),
+                         tick(o), tick(h), tick(l), tick(c), 10))
+
+    det = BprDetector({})
+    for n in range(1, len(day1_bars) + 1):
+        now = day1 + timedelta(minutes=5 * n)
+        det.detect(StockContext(symbol="X", now=now, candles=store.view("X", now),
+                                levels=[], evidence_history=[],
+                                day=DayState(session_date=now.date())))
+    assert not any(not g.dead and not g.bull for g in det._gaps)  # no bear gap yet
+
+    out = []
+    for n in range(1, len(day2_bars) + 1):
+        now = day2 + timedelta(minutes=5 * n)
+        out = det.detect(StockContext(symbol="X", now=now, candles=store.view("X", now),
+                                      levels=[], evidence_history=[],
+                                      day=DayState(session_date=now.date())))
+    assert out == []                                              # no cross-session BPR
+    assert not any(not g.dead and not g.bull for g in det._gaps)  # bear gap never formed

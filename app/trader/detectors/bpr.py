@@ -49,7 +49,7 @@ class BprDetector(Detector):
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
-        window = ctx.candles.last(3, tf)
+        window = ctx.candles.today(tf)[-3:]
         if not window:
             return []
         atr = ctx.atr(tf)

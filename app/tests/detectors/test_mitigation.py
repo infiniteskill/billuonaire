@@ -175,3 +175,33 @@ def test_atr_spike_ages_out_no_stale_touch():
     for n in range(15, len(bars) + 1):
         assert det.detect(ctx_at(store, n)) == []
         assert det._blocks == {}  # never persisted -> never a late/stale touch
+
+
+def test_session_boundary_no_cross_day_block():
+    """BLOCK_L is day 1's last candle; SEG_L1..3 (the displacement leg) are
+    day 2's first three candles -- byte-identical content/offsets to
+    long_bars()'s tick-19 window, just split across the session boundary.
+    The old ctx.candles.last(lookback+2, tf) window would span the boundary
+    and evaluate BLOCK_L's displacement using day-2 candles, forming a block
+    that TOUCH_L (day 2's 4th candle, geometrically overlapping BLOCK_L's
+    zone) would then fire on. Session-scoped ctx.candles.today(tf) means day
+    2 never accumulates lookback+2=5 today-only bars in this sequence, so
+    the block is never even considered."""
+    day1 = SESSION_START
+    day2 = day1 + timedelta(days=1)
+    store = CandleStore("/nonexistent")
+    for i, b in enumerate([FLAT] * 15 + [BLOCK_L]):
+        store.add(bar(i, *b))
+    for i, (o, h, l, c) in enumerate([SEG_L1, SEG_L2, SEG_L3, TOUCH_L]):
+        store.add(Candle("X", M1, day2 + timedelta(minutes=5 * i),
+                         tick(o), tick(h), tick(l), tick(c), 10))
+
+    det = MitigationDetector({})
+    out = []
+    for n in range(1, 5):
+        now = day2 + timedelta(minutes=5 * n)
+        out = det.detect(StockContext(symbol="X", now=now, candles=store.view("X", now),
+                                      levels=[], evidence_history=[],
+                                      day=DayState(session_date=now.date())))
+        assert det._blocks == {} and det._seen == set()  # BLOCK_L never admitted as a candidate
+    assert out == []  # TOUCH_L overlaps BLOCK_L's zone geometrically, but no cross-session fire

@@ -38,7 +38,7 @@ class TurtleSoupDetector(Detector):
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
         N = int(self.params["N"])
-        window = ctx.candles.last(N + 2, tf)
+        window = ctx.candles.today(tf)[-(N + 2):]
         if len(window) < N + 1:
             return []
         c = window[-1]
