@@ -46,7 +46,7 @@ for _m in pkgutil.iter_modules(trader.detectors.__path__):    # @register all
 
 _M5 = timedelta(minutes=5)
 _STRUCTURE = ("BOS", "CHOCH")
-_VERDICT_MIN = 30.0
+_VERDICT_MIN = 3.0
 
 
 class SymbolPipeline:
@@ -118,8 +118,10 @@ class SymbolPipeline:
         htf = self.wyckoff.htf_phase(ctx)
         zones = self.confluence.score(ctx, self.evidence_history, htf,
                                       self._m15_trend())
-        # verdict when any zone scores >= 30, raw or final (final is forced 0
-        # below min_zone_detectors and near-misses are what the journal is for)
+        # verdicts are OBSERVATIONS: journal any zone scoring >= 3, raw or
+        # final (final is forced 0 below min_zone_detectors; near-misses and
+        # armed zones alike must land in the journal, so the bar sits far
+        # below the arm threshold)
         if zones and any(max(z.final, z.raw) >= _VERDICT_MIN for z in zones):
             z = zones[0]
             self._log("verdict", at=ctx.now, zone=list(z.zone), mults=z.mults,

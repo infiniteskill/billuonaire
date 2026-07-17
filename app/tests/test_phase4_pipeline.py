@@ -61,8 +61,13 @@ def make_pipeline(tmp_path, max_qty=50):
 # ------------------------------------------------- 1. full-day orchestrator
 
 def test_judas_two_day_orchestrator(tmp_path):
+    """Day 1: the canonical reversal cluster (distinct>=4 LONG at the pivot)
+    must ARM, fill and close profitably. Day 2 gaps up +7: carried-over M5
+    history keeps ATR/wyckoff live from the session open, so the same pivot
+    re-scores above threshold (verdicts) but its cluster chains wider and
+    every arm attempt is REFUSED stop_too_wide -- journaled risk discipline."""
     feed = ScenarioFeed([judas_reversal("ACME", DAY1, 100.0),
-                         judas_reversal("ACME", DAY2, 100.0)])
+                         judas_reversal("ACME", DAY2, 107.0)])
     orch = Orchestrator(cfg(), feed, ["ACME"], capital=100000, max_qty=50,
                         journal_dir=tmp_path)
     summary = orch.run()
@@ -76,6 +81,24 @@ def test_judas_two_day_orchestrator(tmp_path):
     assert verdicts, "no verdict entries journaled on a judas day"
     assert all(v["mults"] and {"align", "time", "template", "obviousness"}
                <= set(v["mults"]) for v in verdicts)
+    threshold = cfg().confluence.threshold
+    armable = [v for v in verdicts if v["final"] >= threshold]
+    assert armable and all(v["direction"] == "LONG" and v["distinct"] >= 4
+                           and v["template"] == "TRAP_REVERSAL" for v in armable)
+    # day 1 arms at the 12:50 pivot and the trade closes profitably
+    day1 = orch.journal.read(DAY1)
+    opens = [e for e in day1 if e["kind"] == "trade_open"]
+    closes = [e for e in day1 if e["kind"] == "trade_close"]
+    assert len(opens) == 1 and opens[0]["direction"] == "LONG"
+    assert opens[0]["at"][11:16] == "12:50" and opens[0]["stop"] == "100.20"
+    assert len(closes) == 1 and Decimal(closes[0]["pnl"]) > 0
+    assert summary["trades"] == 1 and summary["wins"] == 1
+    # day 2: pivot re-scores above threshold, but arms are refused
+    day2 = orch.journal.read(DAY2)
+    assert [e for e in day2 if e["kind"] == "verdict" and e["final"] >= threshold]
+    day2_skips = [e for e in day2 if e["kind"] == "skip"]
+    assert day2_skips and all(e["reason"] == "stop_too_wide" for e in day2_skips)
+    assert not [e for e in day2 if e["kind"] == "trade_open"]
     assert set(summary) == {"trades", "wins", "losses", "pnl", "skips"}
     assert summary["skips"] == len([e for e in entries if e["kind"] == "skip"])
 

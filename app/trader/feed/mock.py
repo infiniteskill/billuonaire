@@ -218,13 +218,17 @@ def _plan_candles(sc: Scenario, rng: random.Random,
 # lows pinned minclose-3 so no bucket gaps its 2nd predecessor: no bearish
 # OB displacement, no bearish M5 FVG) into a flat bottom that TESTS PL 3x
 # (touches>=3 => sweep quality + obviousness 1.15); b36 lower-high H4
-# (forced 12T); b37 red OB candle spanning (5,11)T; b38 single-candle SWEEP
-# of PL (forced low 3T, 4x volume, M5 closes 10T) => SWEPT, reclaimed b39
-# (sweep upgrade); b39-41 displacement (7T off the b37 close in 3 buckets =>
-# OB_BULL) leaves a bullish FVG (11,13)T; b42 retests the FVG CE (CE_HOLD),
-# b43 closes back into the OB (OB_RETEST); b44 closes 13T > mid(H4) =>
-# CHoCH LONG. sweep+orderblock+fvg+structure (+wyckoff/volume boosters)
-# cluster over (5,13)T: a distinct>=4 LONG pivot with H3 liquidity 11T+
+# (forced 12T); b37 red OB candle spanning (5,11)T closes AT 5T (m56 pins
+# b11's high to 4T so the (b11,b12,b13) morning gap reads (4,7)T and its CE
+# 5.5T sits above that close: no morning CE_HOLD can drag a day-2 cluster
+# below the pivot -- day 2 carries live ATR/wyckoff from the open); b38
+# single-candle SWEEP of PL (forced low 3T, 4x volume, M5 closes 9T) =>
+# SWEPT, reclaimed b39 (sweep upgrade); b38-40 displacement (8T off the b37
+# close => OB_BULL) leaves a bullish FVG (9,11)T; b41 retest closes 10T:
+# holds the FVG CE (CE_HOLD) inside the OB (OB_RETEST); b42 closes 13T >
+# mid(H4) => CHoCH LONG on the trigger candle itself. sweep+orderblock+fvg+
+# structure (+wyckoff/volume boosters) cluster over (5,13)T: a distinct>=4
+# LONG pivot, 8T wide (stop 4T, risk 5T < 1.2xATR), with H3 liquidity 11T+
 # above for >=1.5R room. The afternoon (m225+) stair-steps +1T/min with
 # shallow alternating dips: no bearish OB/FVG, LONG close near the high.
 
@@ -232,7 +236,7 @@ _JUDAS_MORNING: list[tuple[list[int], int, int]] = [
     ([2, 5, 8, 6, 4], -1, 8), ([3, 2, 1, 1, 0], -1, 4), ([0, -1, -1, 0, -1], -1, 1),
     ([-1, 0, -1, 1, 2], -1, 3), ([3, 4, 5, 5, 4], 0, 5), ([3, 3, 2, 1, 1], 0, 4),
     ([1, 0, 0, 1, 0], -1, 2), ([-1, -1, -1, 0, 1], -1, 2), ([2, 3, 4, 4, 4], 0, 4),
-    ([3, 3, 2, 2, 2], 1, 4), ([2, 1, 1, 1, 1], 0, 3), ([1, 1, 0, 1, 1], 0, 2),
+    ([3, 3, 2, 2, 2], 1, 4), ([2, 1, 1, 1, 1], 0, 3), ([1, 1, 0, 1, 1], 0, 4),
     ([3, 5, 6, 7, 7], 1, 8), ([8, 9, 9, 10, 10], 7, 11),
     ([11, 11, 12, 12, 12], 9, 13), ([12, 13, 13, 13, 13], 11, 14),
 ]
@@ -247,22 +251,21 @@ _JUDAS_AFTERNOON: list[tuple[list[int], int, int]] = [
     ([16, 16, 15, 15, 15], 12, 18), ([14, 14, 13, 13, 13], 10, 16),  # b30-31
     ([12, 12, 11, 11, 11], 8, 14), ([10, 10, 9, 9, 9], 7, 11),       # b32-33
     ([9, 9, 8, 8, 8], 6, 10), ([8, 8, 8, 9, 9], 6, 10),              # b34-35
-    ([10, 10, 11, 10, 9], 8, 12), ([9, 8, 8, 7, 7], 5, 11),          # b36-37
-    ([8, 9, 9, 10, 10], 6, 10), ([10, 11, 11, 11, 11], 9, 11),       # b38-39
-    ([12, 13, 13, 14, 15], 11, 16), ([14, 14, 15, 15, 15], 13, 17),  # b40-41
-    ([15, 14, 13, 13, 12], 11, 16), ([12, 11, 11, 10, 10], 9, 13),   # b42-43
-    ([11, 12, 12, 13, 13], 5, 13),                                   # b44
+    ([10, 10, 11, 10, 9], 8, 12), ([8, 7, 6, 5, 5], 5, 11),          # b36-37
+    ([6, 6, 8, 9, 9], 4, 9), ([10, 10, 11, 11, 11], 9, 11),          # b38-39
+    ([12, 12, 13, 13, 13], 11, 13), ([12, 11, 11, 10, 10], 9, 13),   # b40-41
+    ([11, 12, 12, 13, 13], 10, 13), ([14, 14, 15, 15, 15], 12, 16),  # b42-43
+    ([15, 16, 16, 17, 17], 14, 18),                                  # b44
 ]
 _JUDAS_FORCED = {2: ("high", 9), 12: ("low", -2), 17: ("low", -3), 22: ("high", 8),
-                 37: ("low", -6), 44: ("high", 5), 57: ("low", -1),
+                 37: ("low", -6), 44: ("high", 5), 56: ("high", 4), 57: ("low", -1),
                  # afternoon: PL dip, H3 target pool, gentle-pullback low pins,
                  # PL touches, H4/OB highs, pivot sweep spike, FVG far edge
                  82: ("low", 6), 112: ("high", 25), 138: ("low", 18),
                  143: ("low", 16), 148: ("low", 14), 153: ("low", 12),
                  158: ("low", 10), 163: ("low", 8), 168: ("low", 7),
                  173: ("low", 6), 176: ("low", 6), 182: ("high", 12),
-                 185: ("high", 11), 188: ("low", 5), 191: ("low", 3),
-                 206: ("low", 13), 222: ("low", 5)}
+                 185: ("high", 11), 191: ("low", 3)}
 _SWEEP_MINUTE = 37
 _PIVOT_SWEEP_MINUTE = 191
 _SWEEP_VOLUME_MULT = 4
@@ -276,7 +279,7 @@ def _judas_candles(sc: Scenario) -> list[Candle]:
         plan += [(c, lo, hi, 1000 if i < 8 else 1200) for c in closes]
     for closes, lo, hi in _JUDAS_AFTERNOON:                # m80-224: reversal
         plan += [(c, lo, hi, 1000) for c in closes]
-    c = 13
+    c = 17
     for i in range(sc.spec.session_minutes - len(plan)):   # m225+: gentle stair
         c += 1 if i % 50 < 40 else (-1 if i % 2 else 0)
         plan.append((c, c - 3, c + 3, 1100))

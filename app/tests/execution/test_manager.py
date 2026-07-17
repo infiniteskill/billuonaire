@@ -216,15 +216,20 @@ def test_short_ladder_and_trail_mirror(mgr):
 
 # -- (5) counter-zone / (6) stall --------------------------------------
 
+THRESHOLD = Settings.model_validate_json(CONFIG.read_text()).confluence.threshold
+
+
 def test_counter_zone_exit_at_threshold(mgr):
     acts = mgr.on_candle(pos(), one_candle_ctx(101, 102.2, 100.8, 102),
-                         counter_zone_score=65)
+                         counter_zone_score=THRESHOLD)
     assert kinds(acts) == ["EXIT_COUNTER"]
 
 
 def test_counter_below_threshold_ignored(mgr):
+    """Exactly 0.1 under the shipped arm threshold: the counter-zone exit
+    must share the recalibrated confluence scale, not a stale constant."""
     acts = mgr.on_candle(pos(), one_candle_ctx(101, 102.2, 100.8, 102),
-                         counter_zone_score=64.9)
+                         counter_zone_score=THRESHOLD - 0.1)
     assert acts == []
 
 
