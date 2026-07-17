@@ -18,6 +18,7 @@ class RiskCfg(StrictModel):
     consecutive_loss_stop: int = Field(gt=0)
     expiry_size_mult: float = Field(gt=0)
     daily_profit_lock_R: float = Field(default=2.0, gt=0)
+    day_after_trend_mult: float = Field(default=0.75, gt=0)  # axiom 16
 
 
 class TimeCfg(StrictModel):

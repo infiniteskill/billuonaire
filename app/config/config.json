@@ -15,7 +15,8 @@
     "max_per_stock": 1,
     "consecutive_loss_stop": 2,
     "expiry_size_mult": 0.5,
-    "daily_profit_lock_R": 2.0
+    "daily_profit_lock_R": 2.0,
+    "day_after_trend_mult": 0.75
   },
   "time": {
     "observe_until": "11:00",

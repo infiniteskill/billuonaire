@@ -45,6 +45,7 @@ class DayState:
     session_date: date
     template: str = "UNCLASSIFIED"
     po3: dict = field(default_factory=dict)  # scale ("day"/"leg") -> PO3FSM
+    prev_template: str | None = None         # yesterday's locked template
 
 
 @dataclass

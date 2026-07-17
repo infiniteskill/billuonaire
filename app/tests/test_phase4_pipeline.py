@@ -13,10 +13,13 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+from types import SimpleNamespace
+
 from trader.config import Settings
+from trader.engine.confluence import ScoredZone
 from trader.engine.context import DayState, IndexView, StockContext
 from trader.engine.entry import EntryState
-from trader.engine.gates import RiskState
+from trader.engine.gates import RiskState, Verdict
 from trader.engine.pipeline import Orchestrator, SymbolPipeline
 from trader.execution.manager import Action, PositionManager
 from trader.execution.paper import PaperBroker
@@ -273,6 +276,45 @@ def test_expiry_day_halves_qty_and_journals(tmp_path):
     pipe._skip(datetime.combine(DAY1, time(11, 30), tzinfo=IST), "g", "r")
     [skip2] = pipe.journal.read(DAY1)
     assert "expiry" not in skip2
+
+
+# ------------------------------------------- 2a3. day-after-TREND (B5)
+
+def test_day_after_trend_scales_qty(tmp_path):
+    """Day 1 locks TREND; day 2's fresh DayState snapshots it as
+    prev_template and effective qty drops to max_qty x 0.75."""
+    feed = ScenarioFeed([trend_day("ACME", DAY1, 100.0),
+                         trend_day("ACME", DAY2, 100.0)])
+    orch = Orchestrator(cfg(), feed, ["ACME"], capital=100000, max_qty=50,
+                        journal_dir=tmp_path)
+    orch.run()
+    pipe = orch.pipelines["ACME"]
+    assert pipe.day.session_date == DAY2
+    assert pipe.day.prev_template == "TREND"
+    assert pipe._eff_qty() == 37                     # 50 x 0.75
+
+
+def test_arm_receives_throttled_qty(tmp_path, monkeypatch):
+    """fsm.arm gets _eff_qty(): Thursday expiry x day-after-TREND compound
+    (50 x 0.5 x 0.75 = 18)."""
+    pipe, _ = make_pipeline(tmp_path)
+    pipe.day = DayState(session_date=date(2026, 7, 16), prev_template="TREND")
+    seen = {}
+    monkeypatch.setattr(pipe.gates, "check",
+                        lambda *a: Verdict(True, "chain", "ok"))
+
+    def arm(top, ctx, max_qty, opps):
+        seen["mq"] = max_qty
+        return SimpleNamespace(armed=True, reason="")
+
+    monkeypatch.setattr(pipe.fsm, "arm", arm)
+    monkeypatch.setattr(pipe.fsm, "step",
+                        lambda ctx, ev: SimpleNamespace(action=None, reason=""))
+    zone = ScoredZone((D("99"), D("101")), Direction.LONG, [], 5, 50.0, 50.0, {})
+    ctx = StockContext("X", datetime(2026, 7, 16, 11, 30, tzinfo=IST), None,
+                       [], [], pipe.day)
+    pipe._entry_flow(ctx, [zone], ("RANGING", 0.5), [])
+    assert seen["mq"] == 18
 
 
 # --------------------------------------------- 2b. stale/late pending plans

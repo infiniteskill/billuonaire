@@ -116,7 +116,8 @@ class SymbolPipeline:
             return
         c5 = last[-1]
         if self.day is None or c5.ts.date() != self.day.session_date:
-            self.day = DayState(session_date=c5.ts.date())  # fresh po3 dict too
+            self.day = DayState(session_date=c5.ts.date(),  # fresh po3 dict too
+                                prev_template=self.day.template if self.day else None)
         ctx = StockContext(self.symbol, now, view, self.levels,
                            self.evidence_history, self.day,
                            index=index, spec=self.spec)
@@ -241,10 +242,12 @@ class SymbolPipeline:
         return Direction.NEUTRAL
 
     def _eff_qty(self) -> int:
-        """Size throttle: expiry-day mult (B7)."""
+        """Size throttles: expiry-day (B7) x day-after-TREND (B5, axiom 16)."""
         m = 1.0
         if is_expiry(self.day.session_date, self.spec):
             m *= self.s.risk.expiry_size_mult
+        if self.day.prev_template == "TREND":
+            m *= self.s.risk.day_after_trend_mult
         return int(self.max_qty * m)
 
     def _skip(self, at, gate: str, reason: str) -> None:
