@@ -34,12 +34,22 @@ class RiskState:
     consecutive_losses: int = 0
     daily_pnl_R: float = 0.0
     locked: bool = False
+    open_risk: Decimal = Decimal(0)          # sum of open risk_pts x qty (B8)
+    open_dirs: dict[str, Direction] = field(default_factory=dict)
+    _amts: dict[str, Decimal] = field(default_factory=dict)  # release ledger
 
-    def record_open(self, symbol: str) -> None:
+    def record_open(self, symbol: str, risk_amt: Decimal = Decimal(0),
+                    direction: Direction | None = None) -> None:
         self.trades_today += 1
         self.per_symbol[symbol] = self.per_symbol.get(symbol, 0) + 1
+        self.open_risk += risk_amt
+        self._amts[symbol] = risk_amt
+        if direction is not None:
+            self.open_dirs[symbol] = direction
 
-    def record_close(self, r_multiple: float) -> None:
+    def record_close(self, r_multiple: float, symbol: str | None = None) -> None:
+        self.open_risk -= self._amts.pop(symbol, Decimal(0))
+        self.open_dirs.pop(symbol, None)
         r = self.settings.risk
         self.daily_pnl_R += r_multiple
         self.consecutive_losses = self.consecutive_losses + 1 if r_multiple < 0 else 0
@@ -51,6 +61,7 @@ class RiskState:
     def reset_day(self) -> None:
         self.trades_today, self.consecutive_losses, self.daily_pnl_R = 0, 0, 0.0
         self.per_symbol, self.locked = {}, False
+        self.open_risk, self.open_dirs, self._amts = Decimal(0), {}, {}
 
 
 class Gate(ABC):
@@ -151,7 +162,7 @@ class RiskBudgetGate(Gate):
     name = "risk_budget"
 
     def __init__(self, settings: Settings):
-        self.r = settings.risk
+        self.r, self.capital = settings.risk, Decimal(str(settings.capital))
 
     def check(self, ctx, direction, plan_zone, htf_phase, risk) -> Verdict:
         if risk.locked:
@@ -160,6 +171,14 @@ class RiskBudgetGate(Gate):
             return self._no(f"max {self.r.max_trades_day} trades/day reached")
         if risk.per_symbol.get(ctx.symbol, 0) >= self.r.max_per_stock:
             return self._no(f"max {self.r.max_per_stock} trade(s) in {ctx.symbol} reached")
+        # B8 portfolio heat: open risk + this plan's budget vs heat% of capital
+        new = self.capital * Decimal(str(self.r.per_trade_pct)) / 100
+        cap = self.capital * Decimal(str(self.r.portfolio_heat_pct)) / 100
+        if risk.open_risk + new > cap:
+            return self._no(f"portfolio heat {risk.open_risk + new} > cap {cap}")
+        same = sum(1 for d in risk.open_dirs.values() if d is direction)
+        if same >= self.r.max_correlated_positions:
+            return self._no(f"{same} open position(s) already {direction.name}")
         return self._ok()
 
 

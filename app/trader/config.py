@@ -19,6 +19,8 @@ class RiskCfg(StrictModel):
     expiry_size_mult: float = Field(gt=0)
     daily_profit_lock_R: float = Field(default=2.0, gt=0)
     day_after_trend_mult: float = Field(default=0.75, gt=0)  # axiom 16
+    portfolio_heat_pct: float = Field(default=1.0, gt=0)     # B8 open-risk cap
+    max_correlated_positions: int = Field(default=2, gt=0)   # same-direction cap
 
 
 class TimeCfg(StrictModel):

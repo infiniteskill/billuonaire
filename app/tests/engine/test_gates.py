@@ -175,6 +175,43 @@ def test_risk_budget_gate(settings):
     assert run(gate, ctx, risk=RiskState(settings, per_symbol={"Y": 1})).allow
 
 
+# --- B8: portfolio heat + correlation cap ---
+
+def test_risk_state_open_close_releases(settings):
+    rs = RiskState(settings)
+    rs.record_open("A", Decimal("400"), Direction.LONG)
+    rs.record_open("B", Decimal("300"), Direction.SHORT)
+    assert rs.open_risk == Decimal("700")
+    assert rs.open_dirs == {"A": Direction.LONG, "B": Direction.SHORT}
+    rs.record_close(1.0, "A")
+    assert rs.open_risk == Decimal("300") and rs.open_dirs == {"B": Direction.SHORT}
+    rs.reset_day()
+    assert rs.open_risk == 0 and rs.open_dirs == {}
+
+
+def test_portfolio_heat_exact_boundary(settings):
+    """Heat cap 1% of 100k = 1000; new plan budget 0.5% = 500. Open 500 +
+    new 500 == 1000 passes (not >); a paisa more blocks."""
+    gate, ctx = RiskBudgetGate(settings), gate_ctx()
+    rs = RiskState(settings)
+    rs.record_open("A", Decimal("500"), Direction.LONG)
+    assert run(gate, ctx, risk=rs).allow
+    rs2 = RiskState(settings)
+    rs2.record_open("A", Decimal("500.01"), Direction.LONG)
+    v = run(gate, ctx, risk=rs2)
+    assert not v.allow and "heat" in v.reason
+
+
+def test_correlation_cap_third_same_direction_blocked(settings):
+    gate, ctx = RiskBudgetGate(settings), gate_ctx()
+    rs = RiskState(settings)
+    rs.record_open("A", Decimal("100"), Direction.LONG)
+    rs.record_open("B", Decimal("100"), Direction.LONG)
+    v = run(gate, ctx, direction=Direction.LONG, risk=rs)
+    assert not v.allow and "LONG" in v.reason
+    assert run(gate, ctx, direction=Direction.SHORT, risk=rs).allow
+
+
 # --- GateChain ---
 
 def test_chain_returns_first_failure(settings):

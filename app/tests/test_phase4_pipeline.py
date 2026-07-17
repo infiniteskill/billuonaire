@@ -244,6 +244,8 @@ def test_partials_and_eod_exact_accounting(tmp_path):
     pos = pipe.position
     assert pos is not None and pos.remaining_qty == 50
     assert pos.entry.price == D("100.05")                          # adverse open
+    assert risk.open_risk == D("5.05") * 50                        # B8 ledger on
+    assert risk.open_dirs == {"X": Direction.LONG}
     pipe.on_m1(m1("X", t0 + timedelta(minutes=10), 106, 111, 106, 111))  # 1R seen
     assert pos.remaining_qty == 34 and "1R" in pos.partials
     pipe.on_m1(m1("X", t0 + timedelta(minutes=15), 111, 112, 110, 111))  # T2 touch
@@ -258,6 +260,7 @@ def test_partials_and_eod_exact_accounting(tmp_path):
     assert pos.realized == expected
     assert risk.trades_today == 1 and risk.consecutive_losses == 0
     assert risk.daily_pnl_R == pytest.approx(float(expected / (D("5.05") * 50)))
+    assert risk.open_risk == 0 and risk.open_dirs == {}            # B8 released
     kinds = [e["kind"] for e in pipe.journal.read(t0.date())]
     assert "trade_open" in kinds and "trade_close" in kinds
 

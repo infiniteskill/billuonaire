@@ -194,7 +194,9 @@ class SymbolPipeline:
                 self.position = Position(plan, fill, plan.qty, plan.stop,
                                          realized=-fill.costs)
                 self._hunt_logged = False
-                self.risk.record_open(self.symbol)
+                self.risk.record_open(self.symbol,
+                                      self.position.risk_pts * plan.qty,
+                                      plan.direction)
                 self.n_trades += 1
                 self._log("trade_open", at=fill.ts, direction=plan.direction,
                           qty=plan.qty, price=fill.price, stop=plan.stop,
@@ -213,7 +215,7 @@ class SymbolPipeline:
             if a.kind != "PARTIAL":              # full exit: close remainder
                 pos.status = PositionStatus.CLOSED
                 r = float(pos.realized / (pos.risk_pts * pos.plan.qty))
-                self.risk.record_close(r)
+                self.risk.record_close(r, self.symbol)
                 self.closed.append(pos)
                 self._log("trade_close", at=fill.ts, reason=a.kind, why=a.reason,
                           pnl=pos.realized, r=round(r, 3), exit_price=fill.price,
