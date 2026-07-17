@@ -163,3 +163,44 @@ def test_on_session_end_clears_instance_memory():
     assert det._quality and det._emitted
     det.on_session_end()
     assert det._quality == {} and det._emitted == set()
+
+
+def test_no_evidence_for_terminal_state_level():
+    store = make_store(bull_bars() + [BULL_RETRACE])
+    det, levels = ObLuxDetector({"size": 2}), []
+    det.detect(ctx_at(store, 23, levels))
+    [lv] = levels
+    lv.record_state(bar_ts(23), LevelState.MITIGATED)  # terminal: dead for entries
+    assert det.detect(ctx_at(store, 24, levels)) == []  # retest inside zone, but no evidence
+
+
+def test_restart_preserves_tested_level_no_eviction():
+    # Session 1 (or pre-restart): the OB is born at bar17 (bar17's range is
+    # plain, TR == 2) and gets tested -- real state/history now on the level.
+    persisted = ObLuxDetector({"size": 2})
+    levels = []
+    persisted.detect(ctx_at(make_store(bull_bars()), 23, levels))
+    [old] = levels
+    assert old.born == bar_ts(17)
+    old.record_state(bar_ts(20), LevelState.TESTED)
+
+    # Restart: a brand new instance (no memoized anchor) rescans. Here bar17
+    # is a high-volatility wick (excluded from the leg-extreme search, as in
+    # test_vol_adjustment_excludes_high_volatility_wick) -- standing in for
+    # an ATR-drifted re-classification -- so the anchor now resolves to
+    # bar18 instead of bar17: a DIFFERENT level_id for the same zone.
+    bars = ([FLAT] * 16 + [(100, 102, 100, 101), (101, 101.5, 90, 101),
+                           (101, 101, 99, 100), (100, 102, 100, 101),
+                           (101, 103, 101, 102), (102, 104, 102, 103)])
+    fresh = ObLuxDetector({"size": 2})
+    fresh.detect(ctx_at(make_store(bars), 22, levels))
+
+    # The persisted TESTED level must survive untouched, not be evicted.
+    assert old in levels and old.state is LevelState.TESTED
+    assert old.zone == (tick(99), tick(101)) and old.born == bar_ts(17)
+    # The anchor-mismatched OB is added alongside it (fresh ACTIVE dup),
+    # never silently swapped in for the stateful one.
+    assert len(levels) == 2
+    [new] = [lv for lv in levels if lv is not old]
+    assert new.state is LevelState.ACTIVE
+    assert new.zone == (tick(99), tick(101)) and new.born == bar_ts(18)

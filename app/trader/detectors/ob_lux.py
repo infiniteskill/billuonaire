@@ -4,12 +4,18 @@ pivot high/low is confirmed once ``size`` trailing bars fail to exceed it; a
 later close crossing back over that pivot level is a structure break. The OB
 is the bar within [pivot, break] with the lowest (bull) / highest (bear)
 "parsed" extreme, where a bar whose range >= ``hv_atr_mult`` * ATR has its
-high/low swapped first -- LuxAlgo's volatility-as-volume proxy (the
-validated rule has no real volume term to port; a range-vs-ATR spike is
-untrusted as the true wick and excluded from the leg-extreme search).
-Creates an OB_BULL/OB_BEAR Level whose zone is (parsed_low, parsed_high) of
-that bar, born at its ts; mitigation is LevelEngine's job (as in
-``orderblock``).
+high/low swapped first before the argmin/argmax search picks the anchor --
+LuxAlgo's volatility-as-volume proxy (the validated rule has no real volume
+term to port; a range-vs-ATR spike is untrusted as the true wick and
+excluded from the leg-extreme search). The swap only steers which bar WINS
+the search: the recorded zone is always the winning bar's own raw sorted
+(low, high) -- swapping low/high cancels out under sorted(), so vol-adj
+never changes zone geometry. Creates an OB_BULL/OB_BEAR Level born at the
+winning bar's ts; mitigation is LevelEngine's job (as in ``orderblock``).
+Runs on per-session (intraday-reset) candles -- unlike the un-reset
+multi-day series luxob.py was measured on -- as a deliberate intraday
+choice; its real edge will be re-measured by the economic replay, not
+assumed equal to the multi-day +10-14%.
 
 Quality = min(overshoot / ATR, 1.0), overshoot = how far the confirming
 close broke past the pivot level. The source has no strength score of its
@@ -19,7 +25,8 @@ own (it is a boolean event detector for offline study); this is the port's
 Evidence (ttl 6, strength = quality) is emitted when the latest closed
 candle's close sits inside an ACTIVE/TESTED OB zone: OB_BULL -> LONG,
 OB_BEAR -> SHORT. Overlapping same-kind OBs dedupe on creation, keeping the
-higher quality one."""
+higher quality one -- only against an ACTIVE rival; a TESTED/MITIGATED/etc.
+level is never evicted."""
 
 from __future__ import annotations
 
@@ -45,10 +52,12 @@ class ObLuxDetector(Detector):
         super().__init__({**_DEFAULTS, **params})
         self._quality: dict[str, float] = {}          # level_id -> quality
         self._emitted: set[tuple[str, datetime]] = set()  # (level_id, ts)
+        self._anchor: dict[tuple[int, int, bool], int] = {}  # (pivot_idx, confirm_idx, take_max) -> winning idx
 
     def on_session_end(self) -> None:
         self._quality.clear()    # OB levels never carry; new day re-derives
         self._emitted.clear()
+        self._anchor.clear()
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
@@ -74,25 +83,36 @@ class ObLuxDetector(Detector):
                     swL, swLc = (L[p], p), False
             if swH and not swHc and C[i] > swH[0] and (i == 0 or C[i - 1] <= swH[0]):
                 swHc = True
-                idx = min(range(swH[1], i + 1), key=lambda j: pL[j])
+                idx = self._anchor_idx(swH[1], i, pL, False)  # decided once, never re-flips w/ ATR drift
                 lo, hi = sorted((pL[idx], pH[idx]))
                 self._upsert(ctx, window[idx].ts, tf, LevelKind.OB_BULL, lo, hi,
                             min(float((C[i] - swH[0]) / atr), 1.0))
             if swL and not swLc and C[i] < swL[0] and (i == 0 or C[i - 1] >= swL[0]):
                 swLc = True
-                idx = max(range(swL[1], i + 1), key=lambda j: pH[j])
+                idx = self._anchor_idx(swL[1], i, pH, True)
                 lo, hi = sorted((pL[idx], pH[idx]))
                 self._upsert(ctx, window[idx].ts, tf, LevelKind.OB_BEAR, lo, hi,
                             min(float((swL[0] - C[i]) / atr), 1.0))
         return self._evidence(ctx, window[-1])
 
+    def _anchor_idx(self, pivot_idx: int, confirm_idx: int, arr: list, take_max: bool) -> int:
+        key = (pivot_idx, confirm_idx, take_max)
+        if key not in self._anchor:
+            fn = max if take_max else min
+            self._anchor[key] = fn(range(pivot_idx, confirm_idx + 1), key=lambda j: arr[j])
+        return self._anchor[key]
+
     def _upsert(self, ctx: StockContext, born: datetime, tf: Timeframe,
                 kind: LevelKind, lo: Decimal, hi: Decimal, q: float) -> None:
-        level_id = f"{ctx.symbol}-{kind.name}-{tf.value}-{born.isoformat()}"
+        level_id = f"{ctx.symbol}-{self.name}-{kind.name}-{tf.value}-{born.isoformat()}"
         if any(lv.id == level_id for lv in ctx.levels):
             self._quality[level_id] = q  # lazy re-derive after restart
             return
+        # Only an ACTIVE rival may be replaced -- a TESTED/MITIGATED/etc. level
+        # carries real state (touches/history) and must survive an anchor-id
+        # mismatch (e.g. a fresh instance rescanning under drifted ATR).
         rival = next((lv for lv in ctx.levels if lv.kind is kind
+                      and lv.state is LevelState.ACTIVE
                       and lv.zone[0] <= hi and lo <= lv.zone[1]), None)
         if rival is not None:  # overlap: keep the higher quality OB
             if q <= self._quality.get(rival.id, 0.5):
