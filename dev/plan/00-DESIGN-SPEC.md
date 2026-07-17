@@ -76,7 +76,7 @@ feed event → candle store merge → level state machine update
 ## Anti-Stop-Hunt Rules
 
 1. SL held in software only; exit = market order on **close beyond** stop, not wick touch.
-2. Wick tolerance: configurable 1-candle penetration allowed if reclaim.
+2. Wicks NEVER exit: any penetration whose candle closes back on our side survives, however many in a row (journaled `hunt_survived`; no tolerance knob).
 3. Placement: beyond swept trap extreme + `atr_buffer × ATR`, offset from round numbers.
 4. Live phase later: catastrophic exchange SL-M at 2× stop distance (crash insurance only).
 5. Backtest measures hunt-survival benefit vs slippage cost — data decides the rule.

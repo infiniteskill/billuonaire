@@ -33,7 +33,6 @@
   },
   "stops": {
     "atr_buffer": 0.25,
-    "wick_tolerance_candles": 1,
     "round_offset_ticks": 3
   },
   "confluence": {

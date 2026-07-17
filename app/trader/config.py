@@ -34,8 +34,9 @@ class TimeCfg(StrictModel):
 
 
 class StopsCfg(StrictModel):
+    # NB: no wick tolerance knob -- stealth stops are close-confirmed ONLY
+    # (wicks through the stop never exit, however many in a row)
     atr_buffer: float = Field(gt=0)
-    wick_tolerance_candles: int = Field(gt=0)
     round_offset_ticks: int = Field(gt=0)
 
 

@@ -28,7 +28,7 @@ BASE = {
     "risk": {"per_trade_pct": 0.5, "daily_loss_pct": 1.5, "max_trades_day": 3,
              "max_per_stock": 1, "consecutive_loss_stop": 2, "expiry_size_mult": 0.5},
     "time": {"observe_until": "10:45", "no_entry_after": "14:30", "squareoff": "15:10"},
-    "stops": {"atr_buffer": 0.25, "wick_tolerance_candles": 1, "round_offset_ticks": 3},
+    "stops": {"atr_buffer": 0.25, "round_offset_ticks": 3},
     "confluence": {"threshold": 65, "weights": {"sweep": 50, "structure": 30, "orderblock": 20}},
     "detectors": {"enabled": ["sweep", "structure"], "disabled": ["orderblock"], "params": {}},
     "fills": {"slippage_bps": 3, "half_spread_bps": 2,
@@ -53,6 +53,12 @@ def test_stocks_list(tmp_path):
 
 def test_bad_config_rejected(tmp_path):
     bad = dict(BASE, risk=dict(BASE["risk"], per_trade_pct=-1))
+    with pytest.raises(Exception):
+        load_settings(write(tmp_path, bad))
+
+def test_wick_tolerance_key_rejected(tmp_path):
+    # B2: stealth stops are close-confirmed only; the dead knob must not load
+    bad = dict(BASE, stops=dict(BASE["stops"], wick_tolerance_candles=1))
     with pytest.raises(Exception):
         load_settings(write(tmp_path, bad))
 
