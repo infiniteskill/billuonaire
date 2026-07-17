@@ -151,10 +151,10 @@ def test_double_trap_no_trades_before_second_reclaim(double_trap_day):
 
 
 # (5) stop_hunt_survive: wick-through survives, pinned to THE hunt bucket,
-# targets execute as partials (B1) and the runner rides >= 1R gross to EOD
-# (traded-zone entries carry tiny risk, so R-fallback targets collapse into
-# T1 and the remainder always outlives the target ladder; flat brokerage
-# swamps net r at this scenario's tiny notional, so gross price R is asserted)
+# targets execute as partials (B1) and the runner exits AT T3 >= 1R gross
+# (the 1.0*ATR stop floor widens risk enough that the full T1/T2/T3 ladder
+# fits above the limit entry; flat brokerage swamps net r at this scenario's
+# tiny notional, so gross price R is asserted)
 def test_stop_hunt_survive_holds_through_hunt(tmp_path):
     run = _run_day(stop_hunt_survive, tmp_path)
     truth = run.scenario.truth
@@ -168,7 +168,7 @@ def test_stop_hunt_survive_holds_through_hunt(tmp_path):
     assert D(hunts[0]["stop"]) < min(truth["pivot_zone"])
     o, c = _kind(run.entries, "trade_open")[0], _kind(run.entries, "trade_close")[-1]
     assert _kind(run.entries, "trade_partial"), "targets did not execute"
-    assert c["reason"] == ExitReason.EOD.value             # runner squared off
+    assert c["reason"] == ExitReason.TARGET.value and c["why"] == "T3"
     risk = D(o["price"]) - D(o["stop"])
     assert (D(c["exit_price"]) - D(o["price"])) / risk >= 1
 

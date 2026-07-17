@@ -20,7 +20,10 @@ journalling the skip/disarm reasons returned here.
            un-snapped stop does not, arm with the un-snapped stop instead
            (meta["snap_skipped"]=True) -- anti-hunt intent stands, killing
            the trade outright does not. Skip "stop_too_wide" only when even
-           the un-snapped risk breaches max_stop_atr x ATR.
+           the un-snapped risk breaches max_stop_atr x ATR. COST FLOOR:
+           risk under min_stop_atr x ATR is hunt food that percentage costs
+           swamp -- the stop WIDENS to entry -/+ floor (still beyond the
+           level/trap extreme, re-snapped off ROUND), qty shrinks with it.
   TARGETS  opposing liquidity map: ACTIVE/TESTED levels + opposing
            ScoredZones beyond entry (near edge, quantized). T1 = nearest
            >= 1.5R (none => skip "no_room"); T2 = next beyond T1 (else 2.5R);
@@ -131,6 +134,12 @@ class EntryFSM:
             if un_risk > max_risk:
                 return ArmResult(False, "stop_too_wide")
             stop, risk, snap_skipped = unsnapped, un_risk, True  # snap vaulted past budget
+        floor = Decimal(str(self.s.stops.min_stop_atr)) * atr
+        if risk < floor:    # cost floor: hunt-food stops widen, qty shrinks
+            stop = snap_stop_off_round(
+                self.spec.quantize(entry - floor if up else entry + floor),
+                ctx.levels, self.spec, self.s.stops.round_offset_ticks, up)
+            risk = abs(entry - stop)
         targets = self._targets(entry, risk, up, zone.zone, ctx, opps)
         if targets is None:
             return ArmResult(False, "no_room")

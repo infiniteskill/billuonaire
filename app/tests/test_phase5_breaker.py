@@ -82,9 +82,9 @@ def test_breaker_in_armed_verdict_members(day):
 
 # (3) the breaker cluster arms AND trades: LONG open at an armed verdict that
 # carries the breaker member, stop beyond the swept pivot, targets execute as
-# partials and the runner rides >= 1R gross to EOD (traded-zone entries carry
-# tiny risk so the target ladder collapses to T1/T2 partials; flat brokerage
-# swamps net r at this notional, like stop_hunt_survive)
+# partials and the runner exits AT T3 >= 1R gross (the 1.0*ATR stop floor
+# widens risk enough that the full T1/T2/T3 ladder fits above the limit
+# entry; flat brokerage swamps net r at this notional, like stop_hunt_survive)
 def test_breaker_cluster_trades_to_target(day):
     sc, entries = day
     opens, closes = _kind(entries, "trade_open"), _kind(entries, "trade_close")
@@ -96,6 +96,6 @@ def test_breaker_cluster_trades_to_target(day):
     assert arming["final"] >= ARM_THRESHOLD
     assert BREAKER_MEMBER in arming["members"]
     assert _kind(entries, "trade_partial"), "targets did not execute"
-    assert c["reason"] == ExitReason.EOD.value
+    assert c["reason"] == ExitReason.TARGET.value and c["why"] == "T3"
     risk = D(o["price"]) - D(o["stop"])
     assert (D(c["exit_price"]) - D(o["price"])) / risk >= 1

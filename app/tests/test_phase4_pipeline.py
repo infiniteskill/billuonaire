@@ -102,15 +102,15 @@ def test_judas_two_day_orchestrator(tmp_path):
     assert armable and all(v["direction"] == "LONG" and v["distinct"] >= 4
                            and v["template"] == "TRAP_REVERSAL" for v in armable)
     # day 1 arms at the 12:50 pivot on the TRADED zone (tightest level in
-    # the cluster, stop 100.50 behind it; risk 0.10 collapses the R-fallback
-    # ladder into T1): the limit at CE 100.60 fills on the 12:51 M1, then
-    # partials 1R + 2R, runner rides to EOD squareoff
+    # the cluster; the natural stop is hunt-tight, so it widens to the
+    # 1.0*ATR cost floor 100.40): the limit at CE 100.60 fills on the 12:51
+    # M1, then partials 1R + 2R, runner rides to EOD squareoff
     day1 = orch.journal.read(DAY1)
     opens = [e for e in day1 if e["kind"] == "trade_open"]
     closes = [e for e in day1 if e["kind"] == "trade_close"]
     parts = [e for e in day1 if e["kind"] == "trade_partial"]
     assert len(opens) == 1 and opens[0]["direction"] == "LONG"
-    assert opens[0]["at"][11:16] == "12:51" and opens[0]["stop"] == "100.50"
+    assert opens[0]["at"][11:16] == "12:51" and opens[0]["stop"] == "100.40"
     assert opens[0]["price"] == "100.60"                  # AT the limit, no chase
     assert D(opens[0]["stop"]) < D(opens[0]["zone"][0])   # behind traded zone
     assert [p["reason"] for p in parts] == ["1R", "2R"]

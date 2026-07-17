@@ -45,12 +45,13 @@ class StopsCfg(StrictModel):
     # (wicks through the stop never exit, however many in a row)
     atr_buffer: float = Field(gt=0)
     round_offset_ticks: int = Field(gt=0)
+    min_stop_atr: float = Field(default=1.0, gt=0)  # cost floor: widen tighter stops
 
 
 class EntryCfg(StrictModel):
     arm_proximity_atr: float = Field(default=1.0, gt=0)  # 06 §4: arm only near
     chase_tolerance_atr: float = Field(default=0.1, gt=0)
-    max_stop_atr: float = Field(default=1.2, gt=0)
+    max_stop_atr: float = Field(default=2.0, gt=0)
     arm_ttl_candles: int = Field(default=12, gt=0)
     fill_ttl_candles: int = Field(default=6, gt=0)  # M5 lifetime of entry limit
 

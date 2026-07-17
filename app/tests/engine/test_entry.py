@@ -1,8 +1,11 @@
 """Phase-4 Task 3: EntryFSM -- stealth stops, opposing-map targets, triggers.
 
 Fixture geometry: calm() candles have range 2 => ATR(14) = 2 exactly, so
-buffer = 0.25*ATR = 0.50, chase tol = 0.1*ATR = 0.20, max stop = 1.2*ATR = 2.4.
-LONG zone (98, 100) => entry CE 99.00. capital 100000 x 0.5% => budget 500.
+buffer = 0.25*ATR = 0.50, chase tol = 0.1*ATR = 0.20, stop FLOOR =
+min_stop_atr 1.0*ATR = 2.00 (tighter stops widen to it), max stop =
+2.0*ATR = 4.00. LONG zone (98, 100) => entry CE 99.00; its natural stop
+97.50 (risk 1.50) widens to the floor 97.00 (risk 2.00, qty 250).
+capital 100000 x 0.5% => budget 500.
 """
 import json
 from datetime import datetime, timedelta
@@ -64,73 +67,91 @@ def zone(lo, hi, dirn=Direction.LONG, final=72.5):
                       {"align": 1.0, "time": 0.9})
 
 
-def t_lvl():  # T1 source: 101.50 is 2.50 away >= 1.5R for risk 1.50
-    return lvl(LevelKind.SWING_H, "101.50", "102.00")
+def t_lvl():  # T1 source: 102.50 is 3.50 away >= 1.5R for floor risk 2.00
+    return lvl(LevelKind.SWING_H, "102.50", "103.00")
 
 
 # --- arm(): stop construction + qty ---
 
-def test_arm_plain_far_edge_buffer_and_qty_floor(fsm):
+def test_arm_plain_stop_widens_to_cost_floor(fsm):
+    # natural stop 97.50 (far edge 98 - 0.25*ATR, risk 1.50) is under the
+    # 1.0*ATR floor: widened to CE - 2.00 = 97.00 and qty SHRINKS to
+    # floor(500 / 2.00) = 250 (was 333 off the tight 1.50)
     r = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 1000)
     assert r.armed and r.reason is None and fsm.state is EntryState.ARMED
     p = r.plan
-    assert p.stop == D("97.50")                     # far edge 98 - 0.25*ATR
-    assert p.meta["risk_pts"] == "1.50"
-    assert p.qty == 333                             # floor(500 / 1.50)
+    assert p.stop == D("97.00")
+    assert p.meta["risk_pts"] == "2.00"
+    assert p.qty == 250
     assert p.symbol == "X" and p.direction is Direction.LONG
     assert p.score == 72.5 and p.meta["mults"] == {"align": 1.0, "time": 0.9}
 
 
+def test_arm_floor_widened_stop_resnaps_off_round(fsm):
+    # the widened stop 97.00 lands ON a ROUND zone: re-snapped 3 ticks past
+    # its far edge (96.85, never tighter) -- floor and anti-hunt compose;
+    # qty shrinks further to floor(500 / 2.15) = 232
+    levels = [lvl(LevelKind.ROUND, "97.00", "97.00"), t_lvl()]
+    p = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000).plan
+    assert p.stop == D("96.85")
+    assert p.meta["risk_pts"] == "2.15"
+    assert p.qty == 232
+
+
 def test_arm_sweep_trap_round_snap_targets_decimal(fsm):
     levels = [lvl(LevelKind.SWING_L, "97.40", "98.50", LevelState.SWEPT, SWEPT),
-              lvl(LevelKind.ROUND, "96.95", "96.95"),
+              lvl(LevelKind.SWING_L, "96.00", "98.00", LevelState.SWEPT, SWEPT),
+              lvl(LevelKind.ROUND, "95.45", "95.45"),
               lvl(LevelKind.SWING_H, "100.50", "101.00"),
               lvl(LevelKind.SWING_H, "102.40", "102.80"),
               lvl(LevelKind.SWING_H, "104.00", "104.50"),
               lvl(LevelKind.PDH, "106.00", "106.10")]
     p = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000).plan
-    # traded zone = swept SWING_L (span 1.10, the only tighter overlap):
-    # entry CE 97.95; trap extreme 97.40 - 0.50 buffer = 96.90; within
-    # 2 ticks of round 96.95 => landed 3 ticks PAST the round far edge;
-    # risk 97.95 - 96.80 = 1.15 (1.5R = 1.725 so 100.50 qualifies as T1)
+    # traded zone = swept SWING_L 97.40-98.50 (span 1.10, the only STRICTLY
+    # tighter overlap -- the 96.00-98.00 trap spans 2.00, not < cluster):
+    # entry CE 97.95; deepest trap extreme 96.00 - 0.50 buffer = 95.50;
+    # within 2 ticks of round 95.45 => landed 3 ticks PAST the round far
+    # edge; risk 97.95 - 95.30 = 2.65 >= floor 2.00, untouched
+    # (1.5R = 3.975 so 100.50 fails and 102.40 is T1)
     assert p.entry_zone == (D("97.40"), D("98.50"))
     assert p.meta["cluster"] == ["98.00", "100.00"]  # scoring zone kept intact
-    assert p.stop == D("96.80")
-    assert p.targets == [D("100.50"), D("102.40"), D("106.00")]
-    assert p.qty == 434                             # floor(500 / 1.15)
+    assert p.stop == D("95.30")
+    assert p.targets == [D("102.40"), D("104.00"), D("106.00")]
+    assert p.qty == 188                             # floor(500 / 2.65)
     assert all(isinstance(x, Decimal) and x % D("0.05") == 0
                for x in [p.stop, *p.targets, *p.entry_zone])
 
 
 def test_arm_stop_too_wide_skips(fsm):
-    r = fsm.arm(zone("94.00", "100.00"), ctx_at(at(11, 0), calm(), []), 1000)
+    # CE 96.00, stop 91.50: risk 4.50 > max 2.0*ATR = 4.00
+    r = fsm.arm(zone("92.00", "100.00"), ctx_at(at(11, 0), calm(), []), 1000)
     assert (r.armed, r.reason, r.plan) == (False, "stop_too_wide", None)
     assert fsm.state is EntryState.IDLE
 
 
-# knife-edge: un-snapped risk 2.35 <= budget 2.4, but round-snap alone
-# vaults it to 2.55 > budget => arm with the un-snapped stop instead of
-# dying stop_too_wide (trap 97.15 - buf 0.50 = 96.65; ROUND edge 96.60 is
-# within 2 ticks of 96.65 so snap would land 96.45, budget-breaching).
-# The swept SWING_L spans 3.35 > cluster 2.00, so it is a trap extreme but
+# knife-edge: un-snapped risk 3.95 <= budget 4.00, but round-snap alone
+# vaults it to 4.15 > budget => arm with the un-snapped stop instead of
+# dying stop_too_wide (trap 95.55 - buf 0.50 = 95.05; ROUND edge 95.00 is
+# within 2 ticks of 95.05 so snap would land 94.85, budget-breaching).
+# The swept SWING_L spans 4.95 > cluster 2.00, so it is a trap extreme but
 # NOT the traded zone (traded zone never widens): entry stays CE 99.00.
 def test_arm_prefers_unsnapped_stop_over_stop_too_wide(fsm):
-    levels = [lvl(LevelKind.SWING_L, "97.15", "100.50", LevelState.SWEPT, SWEPT),
-              lvl(LevelKind.ROUND, "96.60", "96.60"),
-              lvl(LevelKind.SWING_H, "103.00", "103.50")]
+    levels = [lvl(LevelKind.SWING_L, "95.55", "100.50", LevelState.SWEPT, SWEPT),
+              lvl(LevelKind.ROUND, "95.00", "95.00"),
+              lvl(LevelKind.SWING_H, "105.00", "105.50")]
     r = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000)
     assert r.armed and r.reason is None
     p = r.plan
-    assert p.stop == D("96.65")                      # un-snapped, not 96.45
-    assert p.meta["risk_pts"] == "2.35"
+    assert p.stop == D("95.05")                      # un-snapped, not 94.85
+    assert p.meta["risk_pts"] == "3.95"
     assert p.meta["snap_skipped"] is True
-    assert p.qty == 212                               # floor(500 / 2.35)
+    assert p.qty == 126                               # floor(500 / 3.95)
 
 
-# genuinely wide even un-snapped (trap 96.00 pushes stop to 95.50, risk
-# 3.50): round-snap present but irrelevant -- still skips.
+# genuinely wide even un-snapped (trap 94.50 pushes stop to 94.00, risk
+# 5.00 > 4.00): round-snap present but irrelevant -- still skips.
 def test_arm_stop_too_wide_skips_even_with_round_nearby(fsm):
-    levels = [lvl(LevelKind.SWING_L, "96.00", "98.50", LevelState.SWEPT, SWEPT),
+    levels = [lvl(LevelKind.SWING_L, "94.50", "98.50", LevelState.SWEPT, SWEPT),
               lvl(LevelKind.ROUND, "96.60", "96.60")]
     r = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000)
     assert (r.armed, r.reason, r.plan) == (False, "stop_too_wide", None)
@@ -161,8 +182,8 @@ def fsm_cfg(patch: dict) -> EntryFSM:
 
 def test_arm_notional_cap_exact_and_leverage_config():
     # leverage 0.2 => floor(100000 x 0.2 / entry 99.00) = 202, binding under
-    # both max_qty 1000 and budget qty 333 (default leverage 5 caps at 5050,
-    # never binding here: the plain test's 333 covers that)
+    # both max_qty 1000 and budget qty 250 (default leverage 5 caps at 5050,
+    # never binding here: the plain test's 250 covers that)
     p = fsm_cfg({"risk.leverage": 0.2}).arm(
         zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 1000).plan
     assert p.qty == 202
@@ -171,13 +192,14 @@ def test_arm_notional_cap_exact_and_leverage_config():
 
 
 def test_arm_costs_dominate_boundary():
-    # qty 100, risk 1.50, entry 99.00, pct (0.05+0.05)% => pct leg 9.90;
-    # risk amount 150, cap 0.2 x 150 = 30. flat 5.1 => rt exactly 30 (== cap,
-    # strict > so it ARMS); flat 5.11 => rt 30.02 > 30 skips costs_dominate.
+    # qty 100, floor risk 2.00, entry 99.00, pct (0.05+0.05)% => pct legs
+    # 2 x 9.90 = 19.80; risk amount 200, cap 0.2 x 200 = 40. flat 10.1 =>
+    # rt exactly 40 (== cap, strict > so it ARMS); flat 10.11 => rt 40.02
+    # > 40 skips costs_dominate.
     base = {"fills.costs.stt_pct": 0.05, "fills.costs.exchange_pct": 0.05}
     args = (zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 100)
-    assert fsm_cfg({**base, "fills.costs.brokerage_flat": 5.1}).arm(*args).armed
-    r = fsm_cfg({**base, "fills.costs.brokerage_flat": 5.11}).arm(*args)
+    assert fsm_cfg({**base, "fills.costs.brokerage_flat": 10.1}).arm(*args).armed
+    r = fsm_cfg({**base, "fills.costs.brokerage_flat": 10.11}).arm(*args)
     assert (r.armed, r.reason) == (False, "costs_dominate")
 
 
@@ -191,7 +213,7 @@ def test_arm_tightens_to_tightest_overlapping_level(fsm):
     assert p.entry_zone == (D("98.60"), D("99.20"))
     assert p.meta["cluster"] == ["98.00", "100.00"]
     assert p.meta["entry"] == "98.90"                        # traded-zone CE
-    assert p.stop == D("98.10")            # behind the TRADED zone: 98.60-0.50
+    assert p.stop == D("96.90")     # natural 98.10 (risk 0.80) -> CE - floor
 
 
 def test_traded_zone_tie_breaks_nearest_close(fsm):
@@ -234,16 +256,18 @@ def test_arm_too_far_above_close_skips_short(fsm):
 
 
 def test_arm_at_exactly_one_atr_allowed(fsm):
-    # close 100, zone hi 98: gap 2 == 1*ATR(2) => still arms (farther rejects)
+    # close 100, zone hi 98: gap 2 == 1*ATR(2) => still arms (farther rejects);
+    # CE 96.50, stop 94.50: risk exactly == floor 2.00 stays UNtouched
     r = fsm.arm(zone("95.00", "98.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 1000)
     assert r.armed and r.reason is None
+    assert r.plan.stop == D("94.50") and r.plan.meta["risk_pts"] == "2.00"
 
 
 # --- targets ---
 
 def test_t2_t3_fallback_prices(fsm):  # single level beyond: 2.5R / 4R fallbacks
     p = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 1000).plan
-    assert p.targets == [D("101.50"), D("102.75"), D("105.00")]
+    assert p.targets == [D("102.50"), D("104.00"), D("107.00")]   # risk 2.00
 
 
 def energy_ev(energy):
@@ -252,44 +276,45 @@ def energy_ev(energy):
 
 
 def test_t3_capped_by_compression_energy(fsm):
-    ctx = ctx_at(at(11, 0), calm(), [t_lvl()], history=[energy_ev("4.50")])
+    ctx = ctx_at(at(11, 0), calm(), [t_lvl()], history=[energy_ev("6.00")])
     p = fsm.arm(zone("98.00", "100.00"), ctx, 1000).plan
-    assert p.targets[2] == D("103.50")              # min(4R=105, entry + 4.50)
+    assert p.targets[2] == D("105.00")              # min(4R=107, entry + 6.00)
 
 
 def test_t3_dropped_when_energy_cap_inside_t2(fsm):
     ctx = ctx_at(at(11, 0), calm(), [t_lvl()], history=[energy_ev("3.00")])
     p = fsm.arm(zone("98.00", "100.00"), ctx, 1000).plan
-    assert p.targets == [D("101.50"), D("102.75")]  # cap 102.00 < T2: T3 dropped
+    assert p.targets == [D("102.50"), D("104.00")]  # cap 102.00 < T2: T3 dropped
 
 
 def test_t2_fallback_inside_t1_dropped_t3_promoted(fsm):
-    # T1 103.00 (4.00 >= 1.5R); T2 fallback 99 + 2.5*1.5 = 102.75 <= T1:
-    # dropped (strict T1<T2<T3); T3 = 4R = 105 takes the second slot
-    ctx = ctx_at(at(11, 0), calm(), [lvl(LevelKind.SWING_H, "103.00", "103.50")])
+    # T1 104.00 (5.00 >= 1.5R=3.00); T2 fallback 99 + 2.5*2.00 = 104.00
+    # <= T1: dropped (strict T1<T2<T3); T3 = 4R = 107 takes the second slot
+    ctx = ctx_at(at(11, 0), calm(), [lvl(LevelKind.SWING_H, "104.00", "104.50")])
     p = fsm.arm(zone("98.00", "100.00"), ctx, 1000).plan
-    assert p.targets == [D("103.00"), D("105.00")]
+    assert p.targets == [D("104.00"), D("107.00")]
 
 
 def test_t2_fallback_inside_t1_dropped_short(fsm):
-    # SHORT mirror: T1 97.00; T2 fallback 101 - 3.75 = 97.25 inside T1
-    ctx = ctx_at(at(11, 0), calm(), [lvl(LevelKind.SWING_L, "96.50", "97.00")])
+    # SHORT mirror: T1 96.00; T2 fallback 101 - 5.00 = 96.00 inside T1
+    ctx = ctx_at(at(11, 0), calm(), [lvl(LevelKind.SWING_L, "95.50", "96.00")])
     p = fsm.arm(zone("100.00", "102.00", Direction.SHORT), ctx, 1000).plan
-    assert p.targets == [D("97.00"), D("95.00")]
+    assert p.targets == [D("96.00"), D("93.00")]
 
 
 def test_opposing_scored_zone_supplies_t1(fsm):
     ctx = ctx_at(at(11, 0), calm(), [lvl(LevelKind.SWING_H, "100.50", "101.00")])
     opp = zone("102.60", "103.00", Direction.SHORT)
     p = fsm.arm(zone("98.00", "100.00"), ctx, 1000, opps=[opp]).plan
-    assert p.targets == [D("102.60"), D("102.75"), D("105.00")]
+    assert p.targets == [D("102.60"), D("104.00"), D("107.00")]
 
 
 def test_short_direction_stop_and_t1_boundary(fsm):  # T1 at exactly 1.5R counts
-    ctx = ctx_at(at(11, 0), calm(), [lvl(LevelKind.SWING_L, "98.00", "98.75")])
+    ctx = ctx_at(at(11, 0), calm(), [lvl(LevelKind.SWING_L, "97.25", "98.00")])
     p = fsm.arm(zone("100.00", "102.00", Direction.SHORT), ctx, 1000).plan
-    assert p.stop == D("102.50")                    # far edge 102 + 0.50 buffer
-    assert p.targets == [D("98.75"), D("97.25"), D("95.00")]
+    # natural stop 102.50 (risk 1.50) widens SHORT-side to CE + floor
+    assert p.stop == D("103.00")
+    assert p.targets == [D("98.00"), D("96.00"), D("93.00")]
 
 
 # --- step(): triggers + disarms ---
@@ -311,7 +336,7 @@ def test_trigger_rejection_wick_boundary(fsm, o, filled):
     r = fsm.step(step_ctx(m1(at(10, 30), o=o, h=100.0, lo=98.0, c=99.9), levels=levels))
     assert (r.action == "fill") is filled
     if filled:
-        assert r.plan.qty == 333 and fsm.state is EntryState.IDLE
+        assert r.plan.qty == 250 and fsm.state is EntryState.IDLE
     else:
         assert r.action == "hold" and fsm.state is EntryState.ARMED
 
