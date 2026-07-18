@@ -53,6 +53,8 @@ class FvgCbDetector(Detector):
         self._c3_ts: dict[str, datetime] = {}  # level_id -> actual c3.ts (eligibility gate)
 
     def on_session_end(self) -> None:
+        # Unmitigated zones carry (pipeline continuum): a carried level may
+        # re-fire each event once per session -- a fresh-day retest is signal.
         self._retest_done.clear()
         self._ce_done.clear()
         self._c3_ts.clear()
@@ -105,7 +107,8 @@ class FvgCbDetector(Detector):
             filled = last.close < lo if bull else last.close > hi
             if filled and lv.state is not LevelState.DEAD:
                 lv.record_state(last.ts, LevelState.DEAD)
-            if last.ts <= self._c3_ts[lv.id]:  # c3 itself excluded (its actual ts, not born+tf)
+            c3 = self._c3_ts.get(lv.id)  # None: carried level, c3 long past
+            if c3 is not None and last.ts <= c3:  # c3 itself excluded (its actual ts, not born+tf)
                 continue
             out += self._retest(lv, last, lo, hi, bull, ctx.now)
             out += self._cehold(lv, last, lo, hi, bull, ctx.now)

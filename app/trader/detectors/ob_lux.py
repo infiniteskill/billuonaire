@@ -55,7 +55,7 @@ class ObLuxDetector(Detector):
         self._anchor: dict[tuple[int, int, bool], int] = {}  # (pivot_idx, confirm_idx, take_max) -> winning idx
 
     def on_session_end(self) -> None:
-        self._quality.clear()    # OB levels never carry; new day re-derives
+        self._quality.clear()    # carried OBs fall back to 0.5 until rescanned
         self._emitted.clear()
         self._anchor.clear()
 

@@ -163,8 +163,9 @@ def test_judas_two_day_no_gap_day2_reforms(tmp_path, monkeypatch):
 
 
 def test_end_session_prunes_stale_levels(tmp_path):
-    """Session end keeps only live cross-day liquidity (PDH/PDL/EQ/ROUND,
-    non-terminal); terminal states and intraday micro-structure go."""
+    """Session end keeps live cross-day liquidity (PDH/PDL/EQ/ROUND,
+    non-terminal) plus unmitigated OB/FVG zones (continuum); terminal states
+    and intraday micro-structure (swings, OR) go."""
     pipe, _ = make_pipeline(tmp_path)
     t = datetime(2026, 7, 14, 15, 25, tzinfo=IST)
     mk = lambda kind, state: Level(f"X-{kind.name}-{state.name}", "X", kind,
@@ -174,12 +175,35 @@ def test_end_session_prunes_stale_levels(tmp_path):
                       mk(LevelKind.EQH, LevelState.SWEPT),        # not terminal
                       mk(LevelKind.PDL, LevelState.DEAD),         # terminal
                       mk(LevelKind.SWING_L, LevelState.ACTIVE),   # intraday
-                      mk(LevelKind.OB_BULL, LevelState.ACTIVE),
-                      mk(LevelKind.FVG_BEAR, LevelState.ACTIVE),
+                      mk(LevelKind.OB_BULL, LevelState.ACTIVE),   # zone: carries
+                      mk(LevelKind.FVG_BEAR, LevelState.ACTIVE),  # zone: carries
+                      mk(LevelKind.OB_BEAR, LevelState.MITIGATED),  # terminal
                       mk(LevelKind.OPEN_RANGE_H, LevelState.SWEPT)]
     pipe._end_session(datetime(2026, 7, 15, 9, 15, tzinfo=IST))
-    assert {lv.kind for lv in pipe.levels} == {LevelKind.PDH, LevelKind.ROUND,
-                                               LevelKind.EQH}
+    assert {lv.kind for lv in pipe.levels} == {
+        LevelKind.PDH, LevelKind.ROUND, LevelKind.EQH,
+        LevelKind.OB_BULL, LevelKind.FVG_BEAR}
+
+
+def test_zone_carry_state_intact_and_age_prune(tmp_path):
+    """An unmitigated OB/FVG zone crosses the session boundary with state,
+    touches and state_history intact; a zone older than max_age_sessions
+    (default 5 weekday sessions) is dropped, one exactly at the edge kept."""
+    pipe, _ = make_pipeline(tmp_path)
+    mk = lambda kind, d, state=LevelState.ACTIVE: Level(
+        f"X-{kind.name}-{d.isoformat()}", "X", kind, (D("99"), D("101")),
+        datetime.combine(d, time(11, 0), tzinfo=IST), Timeframe.M5, state)
+    tested = mk(LevelKind.OB_BULL, DAY1)
+    tested.record_state(tested.born, LevelState.TESTED)
+    tested.touches = 1
+    aged = mk(LevelKind.FVG_BULL, date(2026, 7, 7))   # 5 sessions before DAY1
+    edge = mk(LevelKind.OB_BEAR, date(2026, 7, 8))    # 4 sessions: still live
+    pipe.levels[:] = [tested, aged, edge]
+    pipe.day = DayState(session_date=DAY1)            # session being ended
+    pipe._end_session(datetime.combine(DAY2, time(9, 15), tzinfo=IST))
+    assert pipe.levels == [tested, edge]
+    assert (tested.state, tested.touches) == (LevelState.TESTED, 1)
+    assert tested.state_history == [(tested.born, LevelState.TESTED)]
 
 
 # ------------------------------------------------------- LevelStore wiring
@@ -221,7 +245,9 @@ def test_orchestrator_level_dir_survives_across_runs(tmp_path):
     assert any(lv.kind is LevelKind.SWING_L for lv in pipe.levels)  # untouched in memory
 
     persisted = LevelStore(level_dir).load("ACME")
-    carry = {LevelKind.PDH, LevelKind.PDL, LevelKind.EQH, LevelKind.EQL, LevelKind.ROUND}
+    carry = {LevelKind.PDH, LevelKind.PDL, LevelKind.EQH, LevelKind.EQL,
+             LevelKind.ROUND, LevelKind.OB_BULL, LevelKind.OB_BEAR,
+             LevelKind.FVG_BULL, LevelKind.FVG_BEAR}
     assert persisted and {lv.kind for lv in persisted} <= carry
     assert all(lv.state.name not in ("DEAD", "MITIGATED", "INVERTED") for lv in persisted)
 

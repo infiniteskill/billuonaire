@@ -191,3 +191,25 @@ def test_fresh_instance_does_not_duplicate_level():
     OrderblockDetector({}).detect(ctx_at(store, ob_i + 3, levels))
     OrderblockDetector({}).detect(ctx_at(store, ob_i + 3, levels))
     assert len(levels) == 1
+
+
+def test_carried_ob_day2_rescan_dedupes_and_retests():
+    """Continuum: a day-1 OB carried across the session boundary is re-derived
+    by day-2's rescan (window spans the gap) with the SAME id -> no duplicate
+    level -- and a day-2 close back inside the zone emits OB_RETEST."""
+    store, ob_i = bull_store()
+    det, levels = OrderblockDetector({}), []
+    det.detect(ctx_at(store, ob_i + 3, levels))
+    [lv] = levels
+    det.on_session_end()                    # pipeline boundary: quality cleared
+    day2 = SESSION_START + timedelta(days=1)
+    store.add(Candle("X", Timeframe.M1, day2,
+                     *(tick(x) for x in BULL_RETRACE), 10))
+    now = day2 + timedelta(minutes=M5.minutes)
+    ctx = StockContext(symbol="X", now=now, candles=store.view("X", now),
+                       levels=levels, evidence_history=[],
+                       day=DayState(session_date=day2.date()))
+    evs = det.detect(ctx)
+    assert levels == [lv]                   # same-id dedupe: no duplicate
+    assert [e for e in evs if e.meta == {"level_id": lv.id, "hunt_born": True,
+                                         "event": "OB_RETEST"}]
