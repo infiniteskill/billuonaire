@@ -152,3 +152,19 @@ def test_v2_config_registry_constructs():
     s = load_settings(V2_CONFIG)
     registry = DetectorRegistry(s)
     assert {d.name for d in registry.detectors} == set(s.detectors.enabled)
+
+
+def test_propulsion_block_without_ob_producer_rejected(tmp_path):
+    # propulsion_block reads OB_BULL/OB_BEAR Levels: no orderblock/ob_lux
+    # anywhere before it => it would silently produce nothing, so load fails.
+    bad = dict(BASE, detectors={"enabled": ["sweep", "propulsion_block"],
+                                "disabled": [], "params": {}})
+    with pytest.raises(ValueError):
+        load_settings(write(tmp_path, bad))
+
+
+def test_propulsion_block_with_preceding_ob_producer_loads(tmp_path):
+    ok = dict(BASE, detectors={"enabled": ["orderblock", "propulsion_block"],
+                               "disabled": [], "params": {}})
+    s = load_settings(write(tmp_path, ok))
+    assert s.detectors.enabled == ["orderblock", "propulsion_block"]

@@ -3,7 +3,7 @@ size). Core code takes a spec (default NSE), so switching markets is config only
 
 import re
 from dataclasses import dataclass
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from zoneinfo import ZoneInfo
 
@@ -61,8 +61,14 @@ class MarketSpec:
 
 
 def is_expiry(d: date, spec: "MarketSpec") -> bool:
-    """Derivatives expiry day: weekday matches spec.expiry_weekday (None => never)."""
-    return spec.expiry_weekday is not None and d.weekday() == spec.expiry_weekday
+    """Derivatives expiry day: the LAST spec.expiry_weekday of d's month (None
+    => never), not every occurrence -- NSE stock/index derivatives expire
+    monthly on the last Tuesday, shifted to the previous trading day on a
+    holiday. That holiday shift is NOT modeled here (no holiday calendar
+    available): this treats the raw weekday-matched last occurrence as
+    expiry even when it happens to be a holiday."""
+    return (spec.expiry_weekday is not None and d.weekday() == spec.expiry_weekday
+            and (d + timedelta(days=7)).month != d.month)
 
 
 NSE = MarketSpec()

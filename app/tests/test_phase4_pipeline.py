@@ -414,10 +414,10 @@ def test_partials_and_eod_exact_accounting(tmp_path):
 
 def test_expiry_day_halves_qty_and_journals(tmp_path):
     """On the spec's expiry weekday (harness pins Thu; shipped default is Tue
-    since late 2025): effective arm qty is max_qty x expiry_size_mult
-    (50 x 0.5 = 25) and skip/verdict journal entries carry an expiry flag;
-    a non-expiry day is full size, no flag."""
-    thu = date(2026, 7, 16)                              # a Thursday
+    since late 2025), the LAST such weekday of the month: effective arm qty
+    is max_qty x expiry_size_mult (50 x 0.5 = 25) and skip/verdict journal
+    entries carry an expiry flag; a non-expiry day is full size, no flag."""
+    thu = date(2026, 7, 30)                              # last Thursday of July
     pipe, _ = make_pipeline(tmp_path)                    # max_qty 50
     pipe.day = DayState(session_date=thu)
     assert pipe._eff_qty() == 25
@@ -439,7 +439,7 @@ def test_range_pin_day_halves_qty_composes_with_expiry(tmp_path):
     pipe, _ = make_pipeline(tmp_path)                    # max_qty 50
     pipe.day = DayState(session_date=DAY1, template="RANGE_PIN")   # Tuesday
     assert pipe._eff_qty() == 25
-    pipe.day = DayState(session_date=date(2026, 7, 16),  # Thursday expiry
+    pipe.day = DayState(session_date=date(2026, 7, 30),  # last Thursday expiry
                         template="RANGE_PIN")
     assert pipe._eff_qty() == 12                         # 50 x 0.5 x 0.5
 
@@ -473,10 +473,10 @@ def test_day_after_trend_scales_qty(tmp_path):
 
 
 def test_arm_receives_throttled_qty(tmp_path, monkeypatch):
-    """fsm.arm gets _eff_qty(): Thursday expiry x day-after-TREND compound
+    """fsm.arm gets _eff_qty(): last-Thursday expiry x day-after-TREND compound
     (50 x 0.5 x 0.75 = 18)."""
     pipe, _ = make_pipeline(tmp_path)
-    pipe.day = DayState(session_date=date(2026, 7, 16), prev_template="TREND")
+    pipe.day = DayState(session_date=date(2026, 7, 30), prev_template="TREND")
     seen = {}
     monkeypatch.setattr(pipe.gates, "check",
                         lambda *a: Verdict(True, "chain", "ok"))
@@ -489,7 +489,7 @@ def test_arm_receives_throttled_qty(tmp_path, monkeypatch):
     monkeypatch.setattr(pipe.fsm, "step",
                         lambda ctx, ev: SimpleNamespace(action=None, reason=""))
     zone = ScoredZone((D("99"), D("101")), Direction.LONG, [], 5, 50.0, 50.0, {})
-    ctx = StockContext("X", datetime(2026, 7, 16, 11, 30, tzinfo=IST), None,
+    ctx = StockContext("X", datetime(2026, 7, 30, 11, 30, tzinfo=IST), None,
                        [], [], pipe.day)
     pipe._entry_flow(ctx, [zone], ("RANGING", 0.5), [])
     assert seen["mq"] == 18

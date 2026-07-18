@@ -43,13 +43,15 @@ def test_invalid_spec_rejected(kw):
 
 
 def test_is_expiry():
-    # Tuesday default: NSE moved derivative expiries Thu -> Tue late 2025
+    # Tuesday default: NSE moved derivative expiries Thu -> Tue late 2025;
+    # expiry is the LAST Tuesday of the month, not every Tuesday.
     assert NSE.expiry_weekday == 1
     assert MarketSpec().expiry_weekday == 1                 # default settings
-    assert is_expiry(date(2026, 7, 14), NSE)                # a Tuesday
+    assert is_expiry(date(2026, 7, 28), NSE)                # last Tuesday of July
+    assert not is_expiry(date(2026, 7, 14), NSE)            # mid-month Tuesday
     assert not is_expiry(date(2026, 7, 16), NSE)            # Thursday (old day)
     assert not is_expiry(date(2026, 7, 15), NSE)            # Wednesday
-    assert not is_expiry(date(2026, 7, 14), MarketSpec(expiry_weekday=None))
+    assert not is_expiry(date(2026, 7, 28), MarketSpec(expiry_weekday=None))
 
 
 def test_expiry_weekday_config_roundtrip():
