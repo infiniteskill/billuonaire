@@ -52,6 +52,7 @@ journalling the skip/disarm reasons returned here.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import timedelta
 from decimal import Decimal
@@ -67,6 +68,7 @@ from trader.models.level import TERMINAL, LevelKind, LevelState
 from trader.models.market import MarketSpec
 from trader.models.signal import TradePlan
 
+logger = logging.getLogger("trader.engine.entry")
 _M5 = timedelta(minutes=5)
 _TARGETABLE = (LevelState.ACTIVE, LevelState.TESTED)
 _EXTERNAL = (LevelKind.PDH, LevelKind.PDL)
@@ -135,11 +137,17 @@ class EntryFSM:
         entry = self.spec.quantize((lo + hi) / 2)    # traded-zone CE
         snap_skipped = False
         sig = self._signal_evidence(lo, hi, zone.direction, ctx)
+        if sig is not None:
+            sl = Decimal(sig.meta["sl"])
+            if (sl >= entry) if up else (sl <= entry):    # wrong-side stop: never
+                logger.debug(                             # mirror it via abs()
+                    "entry: wrong-side signal sl dropped (%s sl=%s entry=%s)",
+                    zone.direction, sl, entry)
+                sig = None
         if sig is not None:  # signal-emitter drives the zone: honor its tiny stop
             # raw structural extreme, floored at 0.15xATR sl_floor -- NOT the
             # min_stop_atr cost-floor widening that would kill the RR edge.
-            stop_risk = max(abs(entry - Decimal(sig.meta["sl"])),
-                            Decimal(sig.meta["sl_floor"]))
+            stop_risk = max(abs(entry - sl), Decimal(sig.meta["sl_floor"]))
             stop = snap_stop_off_round(  # round-snap still applies to the tiny stop
                 self.spec.quantize(entry - stop_risk if up else entry + stop_risk),
                 ctx.levels, self.spec, self.s.stops.round_offset_ticks, up)
@@ -160,7 +168,8 @@ class EntryFSM:
                 risk = abs(entry - stop)
         if risk <= 0:       # zero ATR + collapsed zone: nothing to size safely
             return ArmResult(False, "no_risk")
-        targets = self._targets(entry, risk, up, zone.zone, ctx, opps)
+        targets = self._targets(entry, risk, up, zone.zone, ctx, opps,
+                                sig.detector if sig is not None else None)
         if targets is None:
             return ArmResult(False, "no_room")
         cap = Decimal(str(self.s.capital))
@@ -237,7 +246,8 @@ class EntryFSM:
                                       self.s.stops.round_offset_ticks, up)
         return snapped, unsnapped
 
-    def _targets(self, entry, risk, up, zone, ctx, opps) -> list[Decimal] | None:
+    def _targets(self, entry, risk, up, zone, ctx, opps,
+                source: str | None = None) -> list[Decimal] | None:
         sign = 1 if up else -1
         near = lambda z: self.spec.quantize(min(z) if up else max(z))  # noqa: E731
         cands = ([(near(lv.zone), lv.kind) for lv in ctx.levels
@@ -245,8 +255,14 @@ class EntryFSM:
                  + [(near(z.zone), None) for z in opps])
         cands = sorted(((p, k) for p, k in cands if (p - entry) * sign > 0),
                        key=lambda c: abs(c[0] - entry))
+        # room gate proves room to the plan's ACTUAL exit target: when its
+        # sl_source maps to a target R (exits.target_r_by_source), that R
+        # floors at 1.5 (never a laxer room requirement than the base gate).
+        mapped = self.s.exits.target_r_by_source.get(source)
+        req_r = max(Decimal("1.5"), Decimal(str(mapped))) if mapped is not None \
+            else Decimal("1.5")
         t1 = next((p for p, _ in cands
-                   if abs(p - entry) >= Decimal("1.5") * risk), None)
+                   if abs(p - entry) >= req_r * risk), None)
         if t1 is None:
             return None
         t2 = next((p for p, _ in cands if (p - t1) * sign > 0),

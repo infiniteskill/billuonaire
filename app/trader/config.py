@@ -126,6 +126,20 @@ class Settings(StrictModel):
     def market_spec(self) -> MarketSpec:
         return self.market.to_spec()
 
+    @model_validator(mode="after")
+    def _propulsion_needs_ob_producer(self) -> "Settings":
+        # propulsion_block reads OB_BULL/OB_BEAR Levels written by orderblock/
+        # ob_lux; without one enabled BEFORE it (run_all executes config
+        # order) it silently produces nothing.
+        en = self.detectors.enabled
+        if "propulsion_block" in en:
+            i = en.index("propulsion_block")
+            if not any(p in en[:i] for p in ("orderblock", "ob_lux")):
+                raise ValueError(
+                    "propulsion_block requires orderblock or ob_lux enabled "
+                    "before it in detectors.enabled")
+        return self
+
     def enabled_weights(self) -> dict[str, float]:
         w = {k: v for k, v in self.confluence.weights.items()
              if k in self.detectors.enabled}

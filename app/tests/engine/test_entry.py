@@ -173,6 +173,18 @@ def test_arm_non_signal_evidence_keeps_min_stop_atr_path(fsm):
     assert p.qty == 250
 
 
+def test_arm_wrong_side_signal_sl_falls_back_to_generic_stop(fsm):
+    # meta["sl"] on the WRONG side of entry (99.50, ABOVE, for a LONG) must
+    # never be mirrored via abs() into a stop below entry (audit fix): the
+    # signal-stop is invalid, so the generic _stop()/min_stop_atr path runs
+    # instead -- same result as test_arm_plain_stop_widens_to_cost_floor.
+    ctx = ctx_at(at(11, 0), calm(), [t_lvl()], history=[sig_ev("99.50")])
+    p = fsm.arm(zone("98.00", "100.00"), ctx, 1000).plan
+    assert p.stop == D("97.00") and p.meta["risk_pts"] == "2.00"
+    assert "sl_source" not in p.meta
+    assert p.qty == 250
+
+
 def test_arm_sweep_trap_round_snap_targets_decimal(fsm):
     levels = [lvl(LevelKind.SWING_L, "97.40", "98.50", LevelState.SWEPT, SWEPT),
               lvl(LevelKind.SWING_L, "96.00", "98.00", LevelState.SWEPT, SWEPT),
@@ -298,6 +310,23 @@ def test_arm_cost_gate_reads_ladder_shape_per_plan():
     unmapped = {k: v for k, v in base.items() if k != "exits"}
     r = fsm_cfg({**unmapped, "fills.costs.brokerage_flat": 12.55}).arm(*args)
     assert (r.armed, r.reason) == (False, "costs_dominate")
+
+
+def test_arm_room_gate_proves_room_to_mapped_target_r_not_flat_1_5R():
+    # CF-sourced plan (exits.target_r_by_source compression_fade=2.0): the
+    # room GATE must prove room to the ACTUAL 2R exit target, not the flat
+    # 1.5R floor -- risk 1.00 (signal sl 98.00, entry 99.00). A candidate at
+    # 1.6R (100.60) clears the old 1.5R floor but not the mapped 2.0R => the
+    # gate must reject it (no_room); one at 2.2R (101.20) clears it and arms.
+    cfg = fsm_cfg({"exits": {"target_r_by_source": {"compression_fade": 2.0}}})
+    sig = sig_ev("98.00", zlo="97.50", zhi="99.00")
+    ctx_1_6r = ctx_at(at(11, 0), calm(),
+                      [lvl(LevelKind.SWING_H, "100.60", "101.10")], history=[sig])
+    r = cfg.arm(zone("98.00", "100.00"), ctx_1_6r, 1000)
+    assert (r.armed, r.reason) == (False, "no_room")
+    ctx_2_2r = ctx_at(at(11, 0), calm(),
+                      [lvl(LevelKind.SWING_H, "101.20", "101.70")], history=[sig])
+    assert cfg.arm(zone("98.00", "100.00"), ctx_2_2r, 1000).armed
 
 
 # --- traded zone: tightest overlapping level, not the cluster span ---
