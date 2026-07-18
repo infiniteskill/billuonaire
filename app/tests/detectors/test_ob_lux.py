@@ -186,6 +186,26 @@ def test_overlap_keeps_higher_quality_old_wins():
     assert levels == [rival]  # 0.5 <= rival's default 0.5: new OB discarded
 
 
+def test_multi_zone_same_close_collapses_to_one_evidence():
+    """G finding: two surviving ACTIVE OB_BULL levels (distinct level_ids,
+    never overlap-evicted against each other since both are seeded directly,
+    bypassing ``_upsert``'s creation-time dedupe) whose zones both contain
+    the same closing price fire in one tick for one physical price event --
+    ``_collapse`` must keep only the higher-quality (strength) OB."""
+    store = make_store([FLAT] * 6)  # no swing pivot ever forms: FLAT never breaks its own high/low
+    det = ObLuxDetector({"size": 2})
+    wide = Level(id="wide", symbol="X", kind=LevelKind.OB_BULL,
+                zone=(tick(99), tick(102)), born=bar_ts(0), tf=M5)
+    tight = Level(id="tight", symbol="X", kind=LevelKind.OB_BULL,
+                 zone=(tick("99.5"), tick("100.5")), born=bar_ts(1), tf=M5)
+    levels = [wide, tight]
+    det._quality = {"wide": 0.4, "tight": 0.9}
+    [ev] = det.detect(ctx_at(store, 6, levels))  # close (100) sits inside both zones
+    assert ev.direction is Direction.LONG
+    assert ev.strength == pytest.approx(0.9)
+    assert ev.zone == (tick("99.5"), tick("100.5"))
+
+
 def test_on_session_end_persists_structural_memory():
     # Continuum: _quality/_anchor describe levels/legs that carry across
     # days -- they persist; _emitted is pruned to the newest bar's entries

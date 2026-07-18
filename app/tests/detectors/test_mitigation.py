@@ -147,6 +147,23 @@ def test_dedupe_one_fire_per_block():
     assert det.detect(ctx_at(store, 20)) == []  # same tick again: no duplicate
 
 
+def test_multi_zone_same_close_collapses_to_one_evidence():
+    """G finding: two pending blocks whose body zones both overlap the same
+    touch candle fire for one physical price event in a single tick --
+    ``_collapse`` must keep only the strongest (max strength)."""
+    store = make_store([(100, 101, 99, 100)])  # 1 closed bar; atr None (needs 15)
+    det = MitigationDetector({})
+    det._blocks = {
+        bar_ts(0): (1, tick(99), tick(100), tick(98), 0.3),
+        bar_ts(1): (1, tick("99.5"), tick("100.5"), tick("98.5"), 0.6),  # overlapping, stronger
+    }
+    [ev] = det.detect(ctx_at(store, 1))
+    assert ev.direction is Direction.LONG
+    assert ev.zone == (tick("99.5"), tick("100.5"))
+    assert ev.meta["sl"] == str(tick("98.5"))
+    assert not det._blocks  # both consumed, weaker one doesn't linger
+
+
 def test_on_session_end_keeps_pending_blocks():
     # Continuum: a block formed but not yet touched carries across the
     # boundary and fires on the next session's touch; _seen is age-pruned.
@@ -332,85 +349,55 @@ def _feed_real(m1: list[Candle], symbol: str, det, spec=NSE) -> list[tuple]:
     return out
 
 
-def _explained(m5, atrs, i, sign, lookback=3, disp_atr=1.0) -> bool:
-    """Every divergence between the (Decimal, single-eval) detector and the
-    (float, full-rescan) reference must trace to one of two unavoidable
-    consequences of that port, never to an unrelated logic bug:
-
-    (a) DIFFERENT-BAR ATR: the reference always thresholds with atrs[i] (the
-        block's OWN bar). ``mitigation.py``'s ``_atr_of`` recomputes the same
-        ATR ending at the block's own close, so this should not fire on
-        current code -- kept as a live, programmatic guard against a future
-        regression back to using the current-tick's (later) ATR.
-    (b) FLOAT/DECIMAL BOUNDARY TIE: with the SAME atrs[i], Decimal-exact
-        arithmetic (what the production detector uses) and ict_pieces' float
-        arithmetic can disagree only when disp==need to the last
-        representable digit -- i.e. only ever an exact tie, never a
-        meaningfully different number.
-    """
-    C = [c.close for c in m5]  # Decimal, exact (unlike the float oracle's C)
-    seg = range(i + 1, i + 1 + lookback)
-    disp_dec = max((C[j] - C[i]) * sign for j in seg)
-    a_i = atrs[i]
-    T = i + lookback
-    a_T = atrs[T] if T < len(atrs) else None
-    if a_i != a_T:
-        return True                                     # (a)
-    if a_i is None:
-        return False
-    need_dec = Decimal(str(disp_atr)) * a_i
-    exact_pass = disp_dec >= need_dec
-    float_pass = float(disp_dec) >= disp_atr * float(a_i)
-    return exact_pass != float_pass                      # (b)
-
-
 @pytest.mark.skipif(DATA_WIDE is None, reason="data/wide real-data fixture not available")
 def test_parity_with_reference_on_real_continuum_data():
     """PARITY GATE vs ict_pieces.py::mitigation_block, session-anchored M5,
     ALL sessions concatenated (continuum), across 2 real symbols.
 
-    NOT an exact match by design: the detector is bounded single-eval (each
-    block candidate is judged ONCE, at its natural formation tick) to fix a
+    EXACT set match: the detector is bounded single-eval (each block
+    candidate is judged ONCE, at its natural formation tick) to fix a
     stale-touch bug (see test_atr_spike_ages_out_no_stale_touch) where the
     OLD behaviour kept retrying a rejected candidate against ever-later ATR
     readings. The reference has no such tick discipline: it is a single
     batch pass that always thresholds a candidate against ITS OWN bar's
     atrs[i]. The detector matches that exactly (mitigation.py's ``_atr_of``
     recomputes the ATR ending at the block's own close, not the current
-    tick's), so on real data the two are near-exact; the residual
-    divergence, in EITHER direction, is verified below -- never hand-waved
-    -- to be fully explained by ``_explained``'s two categories (a stale
-    different-bar ATR that no longer occurs post-fix, kept as a live
-    regression guard, or a float/Decimal exact-tie artifact of comparing a
-    float reference against a Decimal production detector)."""
+    tick's).
+
+    Two previously-tolerated divergence sources are now closed instead of
+    hand-waved: (a) a stale different-bar ATR never occurs post-fix; (b) the
+    disp>=need threshold used to compare Decimal-exact ``disp`` against a
+    float ``need``, which could disagree with the float reference on an
+    exact tie -- ``_form`` now replicates ict_pieces.py's float arithmetic
+    bit-for-bit (independently float-rounding each close before
+    subtracting, not float()-casting the Decimal-exact difference, which
+    double-rounds differently -- this was a REAL, currently-observed INFY
+    tie before the fix, not just a latent one).
+
+    No oracle-side dedupe needed here (contrast test_bpr.py/test_ob_lux.py):
+    the reference does occasionally emit two DIFFERENT blocks resolving on
+    the same touch bar + direction, but on this fixture their body zones
+    never overlap (verified) -- genuinely distinct price events that
+    coincide on one touch tick, not the same event double-counted, so
+    ``mitigation.py``'s ``_collapse`` correctly leaves both live."""
     total_expected = total_got = 0
     for sym in REAL_SYMBOLS:
         m1 = _load_m1_real(sym)
         m5 = _build_m5_real(m1, sym)
         atrs = atr_series(m5)
-        ts_index = {c.ts: idx for idx, c in enumerate(m5)}
 
         ref_ev = _ref_mitigation_block(m5, atrs)
-        expected = {(m5[k].ts, _DIR[sign], Decimal(str(sl))): i
-                    for i, k, sign, sl in ref_ev}
+        expected = {(m5[k].ts, _DIR[sign], Decimal(str(sl))) for i, k, sign, sl in ref_ev}
 
         det = MitigationDetector({})
-        got = {(ts, ev.direction, Decimal(ev.meta["sl"])): ts_index[blk_ts]
+        got = {(ts, ev.direction, Decimal(ev.meta["sl"]))
                for ts, blk_ts, ev in _feed_real(m1, sym, det)}
 
-        det_only, ref_only = set(got) - set(expected), set(expected) - set(got)
-        for key in det_only:
-            i, sign = got[key], key[1].value
-            assert _explained(m5, atrs, i, sign), f"{sym}: unexplained det-only {key}"
-        for key in ref_only:
-            i, sign = expected[key], key[1].value
-            assert _explained(m5, atrs, i, sign), f"{sym}: unexplained ref-only {key}"
+        assert got == expected, f"{sym}: parity mismatch -- " \
+            f"det-only={got - expected} ref-only={expected - got}"
 
         total_expected += len(expected)
         total_got += len(got)
 
-    # guard: the real data must actually exercise the machine non-trivially,
-    # and near-exactly (any explained remainder is a handful of bars, not a
-    # large fraction of the event set)
+    # guard: the real data must actually exercise the machine non-trivially
     assert total_expected >= 150 and total_got >= 150
-    assert abs(total_got - total_expected) <= 5

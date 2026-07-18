@@ -40,7 +40,14 @@ Evidence (ttl 6, strength = quality) is emitted when the latest closed
 candle's close sits inside an ACTIVE/TESTED OB zone: OB_BULL -> LONG,
 OB_BEAR -> SHORT. Overlapping same-kind OBs dedupe on creation, keeping the
 higher quality one -- only against an ACTIVE rival; a TESTED/MITIGATED/etc.
-level is never evicted."""
+level is never evicted.
+
+Emission hygiene (``_collapse``): overlap-dedupe on creation still lets two
+DIFFERENT surviving levels (never overlap-evicted, e.g. opposite kinds, or
+same kind born before either could evict the other) both contain the SAME
+closing price -- one physical price event should fire once, so same-
+direction clashes within a single ``detect()`` call collapse to the single
+strongest (max quality/strength; tie -> tightest zone)."""
 
 from __future__ import annotations
 
@@ -58,6 +65,23 @@ _DEFAULTS = {"tf": "5m", "size": 5, "hv_atr_mult": 2.0}
 _LIVE = (LevelState.ACTIVE, LevelState.TESTED)
 _OB_KINDS = (LevelKind.OB_BULL, LevelKind.OB_BEAR)
 _ALL = 10 ** 9    # "all closed candles" sentinel for CandleView.last
+
+
+def _collapse(evs: list[Evidence]) -> list[Evidence]:
+    """Per-tick emission hygiene: two different ACTIVE/TESTED OB levels can
+    both contain the SAME closing price in one tick (overlapping zones,
+    distinct level_ids) -- one physical price event should fire once.
+    Collapse same-direction, zone-overlapping clashes to the single
+    strongest (max strength; tie -> tightest zone)."""
+    kept: list[Evidence] = []
+    for e in evs:
+        j = next((k for k, o in enumerate(kept) if o.direction is e.direction and
+                  o.zone[0] <= e.zone[1] and e.zone[0] <= o.zone[1]), None)
+        if j is None:
+            kept.append(e)
+        elif (e.strength, e.zone[0] - e.zone[1]) > (kept[j].strength, kept[j].zone[0] - kept[j].zone[1]):
+            kept[j] = e
+    return kept
 
 
 @register
@@ -102,7 +126,7 @@ class ObLuxDetector(Detector):
         for i in range(self._n, n):
             self._step(ctx, tf, window, i)
         self._n = n
-        return self._evidence(ctx, window[-1])
+        return _collapse(self._evidence(ctx, window[-1]))
 
     def _step(self, ctx: StockContext, tf: Timeframe, window: list[Candle], i: int) -> None:
         """Consume the single newly-closed bar ``i``: extend the rolling-TR

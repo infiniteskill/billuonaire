@@ -17,6 +17,10 @@ multi-day history, never session-scoped. That is how the edge was VALIDATED
 (rr.py::compress_fade ran one concatenated multi-day series): a coil formed
 on day 1's last bars stays fadeable by day 2's first bars.
 
+rr.py::compress_fade loops ``i`` from 1, so the very first bar of a symbol's
+WHOLE continuum can never be a compression candidate; ``detect()`` carries
+the same carve-out (see the ``bar0`` guard) so the two never diverge on it.
+
 The measured 0.15*ATR SL floor is annotated (meta["sl_floor"]) for the
 executor to apply; this detector does not floor "sl" itself (that stays the
 literal break extreme) and does not wire the planner -- see task brief
@@ -56,11 +60,17 @@ class CompressionFadeDetector(Detector):
         if len(window) < 2:
             return []
         j = window[-1]
+        # rr.py::compress_fade loops i from 1: the very first bar of the
+        # WHOLE continuum (not just this sliding window) is never a
+        # compression candidate. window[0] is only ever that bar when no
+        # earlier candle exists to extend the window back by one more.
+        bar0 = (window[0].ts if len(ctx.candles.last(len(window) + 1, tf)) == len(window)
+                else None)
         atr = ctx.atr(tf)
         floor = Decimal(str(self.params["sl_atr_floor"])) * atr if atr else Decimal(0)
         out = []
         for c in window[:-1]:
-            if c.ts in self._emitted or not self._is_compress(c):
+            if c.ts == bar0 or c.ts in self._emitted or not self._is_compress(c):
                 continue
             if j.high > c.high:
                 sl, direction = j.high, Direction.SHORT
