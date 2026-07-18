@@ -62,3 +62,8 @@ The prediction edge is real but magnitude-less; extraction fails structurally, n
 ## LIVE-READINESS ENGINEERING DEBTS (only if something ever clears the gate)
 Incremental detectors (kill O(n)/tick rescans) · process-parallel replay (~10×) · detector-state
 persistence across restarts · (all logged; none blocks research).
+
+## ADDENDUM (2026-07-18, post-close tests)
+- Daily-POI anchoring: real +1.1pp, economically dead (`artifacts/dailypoi-anchoring.md`).
+- NESTED fractal + liquidity-swing conjunction (the full top-down model): +0.5-1.4pp vs +6pp bar, holdout-unstable, 0 positive cells (`artifacts/nested-fractal-confluence.md`). Confluence family closed COMPLETELY.
+- Both external code reviews reconciled (24 claims verified; all real bugs fixed). 739 tests green.
