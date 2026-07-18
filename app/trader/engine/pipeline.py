@@ -333,11 +333,13 @@ class SymbolPipeline:
                 self._skip(candle.ts, "fill", "unfilled")  # limit never traded
             elif candle.low <= limit if up else candle.high >= limit:
                 self._pending_plan = None
-                # arm-time risk caps re-checked at FILL time: the daily lock /
-                # heat / correlation state may have engaged while the limit
-                # rested. Exits below are never gated.
-                if (why := fill_time_caps(self.s, self.risk,
-                                          plan.direction)) is not None:
+                # ALL arm-time risk caps re-checked at FILL time (full gate
+                # parity): lock / cooldown / trades-day / per-stock / heat /
+                # correlation may have engaged while the limit rested. Exits
+                # below are never gated.
+                if (why := fill_time_caps(self.s, self.risk, plan.direction,
+                                          symbol=self.symbol,
+                                          now=candle.ts)) is not None:
                     self._skip(candle.ts, "gate_at_fill", why)
                 else:
                     fill = self.broker.entry_fill(plan, candle, limit)

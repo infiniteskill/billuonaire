@@ -193,15 +193,26 @@ class RiskBudgetGate(Gate):
         return self._ok()
 
 
-def fill_time_caps(settings: Settings, risk: RiskState, direction) -> str | None:
-    """Fill-time re-check of RiskBudgetGate's hard caps (mirrors that gate;
-    keep in sync): a resting limit must not fill after the daily lock engaged
-    or into an exceeded portfolio-heat / same-direction correlation cap --
-    arm-time state can go stale while the order rests. Exits are never gated.
-    Returns the failure reason, or None to allow."""
+def fill_time_caps(settings: Settings, risk: RiskState, direction,
+                   symbol: str | None = None, now=None) -> str | None:
+    """Fill-time re-check of ALL RiskBudgetGate hard caps (FULL parity with
+    that gate; keep in sync): a resting limit must not fill after the daily
+    lock engaged, past the trades/day or per-stock caps, inside the
+    post-trade cooldown, or into an exceeded portfolio-heat /
+    same-direction correlation cap -- arm-time state goes stale while the
+    order rests. ``symbol``/``now`` None skip their checks (legacy callers).
+    Exits are never gated. Returns the failure reason, or None to allow."""
+    r, capital = settings.risk, Decimal(str(settings.capital))
     if risk.locked:
         return "risk locked for the day"
-    r, capital = settings.risk, Decimal(str(settings.capital))
+    if (now is not None and risk.last_close_ts is not None
+            and now - risk.last_close_ts
+            < timedelta(minutes=r.min_minutes_between_trades)):
+        return "cooldown_after_trade"
+    if risk.trades_today >= r.max_trades_day:
+        return f"max {r.max_trades_day} trades/day reached"
+    if symbol is not None and risk.per_symbol.get(symbol, 0) >= r.max_per_stock:
+        return f"max {r.max_per_stock} trade(s) in {symbol} reached"
     new = capital * Decimal(str(r.per_trade_pct)) / 100
     cap = capital * Decimal(str(r.portfolio_heat_pct)) / 100
     if risk.open_risk + new > cap:
