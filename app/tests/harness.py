@@ -61,6 +61,10 @@ def scenario_settings(enabled: tuple = PHASE2) -> Settings:
     raw = json.loads(CONFIG.read_text())
     raw["detectors"]["enabled"] = list(enabled)
     raw["risk"]["max_cost_reward_ratio"] = 1000.0
+    # Fixtures were authored on the pre-late-2025 Thu-expiry calendar (their
+    # date-seeded Tue/Wed days must stay full-size non-expiry days); the
+    # shipped Tue default is covered in tests/models/test_market.py.
+    raw["market"]["expiry_weekday"] = 3
     return Settings.model_validate(raw)
 
 

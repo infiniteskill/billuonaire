@@ -6,7 +6,7 @@
     "session_open": "09:15",
     "session_close": "15:30",
     "tick_size": "0.05",
-    "expiry_weekday": 3
+    "expiry_weekday": 1
   },
   "risk": {
     "per_trade_pct": 0.5,

@@ -410,7 +410,9 @@ class SymbolPipeline:
     def _eff_qty(self) -> int:
         """Size throttles, composed multiplicatively: expiry-day (B7) x
         day-after-TREND (B5, axiom 16) x RANGE_PIN half-size (fade edges
-        half-size: score stays full, discipline lives here)."""
+        half-size: score stays full, discipline lives here). Floors at 1
+        when max_qty >= 1 and any throttle is active (m > 0): int() would
+        otherwise silently zero a 1-share smoke test; m == 0 still yields 0."""
         m = 1.0
         if is_expiry(self.day.session_date, self.spec):
             m *= self.s.risk.expiry_size_mult
@@ -418,7 +420,8 @@ class SymbolPipeline:
             m *= self.s.risk.day_after_trend_mult
         if self.day.template == "RANGE_PIN":
             m *= self.s.risk.range_pin_size_mult
-        return int(self.max_qty * m)
+        q = int(self.max_qty * m)
+        return max(q, 1) if m > 0 and self.max_qty >= 1 else q
 
     def _skip(self, at, gate: str, reason: str) -> None:
         self.n_skips += 1

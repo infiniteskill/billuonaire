@@ -159,3 +159,27 @@ validation than the 30-day M1 cap). Or accept the null.
 4. Wave-3 build (data-driven, NOT a stack-voter): direction filter + elite-solo selection + SL-wiring
    (C-1) + meta contract (F) + v2 config drop baseline (C-2) + nonzero weights (E-2).
 5. Economic replay gate on holdout stocks with costs; ship only if it earns.
+
+## Audit-3 (external) — verified + actions
+Confirmed and FIXED in this pass:
+- **A config consistency** — v2 template re-enables `structure` as CONTEXT (weight 2, ordered after the
+  level-writers swings/liquidity; entries stay compression_fade/bpr). Without its BOS/CHOCH evidence,
+  TREND and TRAP_REVERSAL were unreachable and the RANGE_PIN 0.5 size-throttle over-fired.
+- **B dead weight** — `swings` never emits Evidence (levels-only) yet carried weight 1; dropped from
+  `confluence.weights`, kept ENABLED (its levels matter). New config test: weights keys ⊆ enabled,
+  levels-only exception documented.
+- **C zero-qty truncation** — `_eff_qty` `int(max_qty*m)` zeroed size at CLI default max_qty=1 with any
+  0.5 throttle (silent full suppression). Now floors at 1 when max_qty >= 1 and m > 0; m == 0 still 0.
+- **D expiry weekday** — default + both shipped templates moved Thu(3) → Tue(1): NSE shifted index/stock
+  derivative expiries to Tuesday from late 2025. (Scenario harness pins Thu — fixtures were authored on
+  that calendar; the shipped default is covered in tests/models/test_market.py.)
+- **E research preservation** — the 17 validated reference scripts copied from ephemeral /tmp scratchpads
+  into tracked `dev/research/` with a README (results remain in runs/long60 + dev/plan artifacts).
+
+Logged, NOT fixed — market-model debts that matter only if trading ever resumes (the economic null of
+A9 is robust to all of them; each would make costs/frictions WORSE, not better):
+- tiered NSE tick sizes (₹0.01–₹5 by price band) vs the flat 0.05 spec;
+- true cost-levy structure (₹307/crore exchange levy + separate GST/SEBI/stamp) vs the folded pct approx;
+- no per-stock/size market-impact model (fills assume constant half-spread + bps slippage);
+- template is provisional until the 11:30 lock while the entry window opens at open+observe_min (11:00):
+  a 30-min stretch can arm on a template that later flips.
