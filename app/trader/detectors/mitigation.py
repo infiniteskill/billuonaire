@@ -13,10 +13,12 @@ for SHORT.
 it), so formation does NOT rescan history: each tick evaluates only the one
 newly-eligible block candidate -- the candle whose ``lookback``-bar
 displacement window just closed, i.e. ``window[-(lookback + 1)]`` on a
-session-scoped ``ctx.candles.today(tf)[-(lookback + 2):]`` window (never
-crosses into the prior session) -- against the *current*
-``ctx.atr(tf)`` as its formation ATR, then persists it (once) in instance
-state. A candle that fails its displacement check at that single tick is
+``ctx.candles.last(lookback + 2, tf)`` window -- CONTINUOUS multi-day
+history, never session-scoped: that is how the edge was VALIDATED
+(ict_pieces.py ran one concatenated series), so a block/leg may span the
+overnight gap and pending-touch blocks carry across sessions -- against the
+*current* ``ctx.atr(tf)`` as its formation ATR, then persists it (once) in
+instance state. A candle that fails its displacement check at that single tick is
 rejected forever; it is never retried against a later (e.g. post-spike,
 lower) ATR reading, which would otherwise stamp an old candle's already-fixed
 displacement with a fresh, misleadingly-current touch. Touch is checked
@@ -54,13 +56,15 @@ class MitigationDetector(Detector):
         self._blocks: dict[datetime, tuple] = {}   # block ts -> pending-touch data
 
     def on_session_end(self) -> None:
-        self._seen.clear()
-        self._blocks.clear()
+        # Continuum: pending-touch blocks are structure and carry across
+        # days. Prune only _seen by age -- a ts already deeper than the
+        # candidate slot can never be re-evaluated, so dropping it is safe.
+        self._seen = set(sorted(self._seen)[-(int(self.params["lookback"]) + 2):])
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
         lookback = int(self.params["lookback"])
-        window = ctx.candles.today(tf)[-(lookback + 2):]
+        window = ctx.candles.last(lookback + 2, tf)
         atr = ctx.atr(tf)
         floor = Decimal(str(self.params["sl_atr_floor"])) * atr if atr else Decimal(0)
         touches = self._touch(ctx, window, floor)  # against blocks formed on PRIOR ticks

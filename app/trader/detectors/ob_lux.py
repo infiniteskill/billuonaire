@@ -12,10 +12,14 @@ the search: the recorded zone is always the winning bar's own raw sorted
 (low, high) -- swapping low/high cancels out under sorted(), so vol-adj
 never changes zone geometry. Creates an OB_BULL/OB_BEAR Level born at the
 winning bar's ts; mitigation is LevelEngine's job (as in ``orderblock``).
-Runs on per-session (intraday-reset) candles -- unlike the un-reset
-multi-day series luxob.py was measured on -- as a deliberate intraday
-choice; its real edge will be re-measured by the economic replay, not
-assumed equal to the multi-day +10-14%.
+
+CONTINUUM: scans the FULL continuous closed-candle history
+(``ctx.candles.last(_ALL, tf)``, the inducement.py sentinel) -- never
+session-scoped. That is the VALIDATED behavior: luxob.py::lux_ob_events ran
+one long multi-day series, so swing/leg structure (and the OBs it derives)
+carries across days; a leg starting day 1 may confirm day 2. ``_quality``/
+``_anchor`` persist across sessions to match (bounded: keyed by level-id /
+leg indices, which are absolute into the append-only history).
 
 Quality = min(overshoot / ATR, 1.0), overshoot = how far the confirming
 close broke past the pivot level. The source has no strength score of its
@@ -42,6 +46,7 @@ from trader.models.level import Level, LevelKind, LevelState
 _DEFAULTS = {"tf": "5m", "size": 5, "hv_atr_mult": 2.0}
 _LIVE = (LevelState.ACTIVE, LevelState.TESTED)
 _OB_KINDS = (LevelKind.OB_BULL, LevelKind.OB_BEAR)
+_ALL = 10 ** 9    # "all closed candles" sentinel for CandleView.last
 
 
 @register
@@ -55,15 +60,19 @@ class ObLuxDetector(Detector):
         self._anchor: dict[tuple[int, int, bool], int] = {}  # (pivot_idx, confirm_idx, take_max) -> winning idx
 
     def on_session_end(self) -> None:
-        self._quality.clear()    # OB levels never carry; new day re-derives
-        self._emitted.clear()
-        self._anchor.clear()
+        # Continuum: _quality/_anchor describe levels/legs that carry across
+        # days -- they PERSIST (bounded by their level-id / leg keys). Prune
+        # only the ts-keyed emit dedupe by age: an old bar is never again the
+        # latest close, but day 1's last bar stays it until day 2's first.
+        if self._emitted:
+            newest = max(ts for _, ts in self._emitted)
+            self._emitted = {k for k in self._emitted if k[1] == newest}
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
         atr = ctx.atr(tf)
         size = int(self.params["size"])
-        window = ctx.candles.today(tf)
+        window = ctx.candles.last(_ALL, tf)  # full continuum (validated behavior)
         n = len(window)
         if atr is None or atr <= 0 or n <= size:
             return []

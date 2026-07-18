@@ -7,7 +7,10 @@ sign-stable across holdouts, but RR ~breakeven standalone -- CONFLUENCE-ONLY
 contributor (the confluence engine sets its low weight); built here as a
 pure signal-emitter, no Levels.
 
-Window: the last N+1 closed candles (N prior bars + the qualifying bar).
+Window: the last N+1 closed candles (N prior bars + the qualifying bar),
+taken from CONTINUOUS multi-day history (``ctx.candles.last``) -- never
+session-scoped: liq_hunt.py::turtle_soup was VALIDATED on one concatenated
+multi-day series, so the N-bar window legitimately spans the overnight gap.
 Rule uses only the prior window's *first* bar (L[i-N]/H[i-N]) as the reclaim
 reference, not the min/max of the whole prior window -- matches the source.
 Strength: how much of the qualifying bar's range reclaimed past that
@@ -35,12 +38,16 @@ class TurtleSoupDetector(Detector):
         self._emitted: set = set()  # qualifying candle ts already fired
 
     def on_session_end(self) -> None:
-        self._emitted.clear()
+        # Continuum: dedupe survives the boundary (day 1's last bar is still
+        # the qualifying bar until day 2's first close). Prune by age -- only
+        # the newest fired ts can ever be window[-1] again.
+        if self._emitted:
+            self._emitted = {max(self._emitted)}
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
         N = int(self.params["N"])
-        window = ctx.candles.today(tf)[-(N + 2):]
+        window = ctx.candles.last(N + 2, tf)
         if len(window) < N + 1:
             return []
         c = window[-1]
