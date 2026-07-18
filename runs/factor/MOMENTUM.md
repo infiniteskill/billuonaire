@@ -22,3 +22,5 @@
 ## Ops sketch
 Month-end: rank 138 names by t-252..t-21 return -> hold top 15 EW -> rotate (~5 names/mo).
 Delivery, no leverage. ~30 min/month.
+
+**Survivorship quantified** (from the validation run): EW buy-hold of the surviving universe beats NIFTY by ~11pp/yr on the common window — the reason all absolute returns are inflated and the ACTIVE spread (momentum minus EW, +0.4-0.65%/mo, t~2) is the trustworthy metric.
