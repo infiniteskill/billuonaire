@@ -3,11 +3,15 @@ ported faithfully from the measured winner (scratchpad luxob.py). A swing
 pivot high/low is confirmed once ``size`` trailing bars fail to exceed it; a
 later close crossing back over that pivot level is a structure break. The OB
 is the bar within [pivot, break] with the lowest (bull) / highest (bear)
-"parsed" extreme, where a bar whose range >= ``hv_atr_mult`` * ATR has its
-high/low swapped first before the argmin/argmax search picks the anchor --
-LuxAlgo's volatility-as-volume proxy (the validated rule has no real volume
-term to port; a range-vs-ATR spike is untrusted as the true wick and
-excluded from the leg-extreme search). The swap only steers which bar WINS
+"parsed" extreme, where a bar whose range >= ``hv_atr_mult`` * THAT BAR'S OWN
+trailing ATR (``_atr_series``, per-bar, exactly ``atr_series``/``ctx.atr``'s
+formula -- NOT the single current ``ctx.atr(tf)``: the whole window is
+rescanned from bar 0 every tick, so a uniform "current" ATR would retroactively
+reclassify early bars as ATR drifts and silently flip an already-decided
+anchor) has its high/low swapped first before the argmin/argmax search picks
+the anchor -- LuxAlgo's volatility-as-volume proxy (the validated rule has no
+real volume term to port; a range-vs-ATR spike is untrusted as the true wick
+and excluded from the leg-extreme search). The swap only steers which bar WINS
 the search: the recorded zone is always the winning bar's own raw sorted
 (low, high) -- swapping low/high cancels out under sorted(), so vol-adj
 never changes zone geometry. Creates an OB_BULL/OB_BEAR Level born at the
@@ -58,29 +62,33 @@ class ObLuxDetector(Detector):
         self._quality: dict[str, float] = {}          # level_id -> quality
         self._emitted: set[tuple[str, datetime]] = set()  # (level_id, ts)
         self._anchor: dict[tuple[int, int, bool], int] = {}  # (pivot_idx, confirm_idx, take_max) -> winning idx
+        self._decided: set[str] = set()  # level_ids ever run through _upsert's create-or-reject decision
 
     def on_session_end(self) -> None:
-        # Continuum: _quality/_anchor describe levels/legs that carry across
-        # days -- they PERSIST (bounded by their level-id / leg keys), so
-        # carried zones keep their real quality (no 0.5 fallback). Prune
-        # only the ts-keyed emit dedupe by age: an old bar is never again the
-        # latest close, but day 1's last bar stays it until day 2's first.
+        # Continuum: _quality/_anchor/_decided describe levels/legs that carry
+        # across days -- they PERSIST (bounded by their level-id / leg keys),
+        # so carried zones keep their real quality (no 0.5 fallback) and an
+        # overlap-evicted OB never comes back once its rival ages past ACTIVE
+        # (_decided blocks it). Prune only the ts-keyed emit dedupe by age: an
+        # old bar is never again the latest close, but day 1's last bar stays
+        # it until day 2's first.
         if self._emitted:
             newest = max(ts for _, ts in self._emitted)
             self._emitted = {k for k in self._emitted if k[1] == newest}
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
-        atr = ctx.atr(tf)
         size = int(self.params["size"])
         window = ctx.candles.last(_ALL, tf)  # full continuum (validated behavior)
         n = len(window)
-        if atr is None or atr <= 0 or n <= size:
+        if n <= size:
             return []
         H = [c.high for c in window]; L = [c.low for c in window]; C = [c.close for c in window]
-        thr = Decimal(str(self.params["hv_atr_mult"])) * atr
-        pH = [L[j] if H[j] - L[j] >= thr else H[j] for j in range(n)]
-        pL = [H[j] if H[j] - L[j] >= thr else L[j] for j in range(n)]
+        atrs = self._atr_series(window)  # per-bar trailing ATR -- see _atr_series
+        thr_mult = Decimal(str(self.params["hv_atr_mult"]))
+        hv = [a is not None and H[j] - L[j] >= thr_mult * a for j, a in enumerate(atrs)]
+        pH = [L[j] if hv[j] else H[j] for j in range(n)]
+        pL = [H[j] if hv[j] else L[j] for j in range(n)]
         swH = swL = None          # (level, pivot_idx) of the live pivot
         swHc = swLc = True        # confirmed flags (True = none pending)
         for i in range(n):
@@ -96,14 +104,41 @@ class ObLuxDetector(Detector):
                 idx = self._anchor_idx(swH[1], i, pL, False)  # decided once, never re-flips w/ ATR drift
                 lo, hi = sorted((pL[idx], pH[idx]))
                 self._upsert(ctx, window[idx].ts, tf, LevelKind.OB_BULL, lo, hi,
-                            min(float((C[i] - swH[0]) / atr), 1.0))
+                            self._quality_of(C[i] - swH[0], atrs[i]))
             if swL and not swLc and C[i] < swL[0] and (i == 0 or C[i - 1] >= swL[0]):
                 swLc = True
                 idx = self._anchor_idx(swL[1], i, pH, True)
                 lo, hi = sorted((pL[idx], pH[idx]))
                 self._upsert(ctx, window[idx].ts, tf, LevelKind.OB_BEAR, lo, hi,
-                            min(float((swL[0] - C[i]) / atr), 1.0))
+                            self._quality_of(swL[0] - C[i], atrs[i]))
         return self._evidence(ctx, window[-1])
+
+    @staticmethod
+    def _atr_series(window: list[Candle], period: int = 14) -> list[Decimal | None]:
+        """Trailing ATR(period) per bar of ``window`` -- identical formula to
+        ``StockContext.atr``/``trader.tools.study.atr_series`` (SMA of TR over
+        the trailing ``period`` bars; None until ``period`` + 1 bars exist).
+
+        MUST be per-bar, not a single current ``ctx.atr(tf)`` applied to the
+        whole rescanned history: the reference (luxob.py) classifies each
+        bar's high-volatility swap with THAT bar's own point-in-time ATR, and
+        this detector rescans the full window from bar 0 on every tick. A
+        single "current" ATR retroactively reclassifies early bars as ATR
+        drifts, silently flipping which bar wins an already-decided anchor
+        search -- the parity gate (test_ob_lux.py) caught this exact bug."""
+        trs = [max(c.high - c.low, abs(c.high - p.close), abs(c.low - p.close))
+               for p, c in zip(window, window[1:])]
+        return [sum(trs[j - period:j]) / Decimal(period) if j >= period else None
+                for j in range(len(window))]
+
+    @staticmethod
+    def _quality_of(overshoot: Decimal, atr: Decimal | None) -> float:
+        """min(overshoot / ATR, 1.0); 0.5 fallback when the confirm bar has no
+        ATR yet (bar index < period) -- matches the codebase's existing
+        no-ATR-yet convention (e.g. carried-zone quality in pipeline.py)."""
+        if atr is None or atr <= 0:
+            return 0.5
+        return min(float(overshoot / atr), 1.0)
 
     def _anchor_idx(self, pivot_idx: int, confirm_idx: int, arr: list, take_max: bool) -> int:
         key = (pivot_idx, confirm_idx, take_max)
@@ -118,6 +153,17 @@ class ObLuxDetector(Detector):
         if any(lv.id == level_id for lv in ctx.levels):
             self._quality[level_id] = q  # lazy re-derive after restart
             return
+        # Already created-then-evicted (or rejected) once: the full history
+        # rescan rediscovers this same confirm event every future tick --
+        # without this guard, a level whose overlap-evicting rival later ages
+        # off ACTIVE (mitigated/tested/evicted itself) would be silently
+        # RECREATED, duplicating a zone the dedupe rule already resolved. The
+        # reference's `obs` list has no such resurrection (append-only, one
+        # entry per confirm event, ever) -- caught by the parity gate
+        # (test_ob_lux.py).
+        if level_id in self._decided:
+            return
+        self._decided.add(level_id)
         # Only an ACTIVE rival may be replaced -- a TESTED/MITIGATED/etc. level
         # carries real state (touches/history) and must survive an anchor-id
         # mismatch (e.g. a fresh instance rescanning under drifted ATR).
