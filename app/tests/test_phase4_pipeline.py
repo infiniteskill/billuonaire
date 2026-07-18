@@ -413,9 +413,10 @@ def test_partials_and_eod_exact_accounting(tmp_path):
 # ------------------------------------------------ 2a2. expiry sizing (B7)
 
 def test_expiry_day_halves_qty_and_journals(tmp_path):
-    """Thursday (NSE weekly expiry): effective arm qty is max_qty x
-    expiry_size_mult (50 x 0.5 = 25) and skip/verdict journal entries carry
-    an expiry flag; a non-expiry day is full size, no flag."""
+    """On the spec's expiry weekday (harness pins Thu; shipped default is Tue
+    since late 2025): effective arm qty is max_qty x expiry_size_mult
+    (50 x 0.5 = 25) and skip/verdict journal entries carry an expiry flag;
+    a non-expiry day is full size, no flag."""
     thu = date(2026, 7, 16)                              # a Thursday
     pipe, _ = make_pipeline(tmp_path)                    # max_qty 50
     pipe.day = DayState(session_date=thu)
@@ -441,6 +442,18 @@ def test_range_pin_day_halves_qty_composes_with_expiry(tmp_path):
     pipe.day = DayState(session_date=date(2026, 7, 16),  # Thursday expiry
                         template="RANGE_PIN")
     assert pipe._eff_qty() == 12                         # 50 x 0.5 x 0.5
+
+
+def test_throttle_floors_at_one_share_never_zero(tmp_path):
+    """Audit-3 C: int(max_qty * m) with max_qty=1 (CLI smoke default) and any
+    0.5 throttle truncated to 0 -- silent full suppression. Floor at 1 when
+    max_qty >= 1 and m > 0; scale still halves (10 -> 5)."""
+    pipe, _ = make_pipeline(tmp_path, max_qty=1)
+    pipe.day = DayState(session_date=DAY1, template="RANGE_PIN")
+    assert pipe._eff_qty() == 1                          # not 0
+    pipe10, _ = make_pipeline(tmp_path / "b", max_qty=10)
+    pipe10.day = DayState(session_date=DAY1, template="RANGE_PIN")
+    assert pipe10._eff_qty() == 5
 
 
 # ------------------------------------------- 2a3. day-after-TREND (B5)

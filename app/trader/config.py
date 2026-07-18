@@ -97,7 +97,7 @@ class MarketCfg(StrictModel):
     session_open: str = "09:15"
     session_close: str = "15:30"
     tick_size: float | str = "0.05"
-    expiry_weekday: int | None = Field(default=3, ge=0, le=6)
+    expiry_weekday: int | None = Field(default=1, ge=0, le=6)  # Tue (NSE, late 2025)
 
     def to_spec(self) -> MarketSpec:
         return MarketSpec(self.tz, self.session_open, self.session_close,

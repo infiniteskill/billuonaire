@@ -1,8 +1,10 @@
 import json
+from datetime import date
 from pathlib import Path
 import pytest
 from trader.config import load_settings, load_stocks
 from trader.detectors.base import DetectorRegistry
+from trader.feed.mock import trend_day
 import trader.detectors.bpr  # noqa: F401
 import trader.detectors.breaker  # noqa: F401  -- register all implemented detectors
 import trader.detectors.compression  # noqa: F401
@@ -90,16 +92,49 @@ def test_baseline_config_registry_constructs():
     assert {d.name for d in registry.detectors} == set(settings.detectors.enabled)
 
 
+LEVELS_ONLY = {"swings"}  # documented exception: writes levels, never Evidence
+
+
 def test_v2_config_loads_and_no_free_rider():
-    # E-2: every ENABLED detector must carry a confluence weight, else it is a
-    # free-rider (counts toward distinct/min_zone_detectors while scoring 0).
+    # E-2: every ENABLED evidence-capable detector must carry a confluence
+    # weight, else it is a free-rider (counts toward distinct/
+    # min_zone_detectors while scoring 0). LEVELS_ONLY detectors never emit
+    # Evidence, so they can neither free-ride nor use a weight.
     s = load_settings(V2_CONFIG)
-    missing = [d for d in s.detectors.enabled if d not in s.confluence.weights]
+    missing = [d for d in s.detectors.enabled
+               if d not in s.confluence.weights and d not in LEVELS_ONLY]
     assert missing == [], f"enabled detectors without a weight: {missing}"
     assert all(w > 0 for w in s.enabled_weights().values())
     # the two RR-profitable entry signals carry NONZERO weight
     assert s.confluence.weights["compression_fade"] > 0
     assert s.confluence.weights["bpr"] > 0
+
+
+def test_v2_config_no_dead_weight():
+    # Audit-3 B: a weight whose detector can't score is dead config. Every
+    # weight key must be an enabled detector, and levels-only detectors
+    # (swings: no Evidence, ever) stay ENABLED but carry no weight.
+    s = load_settings(V2_CONFIG)
+    assert set(s.confluence.weights) <= set(s.detectors.enabled)
+    assert LEVELS_ONLY.isdisjoint(s.confluence.weights)
+    assert "swings" in s.detectors.enabled       # its levels still matter
+
+
+def test_v2_config_structure_context_reaches_trend():
+    # Audit-3 A: with structure disabled no BOS/CHOCH evidence ever exists,
+    # so TREND/TRAP_REVERSAL are unreachable and RANGE_PIN's 0.5 throttle
+    # over-fires. structure rides as CONTEXT after the level-writers (small
+    # nonzero weight; entries stay compression_fade/bpr).
+    from tests.harness import run_scenario
+    s = load_settings(V2_CONFIG)
+    en = s.detectors.enabled
+    assert en.index("structure") > max(en.index("swings"), en.index("liquidity"))
+    assert s.confluence.weights["structure"] == 2
+    res = run_scenario(trend_day("X", date(2026, 7, 15), 100.0),
+                       tuple(en), classify=True)
+    bos = [e for e in res.history
+           if e.detector == "structure" and e.meta.get("event") == "BOS"]
+    assert len(bos) >= 2 and res.day.template == "TREND"
 
 
 def test_v2_config_elite_solo_settings():

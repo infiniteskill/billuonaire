@@ -24,7 +24,9 @@ class MarketSpec:
     session_open: str = "09:15"    # "00:00" for 24h markets
     session_close: str = "15:30"   # exclusive; "24:00" allowed for 24h
     tick_size: Decimal = Decimal("0.05")
-    expiry_weekday: int | None = 3  # weekly derivatives expiry (Thu); None = none
+    expiry_weekday: int | None = 1  # weekly derivatives expiry; None = none.
+    # Tuesday: NSE moved index/stock derivative expiries Thu -> Tue (SEBI
+    # expiry-day rationalisation, effective late 2025 / Sep 1 2025 onward).
 
     def __post_init__(self):
         object.__setattr__(self, "tick_size", Decimal(str(self.tick_size)))

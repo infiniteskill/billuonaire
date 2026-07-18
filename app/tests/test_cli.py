@@ -30,7 +30,11 @@ def test_init_installs_v2_profile_and_baseline(tmp_path):
     runner.invoke(app, ["init", "--dir", str(tmp_path)])
     s = load_settings(tmp_path / "config.json")
     assert s.confluence.threshold == 6 and "bpr" in s.detectors.enabled
-    assert "structure" not in s.detectors.enabled        # measured harmful
+    # structure rides as CONTEXT (small weight, audit-3 A); the measured-
+    # harmful entry detectors stay out (entries = compression_fade/bpr)
+    assert "structure" in s.detectors.enabled
+    assert s.confluence.weights["structure"] == 2
+    assert "sweep" not in s.detectors.enabled
     b = load_settings(tmp_path / "config.baseline.json")
     assert b.confluence.weights["structure"] == 15 and b.confluence.weights["breaker"] == 10
 
