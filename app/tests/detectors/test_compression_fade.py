@@ -115,23 +115,22 @@ def test_dedupe_one_fire_per_compression():
     assert det.detect(ctx_at(store, 2)) == []  # same tick again: no duplicate
 
 
-def test_on_session_end_clears_dedupe():
+def test_on_session_end_keeps_recent_dedupe():
+    # Continuum: dedupe survives the boundary; a fired coil still inside the
+    # break window must NOT re-fire after on_session_end (age-prune only).
     store = make_store([COMPRESS, UP_BREAK])
     det = CompressionFadeDetector({})
     det.detect(ctx_at(store, 2))
     det.on_session_end()
-    # re-running the same compression/break pair fires again after reset
-    [ev] = det.detect(ctx_at(store, 2))
-    assert ev.direction is Direction.SHORT
+    assert det._emitted  # coil ts retained (within break_window age)
+    assert det.detect(ctx_at(store, 2)) == []
 
 
-def test_session_boundary_no_cross_day_fade():
-    """COMPRESS is day 1's last candle; UP_BREAK is day 2's first candle and
-    breaks COMPRESS's high. The old ctx.candles.last(bw+1, tf) window would
-    span the session boundary and mix them into a false SHORT fade on day
-    2's very first tick. Session-scoped ctx.candles.today(tf) excludes
-    COMPRESS on day 2, so the detector correctly emits nothing until it has
-    its own intraday compression candle."""
+def test_continuum_cross_day_fade():
+    """CONTINUUM (validated): COMPRESS is day 1's last candle; UP_BREAK is
+    day 2's first candle and breaks its high. rr.py::compress_fade was
+    measured on one concatenated multi-day series, so the coil stays live
+    across the gap: the fade MUST fire on day 2's very first tick."""
     day1 = SESSION_START
     day2 = day1 + timedelta(days=1)
     store = CandleStore("/nonexistent")
@@ -139,19 +138,11 @@ def test_session_boundary_no_cross_day_fade():
     store.add(Candle("X", M1, day2, *(tick(x) for x in UP_BREAK), 10))
 
     det = CompressionFadeDetector({})
+    det.on_session_end()                    # boundary hook must not lose the coil
     now = day2 + timedelta(minutes=M5.minutes)
     ctx = StockContext(symbol="X", now=now, candles=store.view("X", now),
                        levels=[], evidence_history=[],
                        day=DayState(session_date=now.date()))
-    assert det.detect(ctx) == []            # no cross-session fade
-
-    # a genuine day-2-only COMPRESS + break DOES fire, from day-2 candles only
-    store.add(Candle("X", M1, day2 + timedelta(minutes=5), *(tick(x) for x in COMPRESS), 10))
-    store.add(Candle("X", M1, day2 + timedelta(minutes=10), *(tick(x) for x in DOWN_BREAK), 10))
-    now2 = day2 + timedelta(minutes=15)
-    ctx2 = StockContext(symbol="X", now=now2, candles=store.view("X", now2),
-                        levels=[], evidence_history=[],
-                        day=DayState(session_date=now2.date()))
-    [ev] = det.detect(ctx2)
-    assert ev.direction is Direction.LONG
-    assert ev.meta["sl"] == str(tick(93))
+    [ev] = det.detect(ctx)                  # day-1 coil faded by day-2 break
+    assert ev.direction is Direction.SHORT
+    assert ev.meta["sl"] == str(tick(107))

@@ -140,14 +140,17 @@ def test_dedupe_one_fire_per_block():
     assert det.detect(ctx_at(store, 20)) == []  # same tick again: no duplicate
 
 
-def test_on_session_end_clears_state():
+def test_on_session_end_keeps_pending_blocks():
+    # Continuum: a block formed but not yet touched carries across the
+    # boundary and fires on the next session's touch; _seen is age-pruned.
     store = make_store(long_bars())
     det = MitigationDetector({})
-    det.detect(ctx_at(store, 19))
-    det.detect(ctx_at(store, 20))
+    det.detect(ctx_at(store, 19))         # block forms, no touch yet
+    assert det._blocks
     det.on_session_end()
-    det.detect(ctx_at(store, 19))         # re-forms (state cleared)
-    [ev] = det.detect(ctx_at(store, 20))  # re-fires after reset
+    assert det._blocks                    # pending block carried
+    assert len(det._seen) <= 5            # lookback + 2 newest ts kept
+    [ev] = det.detect(ctx_at(store, 20))  # next-session touch still fires
     assert ev.direction is Direction.LONG
     assert ev.meta["sl"] == str(tick(97))
 
@@ -181,16 +184,13 @@ def test_atr_spike_ages_out_no_stale_touch():
         assert det._blocks == {}  # never persisted -> never a late/stale touch
 
 
-def test_session_boundary_no_cross_day_block():
-    """BLOCK_L is day 1's last candle; SEG_L1..3 (the displacement leg) are
-    day 2's first three candles -- byte-identical content/offsets to
+def test_continuum_cross_day_block_fires():
+    """CONTINUUM (validated): BLOCK_L is day 1's last candle; SEG_L1..3 (the
+    displacement leg) and TOUCH_L open day 2 -- byte-identical content to
     long_bars()'s tick-19 window, just split across the session boundary.
-    The old ctx.candles.last(lookback+2, tf) window would span the boundary
-    and evaluate BLOCK_L's displacement using day-2 candles, forming a block
-    that TOUCH_L (day 2's 4th candle, geometrically overlapping BLOCK_L's
-    zone) would then fire on. Session-scoped ctx.candles.today(tf) means day
-    2 never accumulates lookback+2=5 today-only bars in this sequence, so
-    the block is never even considered."""
+    ict_pieces.py ran one concatenated series, so the leg legitimately spans
+    the gap: BLOCK_L forms once its boundary-spanning displacement window
+    closes, and TOUCH_L fires the same LONG as the single-day test."""
     day1 = SESSION_START
     day2 = day1 + timedelta(days=1)
     store = CandleStore("/nonexistent")
@@ -201,11 +201,14 @@ def test_session_boundary_no_cross_day_block():
                          tick(o), tick(h), tick(l), tick(c), 10))
 
     det = MitigationDetector({})
+    det.on_session_end()                   # boundary hook must not blind day 2
     out = []
     for n in range(1, 5):
         now = day2 + timedelta(minutes=5 * n)
         out = det.detect(StockContext(symbol="X", now=now, candles=store.view("X", now),
                                       levels=[], evidence_history=[],
                                       day=DayState(session_date=now.date())))
-        assert det._blocks == {} and det._seen == set()  # BLOCK_L never admitted as a candidate
-    assert out == []  # TOUCH_L overlaps BLOCK_L's zone geometrically, but no cross-session fire
+    [ev] = out                             # cross-session block + touch fires
+    assert ev.direction is Direction.LONG
+    assert ev.zone == (tick(99), tick(100))
+    assert ev.meta["sl"] == str(tick(97))

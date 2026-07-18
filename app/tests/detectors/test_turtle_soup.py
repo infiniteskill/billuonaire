@@ -103,13 +103,14 @@ def test_dedupe_one_fire_per_qualifying_bar():
     assert det.detect(ctx_at(store, 4)) == []  # same tick again: no duplicate
 
 
-def test_on_session_end_clears_dedupe():
+def test_on_session_end_keeps_newest_dedupe():
+    # Continuum: the just-fired bar is still window[-1] across the boundary,
+    # so its dedupe entry must survive on_session_end (age-prune only).
     store = make_store([PRIOR_A, PRIOR_B, PRIOR_C, BREAK_LONG])
     det = TurtleSoupDetector(PARAMS)
     det.detect(ctx_at(store, 4))
     det.on_session_end()
-    [ev] = det.detect(ctx_at(store, 4))
-    assert ev.direction is Direction.LONG
+    assert det.detect(ctx_at(store, 4)) == []
 
 
 def test_default_params_require_n_plus_one_bars():
@@ -117,12 +118,11 @@ def test_default_params_require_n_plus_one_bars():
     assert TurtleSoupDetector({}).detect(ctx_at(store, 1)) == []  # N=20 default, far short
 
 
-def test_session_boundary_no_cross_day_fade():
-    """PRIOR_A/B/C close out day 1; BREAK_LONG is day 2's first candle. The
-    old ctx.candles.last(N+2, tf) window would span the session boundary,
-    mixing day 1's prior lows with day 2's break bar into a false LONG fade
-    on day 2's very first tick. Session-scoped ctx.candles.today(tf) means
-    day 2 hasn't got N+1=4 bars of its own yet, so nothing fires."""
+def test_continuum_cross_day_fade():
+    """CONTINUUM (validated): PRIOR_A/B/C close out day 1; BREAK_LONG is day
+    2's first candle. liq_hunt.py::turtle_soup was measured on one
+    concatenated multi-day series, so the N-bar window legitimately spans
+    the overnight gap: the fade MUST fire on day 2's very first tick."""
     day1 = SESSION_START
     day2 = day1 + timedelta(days=1)
     store = CandleStore("/nonexistent")
@@ -133,20 +133,11 @@ def test_session_boundary_no_cross_day_fade():
     store.add(Candle("X", M1, day2, tick(o), tick(h), tick(l), tick(c), 10))
 
     det = TurtleSoupDetector(PARAMS)
+    det.on_session_end()                    # boundary hook must not blind day 2
     now = day2 + timedelta(minutes=M5.minutes)
     ctx = StockContext(symbol="X", now=now, candles=store.view("X", now),
                        levels=[], evidence_history=[],
                        day=DayState(session_date=now.date()))
-    assert det.detect(ctx) == []            # no cross-session fade
-
-    # a genuine day-2-only PRIOR/BREAK sequence DOES fire, from day-2 candles only
-    for i, (o, h, l, c) in enumerate([PRIOR_A, PRIOR_B, PRIOR_C, BREAK_LONG], start=1):
-        store.add(Candle("X", M1, day2 + timedelta(minutes=5 * i),
-                         tick(o), tick(h), tick(l), tick(c), 10))
-    now2 = day2 + timedelta(minutes=5 * 5)
-    ctx2 = StockContext(symbol="X", now=now2, candles=store.view("X", now2),
-                        levels=[], evidence_history=[],
-                        day=DayState(session_date=now2.date()))
-    [ev] = det.detect(ctx2)
+    [ev] = det.detect(ctx)                  # window spans the boundary: fires
     assert ev.direction is Direction.LONG
     assert ev.meta["sl"] == str(tick(90))

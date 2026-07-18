@@ -155,14 +155,51 @@ def test_overlap_keeps_higher_quality_old_wins():
     assert levels == [rival]  # 0.5 <= rival's default 0.5: new OB discarded
 
 
-def test_on_session_end_clears_instance_memory():
+def test_on_session_end_persists_structural_memory():
+    # Continuum: _quality/_anchor describe levels/legs that carry across
+    # days -- they persist; _emitted is pruned to the newest bar's entries
+    # (that bar is still the latest close across the boundary).
     store = make_store(bull_bars() + [BULL_RETRACE])
     det, levels = ObLuxDetector({"size": 2}), []
     det.detect(ctx_at(store, 23, levels))
-    det.detect(ctx_at(store, 24, levels))
-    assert det._quality and det._emitted
+    [ev] = det.detect(ctx_at(store, 24, levels))
+    quality, anchor = dict(det._quality), dict(det._anchor)
+    assert quality and anchor and det._emitted
     det.on_session_end()
-    assert det._quality == {} and det._emitted == set()
+    assert det._quality == quality and det._anchor == anchor
+    assert det._emitted == {(ev.meta["level_id"], bar_ts(23))}
+    assert det.detect(ctx_at(store, 24, levels)) == []  # dedupe survived
+
+
+def test_continuum_leg_spans_session_boundary():
+    """CONTINUUM (validated): the bull leg's pivot/pullback close out day 1;
+    the confirming breakout close and the retrace are day 2's first two
+    candles. luxob.py::lux_ob_events ran one long multi-day series, so the
+    swing structure carries: the OB is born at day 1's leg-extreme bar and
+    day 2's retrace fires the LONG retest."""
+    day1_bars = [FLAT] * 16 + BULL_16_21            # pivot @16, leg through 21
+    day2 = SESSION_START + timedelta(days=1)
+    store = make_store(day1_bars)
+    for i, (o, h, l, c) in enumerate([(102, 104, 102, 103), BULL_RETRACE]):
+        store.add(Candle("X", Timeframe.M1, day2 + timedelta(minutes=5 * i),
+                         tick(o), tick(h), tick(l), tick(c), 10))
+
+    det, levels = ObLuxDetector({"size": 2}), []
+    det.on_session_end()                            # boundary hook: keeps structure
+    now = day2 + timedelta(minutes=5)
+    assert det.detect(StockContext(symbol="X", now=now, candles=store.view("X", now),
+                                   levels=levels, evidence_history=[],
+                                   day=DayState(session_date=now.date()))) == []
+    [lv] = levels                                   # confirmed by day-2's first close
+    assert lv.kind is LevelKind.OB_BULL
+    assert lv.zone == (tick(99), tick(101))
+    assert lv.born == bar_ts(17)                    # day-1 leg-extreme bar
+    now2 = day2 + timedelta(minutes=10)
+    [ev] = det.detect(StockContext(symbol="X", now=now2, candles=store.view("X", now2),
+                                   levels=levels, evidence_history=[],
+                                   day=DayState(session_date=now2.date())))
+    assert ev.direction is Direction.LONG
+    assert ev.strength == pytest.approx(0.5)
 
 
 def test_no_evidence_for_terminal_state_level():

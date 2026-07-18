@@ -9,7 +9,12 @@ live at the touch bar qualify.
 Pure signal-emitter: gaps are internal instance memory (no persistent
 Level), rediscovered incrementally each tick from the latest closed 3-candle
 window -- same creation rule as trader/detectors/fvg.py (3-candle gap >=
-gap_atr * ATR), just not upserted into ctx.levels."""
+gap_atr * ATR), just not upserted into ctx.levels.
+
+CONTINUUM: the 3-candle window is ``ctx.candles.last(3)`` -- continuous
+multi-day history, never session-scoped -- and live gaps carry across
+sessions. That is how the edge was VALIDATED (ict_pieces.py ran one
+concatenated series): a day-1 FVG can pair with a day-2 FVG."""
 
 from __future__ import annotations
 
@@ -44,12 +49,16 @@ class BprDetector(Detector):
         self._fired: set[tuple[datetime, datetime]] = set()  # (bull.born, bear.born)
 
     def on_session_end(self) -> None:
-        self._gaps.clear()
-        self._fired.clear()
+        # Continuum: live gaps are structure and carry across days. Prune
+        # only dead gaps and fired pairs referencing a pruned gap -- neither
+        # can ever signal again (bounded memory, no behavior change).
+        self._gaps = [g for g in self._gaps if not g.dead]
+        born = {g.born for g in self._gaps}
+        self._fired = {k for k in self._fired if k[0] in born and k[1] in born}
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
-        window = ctx.candles.today(tf)[-3:]
+        window = ctx.candles.last(3, tf)
         if not window:
             return []
         atr = ctx.atr(tf)

@@ -12,6 +12,11 @@ lookback, so the batch "first break wins" semantics fall out for free -- a
 compression candle is deduped (by its ts) the first tick it fires, so a
 later tick can never re-attribute its break to a different bar.
 
+CONTINUUM: the window is ``ctx.candles.last(bw + 1)`` -- continuous
+multi-day history, never session-scoped. That is how the edge was VALIDATED
+(rr.py::compress_fade ran one concatenated multi-day series): a coil formed
+on day 1's last bars stays fadeable by day 2's first bars.
+
 The measured 0.15*ATR SL floor is annotated (meta["sl_floor"]) for the
 executor to apply; this detector does not floor "sl" itself (that stays the
 literal break extreme) and does not wire the planner -- see task brief
@@ -39,12 +44,15 @@ class CompressionFadeDetector(Detector):
         self._emitted: set = set()  # compression candle ts already fired
 
     def on_session_end(self) -> None:
-        self._emitted.clear()
+        # Continuum: coils carry across the gap, so dedupe must survive the
+        # boundary. Prune by age only -- a coil older than break_window bars
+        # can never re-enter the window, so dropping it is provably safe.
+        self._emitted = set(sorted(self._emitted)[-int(self.params["break_window"]):])
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
         bw = int(self.params["break_window"])
-        window = ctx.candles.today(tf)[-(bw + 1):]
+        window = ctx.candles.last(bw + 1, tf)
         if len(window) < 2:
             return []
         j = window[-1]

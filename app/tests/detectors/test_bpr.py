@@ -132,25 +132,28 @@ def test_dedupe_once_per_pair():
     assert det.detect(ctx_at(store, 24)) == []  # same tick again: no duplicate
 
 
-def test_on_session_end_clears():
+def test_on_session_end_keeps_live_gaps_and_fired_pairs():
+    # Continuum: live gaps are structure and carry across days; fired pairs
+    # referencing them stay deduped. Only dead gaps/orphaned pairs prune.
     store = make_store(BARS_A)
     det = BprDetector({})
     run_to(det, store, 24)
+    live, fired = list(det._gaps), set(det._fired)
     det.on_session_end()
-    assert det._gaps == [] and det._fired == set()
-    [ev] = run_to(det, store, 24)  # replay: fires again after reset
-    assert ev.direction is Direction.SHORT
+    assert det._gaps == live and det._fired == fired  # both gaps live: all kept
+    assert det.detect(ctx_at(store, 24)) == []        # still deduped: no re-fire
+    det._gaps[0].dead = True                          # kill the bull gap
+    det.on_session_end()
+    assert det._gaps == live[1:]                      # dead gap + its pair pruned
+    assert det._fired == set()
 
 
-def test_session_boundary_no_cross_day_bear_gap():
-    """Same candle content/order as BARS_A, except C1_BEAR/C2_BEAR close out
-    day 1 and C3_BEAR/TOUCH are day 2's first two candles. The old
-    ctx.candles.last(3, tf) window would span the boundary and form the bear
-    FVG from a mixed day1+day2 triad, then TOUCH would fire a false SHORT
-    BPR (byte-identical to test_bull_older_bear_newer_fires_short_sl_hi,
-    just split across the session boundary). Session-scoped
-    ctx.candles.today(tf) means day 2 never reaches 3 today-only bars during
-    this sequence, so the bear gap never forms and nothing fires."""
+def test_continuum_cross_day_bear_gap_fires():
+    """CONTINUUM (validated): same candle content/order as BARS_A, except
+    C1_BEAR/C2_BEAR close out day 1 and C3_BEAR/TOUCH open day 2. The
+    ict_pieces.py reference ran one concatenated series, so the bear FVG
+    forms from the boundary-spanning triad, pairs with day 1's live bull
+    gap, and TOUCH fires the same SHORT BPR as the single-day test."""
     day1 = SESSION_START
     day2 = day1 + timedelta(days=1)
     day1_bars = [FLAT] * 16 + [C1_BULL, C2_BULL, C3_BULL, FILLER, C1_BEAR, C2_BEAR]
@@ -169,7 +172,8 @@ def test_session_boundary_no_cross_day_bear_gap():
         det.detect(StockContext(symbol="X", now=now, candles=store.view("X", now),
                                 levels=[], evidence_history=[],
                                 day=DayState(session_date=now.date())))
-    assert not any(not g.dead and not g.bull for g in det._gaps)  # no bear gap yet
+    assert any(not g.dead and g.bull for g in det._gaps)  # day-1 bull gap live
+    det.on_session_end()                                  # bull gap must survive
 
     out = []
     for n in range(1, len(day2_bars) + 1):
@@ -177,5 +181,8 @@ def test_session_boundary_no_cross_day_bear_gap():
         out = det.detect(StockContext(symbol="X", now=now, candles=store.view("X", now),
                                       levels=[], evidence_history=[],
                                       day=DayState(session_date=now.date())))
-    assert out == []                                              # no cross-session BPR
-    assert not any(not g.dead and not g.bull for g in det._gaps)  # bear gap never formed
+    assert any(not g.dead and not g.bull for g in det._gaps)  # boundary bear gap formed
+    [ev] = out                                # day-1 bull x boundary bear -> SHORT
+    assert ev.direction is Direction.SHORT
+    assert ev.zone == (tick("101.2"), tick(102))
+    assert ev.meta["sl"] == str(tick(102))
