@@ -67,3 +67,6 @@ persistence across restarts · (all logged; none blocks research).
 - Daily-POI anchoring: real +1.1pp, economically dead (`artifacts/dailypoi-anchoring.md`).
 - NESTED fractal + liquidity-swing conjunction (the full top-down model): +0.5-1.4pp vs +6pp bar, holdout-unstable, 0 positive cells (`artifacts/nested-fractal-confluence.md`). Confluence family closed COMPLETELY.
 - Both external code reviews reconciled (24 claims verified; all real bugs fixed). 739 tests green.
+
+## FINAL ADDENDUM — THE COMPLETE TIMEFRAME LADDER (2026-07-18, terminal)
+Every rung measured: 5m/M15/H1(3y)/H4/daily(30y)/weekly. Raw asymmetry rises with TF (0.99→1.79); the RANDOM-ENTRY NULL rises in lockstep. **Excess-over-null ≈ 0 at every timeframe.** Cross-TF (daily zone + H1 entry) LOWERS ratios. H4 standout = 2023-24 smallcap beta (dead 2025-26, 5-symbol concentrated). Buy-and-hold of the traded names beats every config (18.4%/yr vs 16.9% best). Costs collapse at daily scale (0.045R) — cost was never the problem; the edge does not exist. THE PROGRAM IS COMPLETE: zone-retest mechanics = repriced noise (intraday) / repriced drift (positional) at every scale. Only free edge: long Indian equities — an index fund implements it better. Reports: runs/ladder/LADDER.md, runs/daily/FEASIBILITY.md, runs/long60/*.md.
