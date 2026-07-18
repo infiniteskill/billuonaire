@@ -33,7 +33,7 @@ from trader.feed.mock import Scenario, ScenarioFeed
 from trader.models.candle import Timeframe
 from trader.store.candles import CandleStore
 
-CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.json"
+CONFIG = Path(__file__).resolve().parent.parent / "trader" / "templates" / "config.baseline.json"
 PHASE2 = ("swings", "liquidity", "structure", "sweep")
 # Registry order IS execution order: level-writers before their consumers.
 ALL_IMPLEMENTED = ("swings", "liquidity", "orderblock", "fvg", "structure",

@@ -2,10 +2,11 @@
 run the engine against mock/file data (`watch`), and read back the journal
 (`journal`, `status`).
 
-Single source of truth for the default `config.json` content: the template
-shipped alongside this package at ``<repo>/app/config/config.json`` (a sibling
-of the ``trader`` package, resolved relative to this file so it works from an
-editable install without hand-duplicating the defaults).
+Single source of truth for the default `config.json` content: the templates
+shipped INSIDE the package at ``trader/templates/`` (package-data, so a
+non-editable wheel carries them too). `config.json` is the current
+evidence-backed v2 profile; `config.baseline.json` keeps the obsolete
+baseline for A/B replay.
 
 All engine logic (scoring, orchestration, journaling) lives in ``trader.engine``
 / ``trader.store``; this module only wires CLI options to those calls and
@@ -42,8 +43,7 @@ from trader.store.journal import Journal
 app = typer.Typer(no_args_is_help=True)
 console = Console()
 
-_TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "config"
-_DEFAULT_STOCKS: dict = {"stocks": []}
+_TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 
 
 def _setup_logging(dir: Path, verbose: bool) -> None:
@@ -70,21 +70,20 @@ def init(
     dir: Path = typer.Option(Path("."), "--dir", help="Directory to scaffold."),
     force: bool = typer.Option(False, "--force", help="Overwrite existing files."),
 ) -> None:
-    """Write default config.json and stocks.json into --dir."""
+    """Write default config.json (v2 profile), config.baseline.json (A/B
+    replay) and stocks.json into --dir."""
     dir.mkdir(parents=True, exist_ok=True)
-    config_path = dir / "config.json"
-    stocks_path = dir / "stocks.json"
+    names = ("config.json", "config.baseline.json", "stocks.json")
 
     if not force:
-        existing = [p for p in (config_path, stocks_path) if p.exists()]
+        existing = [n for n in names if (dir / n).exists()]
         if existing:
-            names = ", ".join(p.name for p in existing)
-            typer.echo(f"Refusing to overwrite existing file(s): {names} (use --force)", err=True)
+            typer.echo("Refusing to overwrite existing file(s): "
+                       f"{', '.join(existing)} (use --force)", err=True)
             raise typer.Exit(code=1)
 
-    template = _TEMPLATE_DIR / "config.json"
-    shutil.copyfile(template, config_path)
-    stocks_path.write_text(json.dumps(_DEFAULT_STOCKS, indent=2) + "\n")
+    for n in names:
+        shutil.copyfile(_TEMPLATE_DIR / n, dir / n)
 
     typer.echo(f"Initialized trader workspace in {dir}")
 

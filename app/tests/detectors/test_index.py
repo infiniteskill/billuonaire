@@ -49,7 +49,7 @@ def make_settings(enabled=("index",)):
         "capital": 100000,
         "risk": {"per_trade_pct": 0.5, "daily_loss_pct": 1.5, "max_trades_day": 3,
                  "max_per_stock": 1, "consecutive_loss_stop": 2, "expiry_size_mult": 0.5},
-        "time": {"observe_until": "10:45", "no_entry_after": "14:30", "squareoff": "15:10"},
+        "time": {"no_entry_after": "14:30", "squareoff": "15:10"},
         "stops": {"atr_buffer": 0.25, "round_offset_ticks": 3},
         "confluence": {"threshold": 65, "weights": {name: 10 for name in enabled}},
         "detectors": {"enabled": list(enabled), "disabled": [], "params": {}},

@@ -24,7 +24,6 @@
     "max_cost_reward_ratio": 0.15
   },
   "time": {
-    "observe_until": "11:00",
     "no_entry_after": "14:30",
     "squareoff": "15:10",
     "observe_min": 105

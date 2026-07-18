@@ -26,7 +26,7 @@ from trader.store.journal import Journal
 # --------------------------------------------------------------- gate constants
 SYMBOL, DAY, OPEN_PRICE = "ACME", date(2026, 7, 14), 100.0
 CAPITAL, MAX_QTY = 100000, 50
-POST_OBSERVE = time(11, 0)    # config time.observe_until
+POST_OBSERVE = time(11, 0)    # session open + config time.observe_min
 SQUAREOFF = (15, 10)          # config time.squareoff
 DT_RECLAIM_END_OFFSET = 8     # double_trap reclaim bucket closes sweep_high+8m
 MULT_KEYS = {"align", "time", "template", "obviousness"}
@@ -34,7 +34,7 @@ FILL_KINDS = ("trade_open", "trade_partial", "trade_close")
 EXIT_REASONS = {r.value for r in ExitReason}
 
 IST = ZoneInfo("Asia/Kolkata")
-CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.json"
+CONFIG = Path(__file__).resolve().parent.parent / "trader" / "templates" / "config.baseline.json"
 D = Decimal
 
 

@@ -152,7 +152,7 @@ class SymbolPipeline:
             self.fsm._disarm("session_end")
             self._skip(ts, "fsm_disarm", "session_end")
 
-    def _force_close_eod(self, ts) -> None:
+    def _force_close_eod(self, ts, why: str = "session_end") -> None:
         """Session boundary with an open position: the next real M1 is next
         day's candle, so a queued stop/EOD exit would fill against the
         overnight gap (a price never reachable same-day) -- overnight risk and
@@ -165,7 +165,7 @@ class SymbolPipeline:
         if not last:
             return
         c = last[-1]                    # last same-day M1: close is last price
-        self._pending_exits = [Action(ExitReason.EOD.value, None, "session_end")]
+        self._pending_exits = [Action(ExitReason.EOD.value, None, why)]
         self._run_exits(replace(c, open=c.close))
 
     def _carry_over(self) -> list:
@@ -205,7 +205,12 @@ class SymbolPipeline:
         persist the cross-day-safe subset so it survives into the next run,
         WITHOUT mutating in-memory levels -- unlike _end_session, no new
         session actually started, so intraday state stays live for callers
-        that inspect the pipeline right after run()."""
+        that inspect the pipeline right after run(). A truncated feed can
+        strand an open position (no EOD candle ever arrived): force-close it
+        at the last known same-day price -- journaled "feed_end", risk ledger
+        released -- and flush queued exits, so nothing dangles unreported."""
+        if self._last_bucket is not None:
+            self._force_close_eod(self._last_bucket + _M5, why="feed_end")
         if self.level_store is not None:
             self.level_store.save(self.symbol, self._carry_over())
         self._save_timestats()
@@ -423,6 +428,8 @@ class Orchestrator:
             max_qty, idx, level_store=level_store, timestats_dir=timestats_dir)
         self.pipelines = {sym: mk(sym) for sym in symbols}
         self.index_pipe = mk(index_symbol, True) if index_symbol else None
+        self._all = ([self.index_pipe] if self.index_pipe else []) \
+            + list(self.pipelines.values())               # index first
         self._session = None
 
     def run(self) -> dict:
@@ -433,19 +440,24 @@ class Orchestrator:
                              key=lambda e: e.candle.symbol != self.index_symbol):
                 c = ev.candle
                 if self._session != c.ts.date():
-                    self._session = c.ts.date()
-                    self.risk.reset_day()
+                    if self._session is not None:  # settle the outgoing session
+                        for p in self._all:        # FIRST: a previous-day open
+                            p._force_close_eod(c.ts)  # position must release
+                    self._session = c.ts.date()       # into the OLD day's ledger
+                    self.risk.reset_day()             # -- reset on a clean slate
                 if self.index_pipe and c.symbol == self.index_symbol:
                     self.index_pipe.on_m1(c)
                 elif c.symbol in self.pipelines:
                     self.pipelines[c.symbol].on_m1(
                         c, self.index_pipe.index_view if self.index_pipe else None)
-        pipes = self.pipelines.values()
-        for p in list(pipes) + ([self.index_pipe] if self.index_pipe else []):
+        for p in self._all:
             p.finalize()                      # flush levels: state survives across runs
+        pipes = self.pipelines.values()
         closed = [p for pipe in pipes for p in pipe.closed]
         return {"trades": sum(p.n_trades for p in pipes),
                 "wins": sum(1 for p in closed if p.realized > 0),
                 "losses": sum(1 for p in closed if p.realized < 0),
                 "pnl": sum((p.realized for p in closed), Decimal(0)),
-                "skips": sum(p.n_skips for p in pipes)}
+                "skips": sum(p.n_skips for p in pipes),
+                # 0 after finalize by construction; nonzero = loud anomaly
+                "open_positions": sum(p.position is not None for p in pipes)}

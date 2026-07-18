@@ -19,7 +19,7 @@ from trader.models.level import LevelKind
 from trader.models.position import ExitReason
 
 SYMBOL, DAY, OPEN_PRICE = "ACME", date(2026, 7, 14), 100.0
-CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.json"
+CONFIG = Path(__file__).resolve().parent.parent / "trader" / "templates" / "config.baseline.json"
 ARM_THRESHOLD = load_settings(CONFIG).confluence.threshold
 POST_OBSERVE = time(11, 0)
 BREAKER_MEMBER = ["breaker", "BREAKER_RETEST", 0.85]

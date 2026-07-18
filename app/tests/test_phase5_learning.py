@@ -24,7 +24,7 @@ from trader.store.candles import CandleStore
 from trader.store.journal import Journal
 
 IST = ZoneInfo("Asia/Kolkata")
-CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.json"
+CONFIG = Path(__file__).resolve().parent.parent / "trader" / "templates" / "config.baseline.json"
 DAY1 = date(2026, 7, 14)
 D = Decimal
 

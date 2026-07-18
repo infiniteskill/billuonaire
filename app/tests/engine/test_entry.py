@@ -25,7 +25,7 @@ from trader.models.level import Level, LevelKind, LevelState
 from trader.store.candles import CandleStore
 
 IST = ZoneInfo("Asia/Kolkata")
-CONFIG = Path(__file__).resolve().parents[2] / "config" / "config.json"
+CONFIG = Path(__file__).resolve().parents[2] / "trader" / "templates" / "config.baseline.json"
 TODAY = datetime(2026, 7, 15, tzinfo=IST)
 D = Decimal
 SWEPT = [(TODAY, LevelState.SWEPT)]
@@ -267,15 +267,36 @@ def test_arm_notional_cap_exact_and_leverage_config():
 
 
 def test_arm_costs_dominate_boundary_vs_reward():
-    # Viability judges costs against the REWARD to T1, not risk: qty 100,
-    # entry 99.00, T1 102.50 => reward 350; cap 0.15 x 350 = 52.50. Round
-    # trip = 2 x flat + (stt + 2 x exch)% x turnover -- STT once (sell leg
-    # only, shared broker costing) = 2f + 14.85. flat 18.825 => rt exactly
-    # 52.50 (== cap, strict > so it ARMS); 18.83 => 52.51 skips.
+    # Viability judges WORST-CASE trade costs against the REWARD to T1, not
+    # risk: qty 100, entry 99.00, T1 102.50 => reward 350; cap 0.15 x 350 =
+    # 52.50. The default ladder exits in up to 3 tranches (1R + T2/2R + final)
+    # = 4 orders, each paying flat brokerage, + (stt + 2 x exch)% x turnover
+    # -- STT once (sell side only, shared broker costing) = 4f + 14.85.
+    # flat 9.4125 => exactly 52.50 (== cap, strict > so it ARMS); 9.42 =>
+    # 52.53 skips (the old 2-order estimate would have armed up to f 18.825).
     base = {"fills.costs.stt_pct": 0.05, "fills.costs.exchange_pct": 0.05}
     args = (zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 100)
-    assert fsm_cfg({**base, "fills.costs.brokerage_flat": 18.825}).arm(*args).armed
-    r = fsm_cfg({**base, "fills.costs.brokerage_flat": 18.83}).arm(*args)
+    assert fsm_cfg({**base, "fills.costs.brokerage_flat": 9.4125}).arm(*args).armed
+    r = fsm_cfg({**base, "fills.costs.brokerage_flat": 9.42}).arm(*args)
+    assert (r.armed, r.reason) == (False, "costs_dominate")
+
+
+def test_arm_cost_gate_reads_ladder_shape_per_plan():
+    # A signal-driven plan whose sl_source maps in exits.target_r_by_source
+    # exits in at most 2 tranches (1R partial + take-profit remainder) = 3
+    # orders: the gate charges 3 flat fees. Same reward geometry as above
+    # (qty 100, T1 102.50, cap 52.50; pct costs 14.85): 3f + 14.85 => f
+    # 12.55 exactly 52.50 ARMS, 12.56 skips -- and WITHOUT the mapping the
+    # same 12.55 flat pays the 4-order default ladder (65.05) and skips.
+    base = {"fills.costs.stt_pct": 0.05, "fills.costs.exchange_pct": 0.05,
+            "exits": {"target_r_by_source": {"compression_fade": 2.0}}}
+    args = (zone("98.00", "100.00"),
+            ctx_at(at(11, 0), calm(), [t_lvl()], history=[sig_ev("98.40")]), 100)
+    assert fsm_cfg({**base, "fills.costs.brokerage_flat": 12.55}).arm(*args).armed
+    r = fsm_cfg({**base, "fills.costs.brokerage_flat": 12.56}).arm(*args)
+    assert (r.armed, r.reason) == (False, "costs_dominate")
+    unmapped = {k: v for k, v in base.items() if k != "exits"}
+    r = fsm_cfg({**unmapped, "fills.costs.brokerage_flat": 12.55}).arm(*args)
     assert (r.armed, r.reason) == (False, "costs_dominate")
 
 

@@ -36,10 +36,12 @@ journalling the skip/disarm reasons returned here.
   QTY      min(max_qty, floor(capital x per_trade_pct% / risk),
            floor(capital x leverage / entry)) -- the notional cap keeps
            risk-derived size fundable on intraday margin; 0 => skip
-           "qty_zero". Round-trip costs (shared PaperBroker costing: STT
-           sell-leg only, both legs at entry) > max_cost_reward_ratio x
-           expected reward to T1 (|T1 - entry| x qty) => skip
-           "costs_dominate" (the trade must PAY for its friction).
+           "qty_zero". Worst-case trade costs (shared PaperBroker costing:
+           STT sell-leg only, all legs at entry, one flat brokerage per
+           order the manager's ladder can emit -- entry + up to 3 exit
+           tranches) > max_cost_reward_ratio x expected reward to T1
+           (|T1 - entry| x qty) => skip "costs_dominate" (the trade must
+           PAY for its friction).
   TRIGGER  latest closed M5 enters the zone AND (rejection wick >= 60% of
            range off the far side | same-direction CHoCH/VSA evidence
            overlapping the zone, stamped in (c.ts, c.ts + 5m]).
@@ -57,7 +59,7 @@ from enum import Enum, auto
 
 from trader.config import Settings
 from trader.engine.confluence import ScoredZone
-from trader.execution.paper import round_trip_cost
+from trader.execution.paper import trade_cost
 from trader.engine.context import StockContext, live_evidence
 from trader.models.candle import Timeframe
 from trader.models.evidence import Direction, Evidence
@@ -168,7 +170,9 @@ class EntryFSM:
         if qty <= 0:
             return ArmResult(False, "qty_zero")
         reward = abs(targets[0] - entry) * qty       # expected reward to T1
-        if round_trip_cost(self.s.fills.costs, entry, qty) > (
+        from trader.execution.manager import ladder_exits  # local: manager imports us
+        n_exits = ladder_exits(self.s, sig.detector if sig else None)
+        if trade_cost(self.s.fills.costs, entry, qty, n_exits) > (
                 Decimal(str(self.s.risk.max_cost_reward_ratio)) * reward):
             return ArmResult(False, "costs_dominate")
         meta = {"final": zone.final, "mults": dict(zone.mults),

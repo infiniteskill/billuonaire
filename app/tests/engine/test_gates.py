@@ -16,7 +16,7 @@ from trader.models.evidence import Direction
 from trader.store.candles import CandleStore
 
 IST = ZoneInfo("Asia/Kolkata")
-CONFIG = Path(__file__).resolve().parents[2] / "config" / "config.json"
+CONFIG = Path(__file__).resolve().parents[2] / "trader" / "templates" / "config.baseline.json"
 TODAY = datetime(2026, 7, 15, tzinfo=IST)
 YDAY = datetime(2026, 7, 14, tzinfo=IST)
 
