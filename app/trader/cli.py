@@ -502,10 +502,15 @@ def fetch(
     days: int = typer.Option(25, "--days", help="Trailing days of M1 data to pull."),
     data: Path = typer.Option(..., "--data", help="CSV root; writes/merges <SYMBOL>.csv."),
     source: str = typer.Option("yfinance", "--source", help="Data source (yfinance)."),
+    merge: bool = typer.Option(True, "--merge/--no-merge",
+                               help="--no-merge overwrites <SYMBOL>.csv with the fresh "
+                               "pull instead of unioning (splice recovery)."),
 ) -> None:
     """Pull trailing M1 candles for SYMBOLS into --data as FileFeed CSVs
     (merged with any existing file), printing a per-symbol summary with a
-    gap report (sessions with <300 M1 rows)."""
+    gap report (sessions with <300 M1 rows). Prices are RAW (never
+    dividend/split adjusted); any close->open jump >15% after the merge is
+    flagged loudly as a probable split/bonus splice."""
     if source != "yfinance":
         typer.echo(f"unknown --source {source!r} (expected yfinance)", err=True)
         raise typer.Exit(code=1)
@@ -514,7 +519,7 @@ def fetch(
     data.mkdir(parents=True, exist_ok=True)
     for symbol in symbols:
         try:
-            summary = fetch_symbol(symbol, days, data)
+            summary = fetch_symbol(symbol, days, data, merge_existing=merge)
         except RuntimeError as e:
             typer.echo(str(e), err=True)
             raise typer.Exit(code=1)
@@ -528,6 +533,55 @@ def fetch(
         for day_iso, n in gaps:
             table.add_row(f"  {day_iso}", f"{n} rows")
         console.print(table)
+        for ts, pct in summary["splices"]:
+            console.print(f"[bold red]SPLICE WARNING {symbol} @ {ts}: close->open "
+                          f"jump {pct}% -- probable split/bonus. History is NOT "
+                          "auto-adjusted; research across this boundary is invalid "
+                          "(refetch with --no-merge or trim the file).[/bold red]")
+
+
+@app.command()
+def doctor(
+    data: Path = typer.Option(..., "--data", help="CSV root to audit (read-only)."),
+    jump_pct: float = typer.Option(15.0, "--jump-pct",
+                                   help="close->open % move flagged as a probable "
+                                   "split/bonus splice."),
+) -> None:
+    """Integrity audit of a FileFeed CSV dir: schema, tz/session/ordering,
+    OHLC/tick/volume sanity, cadence, per-session gaps, splice detection and
+    a cross-file coverage matrix. Exits 1 if anything CRITICAL is found."""
+    from trader.tools.doctor import CRITICAL, run_dir
+
+    reps = run_dir(data, jump_pct=jump_pct)
+    if not reps:
+        typer.echo(f"no CSV files under {data}", err=True)
+        raise typer.Exit(code=1)
+
+    cov = Table(title=f"doctor {data} — coverage")
+    for col in ("file", "rows", "cadence", "first", "last", "sessions", "CRIT", "WARN"):
+        cov.add_column(col)
+    for r in reps:
+        first, last = (min(r.sessions), max(r.sessions)) if r.sessions else ("-", "-")
+        n_warn = sum(i.sev == "WARNING" for i in r.issues)
+        cov.add_row(r.name, str(r.rows), f"{r.cadence or '-'}m", str(first), str(last),
+                    str(len(r.sessions)), str(r.n_crit) if r.n_crit else "-",
+                    str(n_warn) if n_warn else "-")
+    console.print(cov)
+
+    issues = [i for r in reps for i in r.issues if i.sev != "INFO"]
+    if issues:
+        tbl = Table(title="issues")
+        for col in ("severity", "file", "code", "detail"):
+            tbl.add_column(col)
+        for i in issues:
+            sev = f"[bold red]{i.sev}[/bold red]" if i.sev == CRITICAL else i.sev
+            tbl.add_row(sev, i.file, i.code, i.msg)
+        console.print(tbl)
+    n_crit = sum(r.n_crit for r in reps)
+    if n_crit:
+        console.print(f"[bold red]{n_crit} CRITICAL issue(s) — data NOT research-safe[/bold red]")
+        raise typer.Exit(code=1)
+    console.print(f"[green]OK: {len(reps)} files, no critical issues[/green]")
 
 
 if __name__ == "__main__":
