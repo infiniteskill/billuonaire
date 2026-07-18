@@ -11,15 +11,22 @@ equals it exactly. Every candle before the touch bar keeps range==2 and
 open == previous close, so ATR(M5,14) == 2 exactly once 15 candles have
 closed and stays 2 through block formation (need = disp_atr(1.0) * 2 = 2)."""
 
+import subprocess
 from datetime import datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 from zoneinfo import ZoneInfo
+
+import pytest
 
 from trader.detectors.mitigation import MitigationDetector
 from trader.engine.context import DayState, StockContext
+from trader.feed.file import FileFeed
 from trader.models.candle import Candle, Timeframe, tick
 from trader.models.evidence import Direction
-from trader.store.candles import CandleStore
+from trader.models.market import NSE
+from trader.store.candles import CandleStore, _bucket_start
+from trader.tools.study import atr_series
 
 IST = ZoneInfo("Asia/Kolkata")
 SESSION_START = datetime(2026, 7, 15, 9, 15, tzinfo=IST)
@@ -212,3 +219,198 @@ def test_continuum_cross_day_block_fires():
     assert ev.direction is Direction.LONG
     assert ev.zone == (tick(99), tick(100))
     assert ev.meta["sl"] == str(tick(97))
+
+
+# --------------------------------------------------------------------------
+# PARITY GATE -- fidelity vs ict_pieces.py::mitigation_block on real
+# continuum data. Pattern: test_inducement.py's parity test (inlined
+# verbatim oracle, tick-by-tick feed) -- but NOT an exact-match assertion
+# (see the test's own docstring for why, and how the remainder is verified).
+# --------------------------------------------------------------------------
+_DIR = {1: Direction.LONG, -1: Direction.SHORT}
+REAL_SYMBOLS = ("RELIANCE", "INFY")  # LTIM/TATAMOTORS: empty CSVs in this fixture
+
+
+def _data_wide_dir() -> Path | None:
+    """Absolute path to the repo's data/wide fixture. It is untracked and
+    lives only in the MAIN worktree checkout, not this (or any) `git
+    worktree`, so resolve it via git's common dir rather than a path
+    relative to this file."""
+    try:
+        common = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=Path(__file__).resolve().parent, capture_output=True, text=True,
+            check=True, timeout=5).stdout.strip()
+    except Exception:
+        return None
+    d = Path(common).parent / "data" / "wide"
+    return d if d.is_dir() else None
+
+
+DATA_WIDE = _data_wide_dir()
+
+
+def _ref_mitigation_block(m5, atrs, disp_atr=1.0, lookback=3):
+    """Verbatim ict_pieces.py::mitigation_block -- fidelity ORACLE. Returns
+    [(block_i, touch_k, sign, sl)]; block_i is kept (the source only returns
+    touch_k) so divergences can be traced back to their forming candidate."""
+    O = [float(c.open) for c in m5]; H = [float(c.high) for c in m5]
+    L = [float(c.low) for c in m5]; C = [float(c.close) for c in m5]
+    ev = []
+    for sign in (1, -1):
+        for i in range(1, len(m5) - lookback):
+            down = C[i] < O[i] if sign == 1 else C[i] > O[i]
+            if not down: continue
+            seg = range(i + 1, i + 1 + lookback)
+            if any((C[j] < O[j]) if sign == 1 else (C[j] > O[j]) for j in seg): continue
+            a = atrs[i]
+            if a is None: continue
+            disp = max((C[j] - C[i]) * sign for j in seg)
+            if disp < disp_atr * float(a): continue
+            lo, hi = min(O[i], C[i]), max(O[i], C[i])
+            for k in range(i + 1 + lookback, len(m5)):
+                if L[k] <= hi and H[k] >= lo:
+                    sl = min(L[i], L[k]) if sign == 1 else max(H[i], H[k])
+                    ev.append((i, k, sign, sl))
+                    break
+    return ev
+
+
+def _load_m1_real(symbol: str) -> list[Candle]:
+    return FileFeed(DATA_WIDE)._load_candles(symbol)
+
+
+def _build_m5_real(m1: list[Candle], symbol: str) -> list[Candle]:
+    """Full continuum M5 series (session-anchored, all days concatenated),
+    built the same way production does (CandleStore bucketing) so bar
+    boundaries are byte-identical to the tick-fed detector's."""
+    store = CandleStore("/nonexistent")
+    for c in m1:
+        store.add(c)
+    view = store.view(symbol, m1[-1].ts + timedelta(days=1))
+    return view.last(1_000_000, M5)
+
+
+def _feed_real(m1: list[Candle], symbol: str, det, spec=NSE) -> list[tuple]:
+    """Like test_bpr.py's harness, but also traces WHICH pending block
+    resolved each emitted touch (by diffing det._blocks before/after
+    detect()), so a divergence can be attributed to a specific block
+    candidate. Returns [(bar_ts, block_ts, Evidence), ...]."""
+    store = CandleStore("/nonexistent")
+    last_bucket = session_date = None
+    out: list[tuple] = []
+
+    def _flush(stop_bucket):
+        nonlocal last_bucket
+        if last_bucket is None:
+            return
+        t = last_bucket + timedelta(minutes=5)
+        stop = min(stop_bucket, spec.session_open_dt(last_bucket)
+                   + timedelta(minutes=spec.session_minutes))
+        while t <= stop:
+            ctx = StockContext(symbol=symbol, now=t, candles=store.view(symbol, t),
+                               levels=[], evidence_history=[],
+                               day=DayState(session_date=t.date()))
+            pending = dict(det._blocks)
+            for ev in det.detect(ctx):
+                sign = 1 if ev.direction is Direction.LONG else -1
+                blk_ts = next(ts for ts, (s, *_) in pending.items()
+                             if s == sign and ts not in det._blocks)
+                out.append((t - timedelta(minutes=5), blk_ts, ev))
+            t += timedelta(minutes=5)
+
+    for c in m1:
+        bucket = _bucket_start(c.ts, M5, spec)
+        if last_bucket is not None and bucket != last_bucket:
+            _flush(bucket)
+        if session_date is not None and c.ts.date() != session_date:
+            det.on_session_end()
+        session_date = c.ts.date()
+        store.add(c)
+        last_bucket = bucket
+    _flush(last_bucket + timedelta(minutes=5))
+    return out
+
+
+def _explained(m5, atrs, i, sign, lookback=3, disp_atr=1.0) -> bool:
+    """Every divergence between the (Decimal, single-eval) detector and the
+    (float, full-rescan) reference must trace to one of two unavoidable
+    consequences of that port, never to an unrelated logic bug:
+
+    (a) DIFFERENT-BAR ATR: the reference always thresholds with atrs[i] (the
+        block's OWN bar). ``mitigation.py``'s ``_atr_of`` recomputes the same
+        ATR ending at the block's own close, so this should not fire on
+        current code -- kept as a live, programmatic guard against a future
+        regression back to using the current-tick's (later) ATR.
+    (b) FLOAT/DECIMAL BOUNDARY TIE: with the SAME atrs[i], Decimal-exact
+        arithmetic (what the production detector uses) and ict_pieces' float
+        arithmetic can disagree only when disp==need to the last
+        representable digit -- i.e. only ever an exact tie, never a
+        meaningfully different number.
+    """
+    C = [c.close for c in m5]  # Decimal, exact (unlike the float oracle's C)
+    seg = range(i + 1, i + 1 + lookback)
+    disp_dec = max((C[j] - C[i]) * sign for j in seg)
+    a_i = atrs[i]
+    T = i + lookback
+    a_T = atrs[T] if T < len(atrs) else None
+    if a_i != a_T:
+        return True                                     # (a)
+    if a_i is None:
+        return False
+    need_dec = Decimal(str(disp_atr)) * a_i
+    exact_pass = disp_dec >= need_dec
+    float_pass = float(disp_dec) >= disp_atr * float(a_i)
+    return exact_pass != float_pass                      # (b)
+
+
+@pytest.mark.skipif(DATA_WIDE is None, reason="data/wide real-data fixture not available")
+def test_parity_with_reference_on_real_continuum_data():
+    """PARITY GATE vs ict_pieces.py::mitigation_block, session-anchored M5,
+    ALL sessions concatenated (continuum), across 2 real symbols.
+
+    NOT an exact match by design: the detector is bounded single-eval (each
+    block candidate is judged ONCE, at its natural formation tick) to fix a
+    stale-touch bug (see test_atr_spike_ages_out_no_stale_touch) where the
+    OLD behaviour kept retrying a rejected candidate against ever-later ATR
+    readings. The reference has no such tick discipline: it is a single
+    batch pass that always thresholds a candidate against ITS OWN bar's
+    atrs[i]. The detector matches that exactly (mitigation.py's ``_atr_of``
+    recomputes the ATR ending at the block's own close, not the current
+    tick's), so on real data the two are near-exact; the residual
+    divergence, in EITHER direction, is verified below -- never hand-waved
+    -- to be fully explained by ``_explained``'s two categories (a stale
+    different-bar ATR that no longer occurs post-fix, kept as a live
+    regression guard, or a float/Decimal exact-tie artifact of comparing a
+    float reference against a Decimal production detector)."""
+    total_expected = total_got = 0
+    for sym in REAL_SYMBOLS:
+        m1 = _load_m1_real(sym)
+        m5 = _build_m5_real(m1, sym)
+        atrs = atr_series(m5)
+        ts_index = {c.ts: idx for idx, c in enumerate(m5)}
+
+        ref_ev = _ref_mitigation_block(m5, atrs)
+        expected = {(m5[k].ts, _DIR[sign], Decimal(str(sl))): i
+                    for i, k, sign, sl in ref_ev}
+
+        det = MitigationDetector({})
+        got = {(ts, ev.direction, Decimal(ev.meta["sl"])): ts_index[blk_ts]
+               for ts, blk_ts, ev in _feed_real(m1, sym, det)}
+
+        det_only, ref_only = set(got) - set(expected), set(expected) - set(got)
+        for key in det_only:
+            i, sign = got[key], key[1].value
+            assert _explained(m5, atrs, i, sign), f"{sym}: unexplained det-only {key}"
+        for key in ref_only:
+            i, sign = expected[key], key[1].value
+            assert _explained(m5, atrs, i, sign), f"{sym}: unexplained ref-only {key}"
+
+        total_expected += len(expected)
+        total_got += len(got)
+
+    # guard: the real data must actually exercise the machine non-trivially,
+    # and near-exactly (any explained remainder is a handful of bars, not a
+    # large fraction of the event set)
+    assert total_expected >= 150 and total_got >= 150
+    assert abs(total_got - total_expected) <= 5

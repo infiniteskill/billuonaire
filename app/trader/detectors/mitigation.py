@@ -17,12 +17,20 @@ displacement window just closed, i.e. ``window[-(lookback + 1)]`` on a
 history, never session-scoped: that is how the edge was VALIDATED
 (ict_pieces.py ran one concatenated series), so a block/leg may span the
 overnight gap and pending-touch blocks carry across sessions -- against the
-*current* ``ctx.atr(tf)`` as its formation ATR, then persists it (once) in
-instance state. A candle that fails its displacement check at that single tick is
-rejected forever; it is never retried against a later (e.g. post-spike,
-lower) ATR reading, which would otherwise stamp an old candle's already-fixed
-displacement with a fresh, misleadingly-current touch. Touch is checked
-separately, every tick, against ONLY the newest closed candle vs. all
+block candle's OWN-bar ATR, matching ict_pieces.py's ``atrs[i]`` exactly (NOT
+the later, current-tick ATR, which would let a volatility spike or lull
+between the block and its formation tick silently move the goalposts). That
+ATR is recomputed on demand from a wider ``ctx.candles.last(lookback + 15,
+tf)`` fetch -- the same 15-candle-trailing-SMA formula as ``StockContext.atr``,
+just anchored ``lookback`` bars earlier -- so formation is a pure function of
+``ctx.candles`` at call time, not of how many prior ticks were observed (a
+detector that skipped ticks, e.g. in a test replaying only some bars, must see
+the identical outcome as one that saw every tick). Persisted (once) in
+instance state. A candle that fails its displacement check at that single
+tick is rejected forever; it is never retried against a later (e.g.
+post-spike, lower) ATR reading, which would otherwise stamp an old candle's
+already-fixed displacement with a fresh, misleadingly-current touch. Touch is
+checked separately, every tick, against ONLY the newest closed candle vs. all
 persisted blocks' body zones -- so a touch is always live, never stale.
 
 Pure signal-emitter (no Level, per brief -- no new LevelKind).
@@ -44,6 +52,19 @@ from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
 
 _DEFAULTS = {"tf": "5m", "disp_atr": 1.0, "lookback": 3, "sl_atr_floor": 0.15}
+_PERIOD = 14
+
+
+def _atr_of(candles: list[Candle], period: int = _PERIOD) -> Decimal | None:
+    """SMA(period) of true range over ``candles`` -- identical formula to
+    ``StockContext.atr``, but callable on an arbitrary (already-sliced) run of
+    candles so callers can ask for the ATR as of an EARLIER bar's close, not
+    just the current tick's."""
+    if len(candles) < period + 1:
+        return None
+    trs = [max(c.high - c.low, abs(c.high - p.close), abs(c.low - p.close))
+           for p, c in zip(candles, candles[1:])]
+    return sum(trs) / Decimal(period)
 
 
 @register
@@ -68,15 +89,20 @@ class MitigationDetector(Detector):
         atr = ctx.atr(tf)
         floor = Decimal(str(self.params["sl_atr_floor"])) * atr if atr else Decimal(0)
         touches = self._touch(ctx, window, floor)  # against blocks formed on PRIOR ticks
-        if atr and atr > 0 and len(window) >= lookback + 2:
-            need = Decimal(str(self.params["disp_atr"])) * atr
-            self._form(window, lookback, need)
+        if len(window) >= lookback + 2 and window[-(lookback + 1)].ts not in self._seen:
+            hist = ctx.candles.last(lookback + _PERIOD + 1, tf)
+            self._form(window, hist, lookback)
         return touches
 
-    def _form(self, window: list[Candle], lookback: int, need: Decimal) -> None:
+    def _form(self, window: list[Candle], hist: list[Candle], lookback: int) -> None:
         blk = window[-(lookback + 1)]
-        if blk.ts in self._seen:
+        need_len = lookback + _PERIOD + 1
+        # the (period+1)-candle run ending at blk's own close, not the current
+        # tick's -- ict_pieces' atrs[i], never a later (or earlier) bar's ATR
+        a = _atr_of(hist[:_PERIOD + 1]) if len(hist) == need_len else None
+        if not a or a <= 0:
             return
+        need = Decimal(str(self.params["disp_atr"])) * a
         seg = window[-lookback:]
         for sign in (1, -1):  # 1: down-candle before up-move (LONG)
             opp = (blk.close < blk.open) if sign == 1 else (blk.close > blk.open)
