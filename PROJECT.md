@@ -19,8 +19,22 @@ Core model: **CAGE → TRAP → RELEASE**. Cage = today's boundaries (levels/OI 
 = morning manipulation (observe only, 09:15–11:00). Release = trade the reversal 11:00–14:30,
 SL beyond the trap extreme, targets at opposing liquidity, squareoff 15:10.
 
-## Where it stands (2026-07-17)
-- **~111 commits, 592 tests green.** Pushed to `github.com/infiniteskill/billuonaire` (branch main).
+## Where it stands (2026-07-18) — CAMPAIGN CLOSED, read `dev/plan/28-FINAL-SYNTHESIS.md` FIRST
+**The intraday research question is ANSWERED.** 300,153 signals / 138 stocks / 57 sessions / 8.4M
+realistic-fill sims: the 7 parity-locked SMC/ICT tools have a REAL prediction edge (+5–15% hit-edge
+over matched random, out-of-sample-confirmed) but **NO extractable profit** — the M1/M5 NSE tape's
+excursions are symmetric (MFE/MAE≈1.0), so after honest fills + retail costs every config of every
+tool, pair, chain, cascade, filter-stack, stop-mode and entry-mode is negative (0/196 solo, 0/42
+pairs, 0/42 chains holdout-stable). Stop-hunt thesis proven + quantified (the stop is the product;
+tax −1.07R tight → −0.19R no-stop; hunts 82–93% front-loaded in the first hour post-entry).
+Confluence/stacking, freshness weighting, cascade layering: all measured DEAD — do not rebuild them.
+Full map: doc 28; audit trail: doc 26; reports: `runs/long60/` + `dev/plan/artifacts/`. Externally
+code-reviewed (9/9 findings verified + fixed). **701 tests green.**
+Doors remaining: Kite depth-20/OI (new data class), daily/swing timeframe, forward accrual.
+NOTE: docs 18/21/22 below are PRE-CLOSE plans — historical context, superseded by 26/28.
+
+### Pre-close history (context only)
+- Pushed to `github.com/infiniteskill/billuonaire` (branch main).
 - **Phases 1–5 complete**: data models, candle store (multi-TF, no-lookahead proven),
   12 detectors + Level state machine + confluence + gates + entry-FSM + paper broker +
   position manager + orchestrator + CLI, replay/report/calibrate, learning loop, memory
