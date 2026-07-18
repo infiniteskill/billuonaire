@@ -55,6 +55,18 @@ _VERDICT_MIN = 3.0
 _CARRY = frozenset({LevelKind.PDH, LevelKind.PDL, LevelKind.PWH, LevelKind.PWL,
                     LevelKind.EQH, LevelKind.EQL, LevelKind.ROUND})  # cross-day
 _DATED = (LevelKind.PDH, LevelKind.PDL, LevelKind.PWH, LevelKind.PWL)
+_ZONES = frozenset({LevelKind.OB_BULL, LevelKind.OB_BEAR,
+                    LevelKind.FVG_BULL, LevelKind.FVG_BEAR})  # SMC continuum
+
+
+def _sessions_old(born, ref) -> int:
+    """Weekday sessions strictly after ``born`` up to ``ref`` (holiday-blind:
+    an NSE holiday counts as a session, so a stale zone prunes a touch early
+    -- conservative, and stateless across restarts)."""
+    if ref is None or ref <= born:
+        return 0
+    return sum((born + timedelta(days=i)).weekday() < 5
+               for i in range(1, (ref - born).days + 1))
 
 
 class SymbolPipeline:
@@ -70,7 +82,9 @@ class SymbolPipeline:
         self.manager, self.risk, self.max_qty = manager, risk, max_qty
         self.is_index, self.index_view = is_index, None
         self.registry = DetectorRegistry(settings)
-        self.level_engine = LevelEngine(settings.detectors.params.get("levels", {}))
+        lvp = settings.detectors.params.get("levels", {})
+        self.level_engine = LevelEngine(lvp)
+        self._zone_max_age = int(lvp.get("max_age_sessions", 5))
         self.classifier = TemplateClassifier(self.spec)
         self.confluence = ConfluenceEngine(
             settings, settings.detectors.params.get("confluence"))
@@ -112,9 +126,13 @@ class SymbolPipeline:
     def _end_session(self, ts) -> None:
         """New session: a pending plan or armed FSM carries day-old stops
         and targets across the overnight gap -- drop both, journal skips.
-        Prune levels to live cross-day liquidity kinds: terminal states and
-        intraday micro-structure (swings, OB/FVG, OR) must not block or bias
-        the new day (liquidity re-creates fresh PDH/PDL/OR per session).
+        Prune levels to live cross-day liquidity kinds + unmitigated OB/FVG
+        zones (SMC continuum): terminal states, aged-out zones and intraday
+        micro-structure (swings, OR) must not block or bias the new day
+        (liquidity re-creates fresh PDH/PDL/OR per session). Carried zones
+        arrive on day 2 with clean engine memory (on_session_end below) and
+        cleared detector _quality maps -- their evidence strength falls back
+        to 0.5 until a rescan re-derives it; acceptable.
         Persist the pruned set (if a level_store is wired) so it survives
         into the next run. Detector instance memories (ts/level-keyed dedupe
         sets) are pruned via the registry hook -- C10 memory bound. An open
@@ -155,9 +173,17 @@ class SymbolPipeline:
         pair kinds (PDH/PDL, PWH/PWL) carry only their NEWEST generation:
         older ones are stale pools that widen stops, fake sweep evidence and
         grow one pair per session (measured 22 of 26 carried levels after a
-        22-session replay before this prune)."""
-        live = [lv for lv in self.levels
-                if lv.kind in _CARRY and lv.state not in TERMINAL]
+        22-session replay before this prune). OB/FVG zones (continuum:
+        yesterday's unmitigated zone is a live trade location today) carry
+        with state/touches/history intact until terminal -- LevelEngine kills
+        them on close-beyond-far-edge / 2nd test, the fvg detectors on full
+        fill -- or older than max_age_sessions weekday sessions (stale-zone
+        hygiene + bounded memory; day count is None-safe pre-first-session)."""
+        ref = self.day.session_date if self.day else None
+        live = [lv for lv in self.levels if lv.state not in TERMINAL
+                and (lv.kind in _CARRY or
+                     (lv.kind in _ZONES and
+                      _sessions_old(lv.born.date(), ref) < self._zone_max_age))]
         top = {k: max((lv.born for lv in live if lv.kind is k), default=None)
                for k in _DATED}
         return [lv for lv in live

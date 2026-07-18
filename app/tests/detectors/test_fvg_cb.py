@@ -212,3 +212,23 @@ def test_on_session_end_clears_instance_memory():
     assert det._retest_done and det._ce_done
     det.on_session_end()
     assert det._retest_done == set() and det._ce_done == set()
+
+
+def test_carried_level_day2_retest_no_keyerror():
+    """Continuum: an unmitigated fvg_cb level carried across the session
+    boundary arrives with its _c3_ts entry cleared -- day-2 events must treat
+    it as long past c3 (no KeyError) and a day-2 touch fires a fresh retest."""
+    store = make_store(bull_bars())
+    det, levels = FvgCbDetector({}), []
+    det.detect(ctx_at(store, 19, levels))
+    [lv] = levels
+    det.on_session_end()                   # pipeline boundary: maps cleared
+    day2 = SESSION_START + timedelta(days=1)
+    store.add(Candle("X", Timeframe.M1, day2, *(tick(x) for x in TOUCH), 10))
+    now = day2 + timedelta(minutes=M5.minutes)
+    ctx = StockContext(symbol="X", now=now, candles=store.view("X", now),
+                       levels=levels, evidence_history=[],
+                       day=DayState(session_date=day2.date()))
+    evs = det.detect(ctx)
+    assert levels == [lv]                  # no duplicate from the day-2 scan
+    assert [e.meta["event"] for e in evs] == ["FVG_RETEST"]

@@ -41,7 +41,7 @@ class FvgDetector(Detector):
 
     def on_session_end(self) -> None:
         for m in (self._episode, self._ce_fired, self._ifvg_seen, self._bpr_fired):
-            m.clear()        # FVG levels never carry across sessions
+            m.clear()   # episodes are per-session; carried zones re-fire fresh
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])

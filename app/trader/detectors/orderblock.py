@@ -45,7 +45,7 @@ class OrderblockDetector(Detector):
         self._emitted: set[tuple[str, datetime]] = set()  # (level_id, candle ts)
 
     def on_session_end(self) -> None:
-        self._quality.clear()    # OB levels never carry; new day re-derives
+        self._quality.clear()    # carried OBs fall back to 0.5 until rescanned
         self._emitted.clear()
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
@@ -77,7 +77,10 @@ class OrderblockDetector(Detector):
         if any(lv.id == level_id for lv in ctx.levels):
             self._quality[level_id] = q  # lazy re-derive after restart
             return
+        # ACTIVE rivals only (as ob_lux): a TESTED zone -- possibly carried
+        # from a prior session -- holds real touches/history, never evicted.
         rival = next((lv for lv in ctx.levels if lv.kind is kind
+                      and lv.state is LevelState.ACTIVE
                       and lv.zone[0] <= ob.high and ob.low <= lv.zone[1]), None)
         if rival is not None:  # overlap: keep the higher quality OB
             if min(q + 0.15 * self._hunt(ctx, ob.ts), 1.0) <= self._strength(ctx, rival):

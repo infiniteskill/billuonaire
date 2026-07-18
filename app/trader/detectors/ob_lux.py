@@ -61,7 +61,8 @@ class ObLuxDetector(Detector):
 
     def on_session_end(self) -> None:
         # Continuum: _quality/_anchor describe levels/legs that carry across
-        # days -- they PERSIST (bounded by their level-id / leg keys). Prune
+        # days -- they PERSIST (bounded by their level-id / leg keys), so
+        # carried zones keep their real quality (no 0.5 fallback). Prune
         # only the ts-keyed emit dedupe by age: an old bar is never again the
         # latest close, but day 1's last bar stays it until day 2's first.
         if self._emitted:
