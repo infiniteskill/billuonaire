@@ -8,6 +8,15 @@ here is a pure transform over DataFrames, testable with fixtures.
 yfinance's 1m interval is limited to short trailing windows and rejects
 requests spanning more than ~7 days, so a ``--days N`` pull is chunked into
 <=7-day windows and concatenated.
+
+Prices are fetched RAW (``auto_adjust=False``): what traded is what is
+stored, and a merge can never splice differently-adjusted bases together
+(adjusted history is rewritten retroactively after every corporate action,
+so merging adjusted windows fetched at different times corrupts the file --
+observed in data/long5m TRENT). The cost: a real split/bonus shows up as a
+genuine price discontinuity, so ``fetch_symbol`` runs a post-merge splice
+check (``trader.tools.doctor.splices``) and reports hits for the CLI to
+shout about; history is never silently rewritten.
 """
 
 from __future__ import annotations
@@ -19,6 +28,7 @@ from pathlib import Path
 import pandas as pd
 
 from trader.models.market import NSE, MarketSpec
+from trader.tools.doctor import splices
 
 CSV_COLUMNS = ["ts", "open", "high", "low", "close", "volume"]
 CHUNK_DAYS = 7
@@ -43,15 +53,18 @@ def to_filefeed(raw: pd.DataFrame, spec: MarketSpec = NSE) -> pd.DataFrame:
     ``Datetime``/``ts`` column; columns Open/High/Low/Close/Volume, any
     case) into the FileFeed CSV schema: ``ts`` ISO in spec's tz, prices
     tick-quantized, volume int. Rows outside the session
-    ``[open_t, close_t)`` are dropped; duplicate ``ts`` keep the last row;
-    result is sorted by ``ts``."""
+    ``[open_t, close_t)`` or with any NaN OHLCV field (yfinance emits them
+    for missing minutes; unfiltered they would poison the CSV with "NaN"
+    prices or crash the volume int cast) are dropped; duplicate ``ts`` keep
+    the last row; result is sorted by ``ts``."""
     if raw.empty:
         return pd.DataFrame(columns=CSV_COLUMNS)
     df = raw.reset_index() if "ts" not in raw.columns else raw.copy()
     df.columns = [str(c).lower() for c in df.columns]
     ts_col = "ts" if "ts" in df.columns else df.columns[0]
     ts = pd.to_datetime(df[ts_col], utc=True).dt.tz_convert(spec.tzinfo)
-    in_session = ts.map(lambda t: spec.open_t <= t.time() < spec.close_t)
+    ok = df[["open", "high", "low", "close", "volume"]].notna().all(axis=1)
+    in_session = ok & ts.map(lambda t: spec.open_t <= t.time() < spec.close_t)
     out = pd.DataFrame({
         "ts": ts[in_session].map(lambda t: t.isoformat()),
         "open": [str(spec.quantize(v)) for v in df.loc[in_session, "open"]],
@@ -86,10 +99,13 @@ def gap_report(df: pd.DataFrame, threshold: int = GAP_THRESHOLD) -> list[tuple[s
 
 
 def read_csv(path: Path) -> pd.DataFrame:
-    """Existing FileFeed CSV at ``path``, or an empty frame if absent."""
+    """Existing FileFeed CSV at ``path``, or an empty frame if absent.
+    ALL columns stay str: merge must preserve existing rows byte-exactly
+    (numeric dtypes would rewrite "1328.90" as "1328.9" and mix float/str
+    in the merged columns)."""
     if not path.exists():
         return pd.DataFrame(columns=CSV_COLUMNS)
-    return pd.read_csv(path, dtype={"ts": str})
+    return pd.read_csv(path, dtype=str)
 
 
 def write_csv(path: Path, df: pd.DataFrame) -> None:
@@ -98,11 +114,15 @@ def write_csv(path: Path, df: pd.DataFrame) -> None:
 
 
 def fetch_symbol(symbol: str, days: int, data_dir: Path,
-                 spec: MarketSpec = NSE) -> dict:
+                 spec: MarketSpec = NSE, merge_existing: bool = True) -> dict:
     """Download ``days`` trailing days of NSE M1 data for ``symbol`` via
-    yfinance, merge into ``data_dir/<symbol>.csv`` (union by ts with any
-    existing file), and return a summary dict (symbol, days, rows, gaps).
-    Raises RuntimeError with an install hint if yfinance is not installed."""
+    yfinance (RAW prices -- see module docstring), merge into
+    ``data_dir/<symbol>.csv`` (union by ts with any existing file; overwrite
+    when ``merge_existing`` is False -- splice recovery), and return a summary
+    dict (symbol, days, rows, gaps, splices). ``splices`` lists close->open
+    jumps >15% in the written file -- probable split/bonus boundaries the
+    caller must surface loudly. Raises RuntimeError with an install hint if
+    yfinance is not installed."""
     try:
         import yfinance as yf
     except ImportError as e:
@@ -112,12 +132,14 @@ def fetch_symbol(symbol: str, days: int, data_dir: Path,
 
     ticker = yf.Ticker(f"{symbol}.NS")
     frames = [h for start, end in chunks(days)
-             if not (h := ticker.history(interval="1m", start=start, end=end)).empty]
+             if not (h := ticker.history(interval="1m", start=start, end=end,
+                                         auto_adjust=False)).empty]
     raw = pd.concat(frames) if frames else pd.DataFrame()
     fetched = to_filefeed(raw, spec)
 
     path = data_dir / f"{symbol}.csv"
-    merged = merge(read_csv(path), fetched)
+    merged = merge(read_csv(path), fetched) if merge_existing else fetched
     write_csv(path, merged)
 
-    return {"symbol": symbol, "days": days, "rows": len(merged), "gaps": gap_report(merged)}
+    return {"symbol": symbol, "days": days, "rows": len(merged),
+            "gaps": gap_report(merged), "splices": splices(merged)}

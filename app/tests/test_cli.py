@@ -444,3 +444,65 @@ def test_report_command_date_bounds(tmp_path):
                             "--from", "2026-07-15"])
     assert r.exit_code == 0
     assert "TRAP_REVERSAL" not in r.output and "fsm_arm" in r.output
+
+
+# ------------------------------------------------------------------- doctor
+
+def _doctor_csv(dir, name, days, px="100.00,101.00,99.00,100.50"):
+    rows = [f"2026-07-{d:02d}T09:{15 + i}:00+05:30,{px},10"
+            for d in days for i in range(5)]
+    (dir / f"{name}.csv").write_text(
+        "ts,open,high,low,close,volume\n" + "\n".join(rows) + "\n")
+
+
+def test_doctor_clean_dir_exits_zero(tmp_path):
+    _doctor_csv(tmp_path, "A", days=[15, 16])
+    r = runner.invoke(app, ["doctor", "--data", str(tmp_path)])
+    assert r.exit_code == 0
+    assert "A.csv" in r.output and "no critical issues" in r.output
+
+
+def test_doctor_splice_exits_nonzero_and_names_file(tmp_path):
+    _doctor_csv(tmp_path, "A", days=[15])
+    _doctor_csv(tmp_path, "B", days=[15])
+    with (tmp_path / "B.csv").open("a") as fh:   # +49.8% overnight: splice
+        fh.write("2026-07-16T09:15:00+05:30,150.55,151.00,150.00,150.55,10\n")
+    r = runner.invoke(app, ["doctor", "--data", str(tmp_path)])
+    assert r.exit_code == 1
+    assert "splice" in r.output and "B.csv" in r.output and "CRITICAL" in r.output
+    r2 = runner.invoke(app, ["doctor", "--data", str(tmp_path), "--jump-pct", "60"])
+    assert r2.exit_code == 0                     # threshold flag respected
+
+
+def test_doctor_empty_dir_errors(tmp_path):
+    r = runner.invoke(app, ["doctor", "--data", str(tmp_path)])
+    assert r.exit_code == 1
+
+
+def test_fetch_no_merge_and_splice_warning(tmp_path, monkeypatch):
+    """--no-merge overwrites; a merged splice prints the loud red warning."""
+    import sys as _sys
+    import types as _types
+
+    import pandas as _pd
+
+    idx = _pd.DatetimeIndex([_pd.Timestamp(2026, 7, 16, 9, 15, tz=IST)], name="Datetime")
+    hist = _pd.DataFrame({"Open": [200.0], "High": [201.0], "Low": [199.0],
+                          "Close": [200.5], "Volume": [10]}, index=idx)
+
+    class FakeTicker:
+        def __init__(self, symbol): pass
+        def history(self, interval, start, end, **kw): return hist
+
+    monkeypatch.setitem(_sys.modules, "yfinance", _types.SimpleNamespace(Ticker=FakeTicker))
+    data = tmp_path / "d"
+    data.mkdir()
+    old = "2026-07-15T15:29:00+05:30,100.00,101.00,99.00,100.00,10"
+    (data / "X.csv").write_text(f"ts,open,high,low,close,volume\n{old}\n")
+
+    r = runner.invoke(app, ["fetch", "X", "--data", str(data)])
+    assert r.exit_code == 0 and "SPLICE WARNING X" in r.output   # merge: 100 -> 200
+
+    r = runner.invoke(app, ["fetch", "X", "--data", str(data), "--no-merge"])
+    assert r.exit_code == 0 and "SPLICE WARNING" not in r.output
+    assert old not in (data / "X.csv").read_text()               # overwritten
