@@ -4,9 +4,10 @@ FVG, ported faithfully from the measured winner (scratchpad fvg2.py,
 c3.low > c1.high; bear: c3.high < c1.low) only becomes a level when (a) the
 middle candle c2 CLOSES beyond the origin edge (displacement) and (b) the
 gap size as a % of the origin edge exceeds an auto threshold: the running
-mean bar-range% over EVERY closed tf candle seen so far (recomputed fresh
-each tick from ``ctx.candles.last``, so it naturally spans sessions exactly
-like fvg2.py's un-reset ``cum/(i+1)``; ``thr_mult`` scales it, default 1.0
+mean bar-range% over EVERY closed tf candle seen so far (a running sum
+``_rsum`` + consumed-bar cursor ``_n``, folded forward over only NEWLY-closed
+bars each tick -- never session-reset, so it spans sessions exactly like
+fvg2.py's un-reset ``cum/(i+1)``; ``thr_mult`` scales it, default 1.0
 reproduces the source exactly). Creates an FVG_BULL/FVG_BEAR Level, zone =
 the gap (bull: (c1.high, c3.low); bear: (c3.high, c1.low)), born = c2.ts;
 id is namespaced with the detector name so it coexists with ``fvg``'s own
@@ -51,6 +52,8 @@ class FvgCbDetector(Detector):
         self._retest_done: set[str] = set()
         self._ce_done: set[str] = set()
         self._c3_ts: dict[str, datetime] = {}  # level_id -> actual c3.ts (eligibility gate)
+        self._n = 0       # closed bars whose range% is already folded into _rsum
+        self._rsum = 0.0  # running sum of bar-range% over bars[2:] (see _pct)
 
     def on_session_end(self) -> None:
         # Unmitigated zones carry (pipeline continuum): a carried level may
@@ -64,13 +67,23 @@ class FvgCbDetector(Detector):
         atr = ctx.atr(tf)
         full = ctx.candles.last(_ALL, tf)
         if atr is None or atr <= 0 or len(full) < 3:
-            return []
+            return []  # cursor untouched: bars fold in once the gates pass
+        # Fold only NEWLY-closed bars into the running range-% sum. Sum starts
+        # at bar 2 (mirrors fvg2.py's running ``cum``, which only begins
+        # accumulating at loop index 2); the threshold divides by len(full) --
+        # the full bar count, INCLUDING bars 0/1 that were never added --
+        # reproducing fvg2.py's ``cum/(i+1)`` exactly. Deliberately NOT a true
+        # mean; do not "fix" the mismatch or the threshold diverges from the
+        # validated source (the parity gate locks it).
+        for c in full[max(self._n, 2):]:
+            self._rsum += self._pct(c)
+        self._n = len(full)
         self._create(ctx, tf, full)
         return self._events(ctx, tf, full[-1])
 
     def _create(self, ctx: StockContext, tf: Timeframe, full: list[Candle]) -> None:
         c1, c2, c3 = full[-3], full[-2], full[-1]
-        thr = float(self.params["thr_mult"]) * self._cum(full) / len(full)
+        thr = float(self.params["thr_mult"]) * self._rsum / len(full)
         for kind, zone, disp in (
             (LevelKind.FVG_BULL, (c1.high, c3.low), c2.close > c1.high),
             (LevelKind.FVG_BEAR, (c3.high, c1.low), c2.close < c1.low),
@@ -86,16 +99,9 @@ class FvgCbDetector(Detector):
             self._c3_ts[level_id] = c3.ts  # actual gap-confirming bar, NOT born+tf (may span a session gap)
 
     @staticmethod
-    def _cum(full: list[Candle]) -> float:
-        """Sum of bar-range% over ``full[2:]`` (mirrors fvg2.py's running
-        ``cum``, which only starts accumulating at loop index 2). The caller
-        divides by ``len(full)`` -- the full bar count, INCLUDING bars 0/1
-        that were never added to this sum -- reproducing fvg2.py's
-        ``cum/(i+1)`` exactly. This is deliberately NOT a true mean of
-        ``full``; do not "fix" the mismatch or the threshold diverges from
-        the validated source."""
-        return sum((float(c.high - c.low) / float(c.low)) if c.low else 0.0
-                   for c in full[2:])
+    def _pct(c: Candle) -> float:
+        """One bar's range% term of the running ``_rsum`` (fvg2.py's cum)."""
+        return float(c.high - c.low) / float(c.low) if c.low else 0.0
 
     def _events(self, ctx: StockContext, tf: Timeframe, last: Candle) -> list[Evidence]:
         out = []

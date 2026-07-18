@@ -4,11 +4,12 @@ pivot high/low is confirmed once ``size`` trailing bars fail to exceed it; a
 later close crossing back over that pivot level is a structure break. The OB
 is the bar within [pivot, break] with the lowest (bull) / highest (bear)
 "parsed" extreme, where a bar whose range >= ``hv_atr_mult`` * THAT BAR'S OWN
-trailing ATR (``_atr_series``, per-bar, exactly ``atr_series``/``ctx.atr``'s
-formula -- NOT the single current ``ctx.atr(tf)``: the whole window is
-rescanned from bar 0 every tick, so a uniform "current" ATR would retroactively
-reclassify early bars as ATR drifts and silently flip an already-decided
-anchor) has its high/low swapped first before the argmin/argmax search picks
+trailing ATR (per-bar, exactly ``atr_series``/``ctx.atr``'s formula,
+maintained as a rolling TR(14) window -- NOT the single current
+``ctx.atr(tf)``: a uniform "current" ATR would retroactively reclassify early
+bars as ATR drifts and silently flip an already-decided anchor; the parity
+gate caught that exact bug) has its high/low swapped first before the
+argmin/argmax search picks
 the anchor -- LuxAlgo's volatility-as-volume proxy (the validated rule has no
 real volume term to port; a range-vs-ATR spike is untrusted as the true wick
 and excluded from the leg-extreme search). The swap only steers which bar WINS
@@ -17,13 +18,18 @@ the search: the recorded zone is always the winning bar's own raw sorted
 never changes zone geometry. Creates an OB_BULL/OB_BEAR Level born at the
 winning bar's ts; mitigation is LevelEngine's job (as in ``orderblock``).
 
-CONTINUUM: scans the FULL continuous closed-candle history
+CONTINUUM + INCREMENTAL: consumes the FULL continuous closed-candle history
 (``ctx.candles.last(_ALL, tf)``, the inducement.py sentinel) -- never
-session-scoped. That is the VALIDATED behavior: luxob.py::lux_ob_events ran
-one long multi-day series, so swing/leg structure (and the OBs it derives)
-carries across days; a leg starting day 1 may confirm day 2. ``_quality``/
-``_anchor`` persist across sessions to match (bounded: keyed by level-id /
-leg indices, which are absolute into the append-only history).
+session-scoped -- stepping only NEWLY-closed bars (``self._n`` cursor +
+persistent swing/ATR/parsed-extreme state, inducement.py's FSM pattern).
+Every per-bar decision (hv swap, pivot, confirm, anchor) depends only on bars
+<= that bar, so stepping is bit-for-bit the same run as rescanning from bar 0
+every tick (the parity gate proves it on real data). That full pass is the
+VALIDATED behavior: luxob.py::lux_ob_events ran one long multi-day series, so
+swing/leg structure (and the OBs it derives) carries across days; a leg
+starting day 1 may confirm day 2. ``_quality``/``_anchor`` persist across
+sessions to match (bounded: keyed by level-id / leg indices, which are
+absolute into the append-only history).
 
 Quality = min(overshoot / ATR, 1.0), overshoot = how far the confirming
 close broke past the pivot level. The source has no strength score of its
@@ -38,6 +44,7 @@ level is never evicted."""
 
 from __future__ import annotations
 
+from collections import deque
 from datetime import datetime
 from decimal import Decimal
 
@@ -63,6 +70,16 @@ class ObLuxDetector(Detector):
         self._emitted: set[tuple[str, datetime]] = set()  # (level_id, ts)
         self._anchor: dict[tuple[int, int, bool], int] = {}  # (pivot_idx, confirm_idx, take_max) -> winning idx
         self._decided: set[str] = set()  # level_ids ever run through _upsert's create-or-reject decision
+        self._size = int(self.params["size"])
+        self._hv_mult = Decimal(str(self.params["hv_atr_mult"]))
+        # Incremental scan state (continuum FSM, never session-reset): cursor
+        # of consumed closed bars, per-bar parsed extremes, rolling TR(14)
+        # window (per-bar trailing ATR), live swing-pivot state.
+        self._n = 0
+        self._pH: list[Decimal] = []; self._pL: list[Decimal] = []
+        self._trs: deque[Decimal] = deque(maxlen=14); self._tr_sum = Decimal(0)
+        self._swH = self._swL = None   # (level, pivot_idx) of the live pivot
+        self._swHc = self._swLc = True  # confirmed flags (True = none pending)
 
     def on_session_end(self) -> None:
         # Continuum: _quality/_anchor/_decided describe levels/legs that carry
@@ -78,58 +95,53 @@ class ObLuxDetector(Detector):
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
-        size = int(self.params["size"])
         window = ctx.candles.last(_ALL, tf)  # full continuum (validated behavior)
         n = len(window)
-        if n <= size:
-            return []
-        H = [c.high for c in window]; L = [c.low for c in window]; C = [c.close for c in window]
-        atrs = self._atr_series(window)  # per-bar trailing ATR -- see _atr_series
-        thr_mult = Decimal(str(self.params["hv_atr_mult"]))
-        hv = [a is not None and H[j] - L[j] >= thr_mult * a for j, a in enumerate(atrs)]
-        pH = [L[j] if hv[j] else H[j] for j in range(n)]
-        pL = [H[j] if hv[j] else L[j] for j in range(n)]
-        swH = swL = None          # (level, pivot_idx) of the live pivot
-        swHc = swLc = True        # confirmed flags (True = none pending)
-        for i in range(n):
-            if i >= size:
-                p = i - size
-                win_h, win_l = max(H[p + 1:i + 1]), min(L[p + 1:i + 1])
-                if H[p] > win_h:
-                    swH, swHc = (H[p], p), False
-                if L[p] < win_l:
-                    swL, swLc = (L[p], p), False
-            if swH and not swHc and C[i] > swH[0] and (i == 0 or C[i - 1] <= swH[0]):
-                swHc = True
-                idx = self._anchor_idx(swH[1], i, pL, False)  # decided once, never re-flips w/ ATR drift
-                lo, hi = sorted((pL[idx], pH[idx]))
-                self._upsert(ctx, window[idx].ts, tf, LevelKind.OB_BULL, lo, hi,
-                            self._quality_of(C[i] - swH[0], atrs[i]))
-            if swL and not swLc and C[i] < swL[0] and (i == 0 or C[i - 1] >= swL[0]):
-                swLc = True
-                idx = self._anchor_idx(swL[1], i, pH, True)
-                lo, hi = sorted((pL[idx], pH[idx]))
-                self._upsert(ctx, window[idx].ts, tf, LevelKind.OB_BEAR, lo, hi,
-                            self._quality_of(swL[0] - C[i], atrs[i]))
+        if n <= self._size:
+            return []  # cursor untouched: these bars are consumed once n > size
+        for i in range(self._n, n):
+            self._step(ctx, tf, window, i)
+        self._n = n
         return self._evidence(ctx, window[-1])
 
-    @staticmethod
-    def _atr_series(window: list[Candle], period: int = 14) -> list[Decimal | None]:
-        """Trailing ATR(period) per bar of ``window`` -- identical formula to
-        ``StockContext.atr``/``trader.tools.study.atr_series`` (SMA of TR over
-        the trailing ``period`` bars; None until ``period`` + 1 bars exist).
-
-        MUST be per-bar, not a single current ``ctx.atr(tf)`` applied to the
-        whole rescanned history: the reference (luxob.py) classifies each
-        bar's high-volatility swap with THAT bar's own point-in-time ATR, and
-        this detector rescans the full window from bar 0 on every tick. A
-        single "current" ATR retroactively reclassifies early bars as ATR
-        drifts, silently flipping which bar wins an already-decided anchor
-        search -- the parity gate (test_ob_lux.py) caught this exact bug."""
-        trs = [max(c.high - c.low, abs(c.high - p.close), abs(c.low - p.close))
-               for p, c in zip(window, window[1:])]
-        return [sum(trs[j - period:j]) / Decimal(period) if j >= period else None
-                for j in range(len(window))]
+    def _step(self, ctx: StockContext, tf: Timeframe, window: list[Candle], i: int) -> None:
+        """Consume the single newly-closed bar ``i``: extend the rolling-TR
+        trailing ATR (``ctx.atr``'s exact formula: SMA of the last 14 TRs;
+        None until 15 bars) and the parsed-extreme series, advance the
+        swing-pivot state, upsert any OB this bar's close confirms. State
+        after stepping 0..i is identical to a full rescan of 0..i."""
+        c = window[i]
+        if i:
+            p = window[i - 1]
+            tr = max(c.high - c.low, abs(c.high - p.close), abs(c.low - p.close))
+            if len(self._trs) == self._trs.maxlen:
+                self._tr_sum -= self._trs[0]
+            self._trs.append(tr); self._tr_sum += tr
+        atr = self._tr_sum / self._trs.maxlen if i >= self._trs.maxlen else None
+        hv = atr is not None and c.high - c.low >= self._hv_mult * atr
+        self._pH.append(c.low if hv else c.high)
+        self._pL.append(c.high if hv else c.low)
+        size = self._size
+        if i >= size:
+            p = i - size
+            seg = window[p + 1:i + 1]
+            if window[p].high > max(b.high for b in seg):
+                self._swH, self._swHc = (window[p].high, p), False
+            if window[p].low < min(b.low for b in seg):
+                self._swL, self._swLc = (window[p].low, p), False
+        C, Cp = c.close, window[i - 1].close if i else None
+        if self._swH and not self._swHc and C > self._swH[0] and (i == 0 or Cp <= self._swH[0]):
+            self._swHc = True
+            idx = self._anchor_idx(self._swH[1], i, self._pL, False)  # decided once, never re-flips w/ ATR drift
+            lo, hi = sorted((self._pL[idx], self._pH[idx]))
+            self._upsert(ctx, window[idx].ts, tf, LevelKind.OB_BULL, lo, hi,
+                        self._quality_of(C - self._swH[0], atr))
+        if self._swL and not self._swLc and C < self._swL[0] and (i == 0 or Cp >= self._swL[0]):
+            self._swLc = True
+            idx = self._anchor_idx(self._swL[1], i, self._pH, True)
+            lo, hi = sorted((self._pL[idx], self._pH[idx]))
+            self._upsert(ctx, window[idx].ts, tf, LevelKind.OB_BEAR, lo, hi,
+                        self._quality_of(self._swL[0] - C, atr))
 
     @staticmethod
     def _quality_of(overshoot: Decimal, atr: Decimal | None) -> float:
@@ -153,8 +165,8 @@ class ObLuxDetector(Detector):
         if any(lv.id == level_id for lv in ctx.levels):
             self._quality[level_id] = q  # lazy re-derive after restart
             return
-        # Already created-then-evicted (or rejected) once: the full history
-        # rescan rediscovers this same confirm event every future tick --
+        # Already created-then-evicted (or rejected) once: a LATER confirm
+        # event can anchor to this same bar + kind (identical level_id) --
         # without this guard, a level whose overlap-evicting rival later ages
         # off ACTIVE (mitigated/tested/evicted itself) would be silently
         # RECREATED, duplicating a zone the dedupe rule already resolved. The
