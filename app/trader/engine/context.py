@@ -30,11 +30,15 @@ def live_evidence(history: list[Evidence], now: datetime | None = None,
 @dataclass(frozen=True)
 class IndexView:
     """Index-symbol read (structure+wyckoff run upstream by the orchestrator
-    on the index; wired in Phase 4)."""
+    on the index; wired in Phase 4). ``ts`` stamps the index M5 close the
+    read derives from; consumers drop a view older than
+    settings.index_stale_min as absent (None = legacy/unstamped, never
+    considered stale)."""
 
     trend: Direction
     phase: str
     strength: float
+    ts: datetime | None = None
 
 
 @dataclass

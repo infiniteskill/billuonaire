@@ -210,7 +210,7 @@ def watch(
             typer.echo(f"index {index}: no data in feed, running without index context",
                        err=True)
             index = None
-        data_feed = FileFeed(data)
+        data_feed = FileFeed(data, settings.market_spec())
     else:
         typer.echo(f"unknown --feed {feed!r} (expected mock|file)", err=True)
         raise typer.Exit(code=1)

@@ -52,10 +52,29 @@ def test_losing_trade_counts_no_wins(tmp_path):
 
 
 def test_trade_links_to_last_verdict_before_open(tmp_path):
+    """Legacy fallback: a trade_open WITHOUT plan members links to the last
+    verdict before it (pre-fix journals)."""
     j = Journal(tmp_path)
     verdict(j, DAY, "A", [["fvg", "CE_HOLD", 0.5]], minute=0)   # stale
     verdict(j, DAY, "A", [["sweep", "SWEEP", 0.8]], minute=5)   # the arm verdict
     trade(j, DAY, "A", "150", minute=10)
+    rep = analyze(tmp_path)
+    assert rep.rows["sweep"]["wins"] == 1
+    assert rep.rows["fvg"]["wins"] == 0
+
+
+def test_trade_credits_arming_verdict_from_plan_meta(tmp_path):
+    """FIX 6: a delayed fill credits the ARMING verdict's members (stamped
+    into the trade_open plan meta at arm time), never the symbol's latest
+    verdict -- verdict B lands between arm and fill and gets nothing."""
+    j = Journal(tmp_path)
+    verdict(j, DAY, "A", [["sweep", "SWEEP", 0.8]], minute=0)   # A: arms
+    verdict(j, DAY, "A", [["fvg", "CE_HOLD", 0.5]], minute=5)   # B: pre-fill
+    j.log("trade_open", {"symbol": "A",
+                         "plan": {"members": [["sweep", "SWEEP", 0.8]]}},
+          day=DAY, ts=ts(DAY, 10))
+    j.log("trade_close", {"symbol": "A", "pnl": "150"},
+          day=DAY, ts=ts(DAY, 40))
     rep = analyze(tmp_path)
     assert rep.rows["sweep"]["wins"] == 1
     assert rep.rows["fvg"]["wins"] == 0

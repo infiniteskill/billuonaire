@@ -96,6 +96,30 @@ def test_watch_file_feed(tmp_path):
     assert r.exit_code == 0 and "ACME" in r.output
 
 
+def test_watch_file_feed_uses_configured_spec(tmp_path, monkeypatch):
+    """FIX 10: watch built FileFeed(data) on the DEFAULT MarketSpec while
+    engine/broker used settings.market_spec() -- a non-default market config
+    quantized feed prices on the wrong tick grid. The configured spec must
+    reach the feed, like replay's path."""
+    import trader.cli as cli_mod
+    _init(tmp_path, ["ACME"])
+    cfg = json.loads((tmp_path / "config.json").read_text())
+    cfg["market"] = {"tick_size": "0.10"}                 # non-default spec
+    (tmp_path / "config.json").write_text(json.dumps(cfg))
+    csv = ("ts,open,high,low,close,volume\n"
+           "2026-07-15T09:15:00+05:30,100,101,99,100.5,1000\n")
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "ACME.csv").write_text(csv)
+    seen, orig = {}, cli_mod.FileFeed
+    monkeypatch.setattr(cli_mod, "FileFeed",
+                        lambda root, *a: seen.update(spec=a) or orig(root, *a))
+    r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path),
+                            "--feed", "file", "--data", str(data_dir)])
+    assert r.exit_code == 0
+    assert seen["spec"] and seen["spec"][0].tick_size == D("0.10")
+
+
 def _spy_index(monkeypatch, seen):
     import trader.cli as cli_mod
     orig = cli_mod.Orchestrator

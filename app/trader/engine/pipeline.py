@@ -12,8 +12,9 @@ closed-M5 flow (LevelEngine -> detectors -> template -> confluence -> gates/
 FSM -> manager) decides. Exits execute at the OPEN of that boundary-crossing
 M1 -- the next M1 open, no lookahead. A triggered ENTRY rests as a LIMIT at
 the plan entry (traded-zone CE): it fills when a later M1 trades through it
-(AT the limit, half-spread only -- no chase), and expires unfilled after
-entry.fill_ttl_candles M5 (journal skip "unfilled").
+(AT the limit exactly -- a limit can never fill worse than its price, and
+no chase), and expires unfilled after entry.fill_ttl_candles M5 (journal
+skip "unfilled").
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ from trader.detectors.wyckoff import WyckoffDetector
 from trader.engine.confluence import ConfluenceEngine
 from trader.engine.context import DayState, IndexView, StockContext
 from trader.engine.entry import EntryFSM, EntryState
-from trader.engine.gates import GateChain, RiskState
+from trader.engine.gates import GateChain, RiskState, fill_time_caps
 from trader.engine.levels import LevelEngine, LevelStore
 from trader.engine.template import TemplateClassifier
 from trader.execution.manager import Action, PositionManager
@@ -92,6 +93,8 @@ class SymbolPipeline:
         self.wyckoff = WyckoffDetector(settings.detectors.params.get("wyckoff", {}))
         self.level_store = level_store        # optional: cross-run level persistence
         self.levels = level_store.load(symbol) if level_store else []
+        self._watermark = level_store.load_watermark(symbol) if level_store else None
+        self._wm_ts = self._watermark         # last-processed candle ts
         self.timestats = self.registry.get("timestats")  # learning hook
         if self.timestats is not None and timestats_dir is not None:
             self.timestats.params["path"] = str(timestats_dir)
@@ -107,6 +110,15 @@ class SymbolPipeline:
         self._cutoff = _minutes(settings.time.no_entry_after)
 
     def on_m1(self, candle: Candle, index: IndexView | None = None) -> None:
+        if self._watermark is not None and candle.ts <= self._watermark:
+            # resumed run (persisted watermark): the feed re-reads every CSV
+            # row, so pre-watermark rows rebuild history/context in the STORE
+            # only -- no detect/arm/fill/journal. A restart can neither
+            # duplicate already-journaled signals/trades nor re-emit history
+            # as current; processing starts strictly after the watermark.
+            self.store.add(candle)
+            self._last_bucket = _bucket_start(candle.ts, Timeframe.M5, self.spec)
+            return
         bucket = _bucket_start(candle.ts, Timeframe.M5, self.spec)
         if self._last_bucket is not None and bucket != self._last_bucket:
             # gap-safe: close EVERY missed boundary in order, clamped to the
@@ -121,7 +133,7 @@ class SymbolPipeline:
             self._end_session(candle.ts)    # no stale intent across the gap
         self._fill_pending(candle)          # fills at this M1's open
         self.store.add(candle)
-        self._last_bucket = bucket
+        self._last_bucket, self._wm_ts = bucket, candle.ts
 
     def _end_session(self, ts) -> None:
         """New session: a pending plan or armed FSM carries day-old stops
@@ -144,6 +156,7 @@ class SymbolPipeline:
         self._force_close_eod(ts)            # no position/exit survives the gap
         self._prune_levels()
         self._save_levels()
+        self._save_watermark()
         self._save_timestats()
         if self._pending_plan is not None:
             self._pending_plan = None
@@ -196,6 +209,10 @@ class SymbolPipeline:
         if self.level_store is not None:
             self.level_store.save(self.symbol, self.levels)
 
+    def _save_watermark(self) -> None:
+        if self.level_store is not None and self._wm_ts is not None:
+            self.level_store.save_watermark(self.symbol, self._wm_ts)
+
     def _save_timestats(self) -> None:
         if self.timestats is not None:
             self.timestats.save(self.symbol)   # no-op without a path
@@ -213,11 +230,15 @@ class SymbolPipeline:
             self._force_close_eod(self._last_bucket + _M5, why="feed_end")
         if self.level_store is not None:
             self.level_store.save(self.symbol, self._carry_over())
+        self._save_watermark()
         self._save_timestats()
 
     # -------------------------------------------------------- closed-M5 flow
 
     def _on_m5_close(self, now, index: IndexView | None) -> None:
+        if (index is not None and index.ts is not None
+                and now - index.ts > timedelta(minutes=self.s.index_stale_min)):
+            index = None    # index feed died: a stale read is NO context
         view = self.store.view(self.symbol, now)
         if not (last := view.last(1, Timeframe.M5)):
             return
@@ -245,7 +266,7 @@ class SymbolPipeline:
         if self.is_index:
             self.wyckoff.detect(ctx)  # prime spring/upthrust memory so phase() can reach ACC/DIST
             self.index_view = IndexView(self._m15_trend(),
-                                        *self.wyckoff.phase(ctx))
+                                        *self.wyckoff.phase(ctx), ts=now)
             return
         htf = self.wyckoff.htf_phase(ctx)
         zones = self.confluence.score(ctx, self.evidence_history, htf,
@@ -312,18 +333,25 @@ class SymbolPipeline:
                 self._skip(candle.ts, "fill", "unfilled")  # limit never traded
             elif candle.low <= limit if up else candle.high >= limit:
                 self._pending_plan = None
-                fill = self.broker.entry_fill(plan, candle, limit)
-                self.position = Position(plan, fill, plan.qty, plan.stop,
-                                         realized=-fill.costs)
-                self._hunt_logged = False
-                self.risk.record_open(self.symbol,
-                                      self.position.risk_pts * plan.qty,
-                                      plan.direction)
-                self.n_trades += 1
-                self._log("trade_open", at=fill.ts, direction=plan.direction,
-                          qty=plan.qty, price=fill.price, stop=plan.stop,
-                          zone=list(plan.entry_zone), targets=plan.targets,
-                          costs=fill.costs, plan=plan.meta)
+                # arm-time risk caps re-checked at FILL time: the daily lock /
+                # heat / correlation state may have engaged while the limit
+                # rested. Exits below are never gated.
+                if (why := fill_time_caps(self.s, self.risk,
+                                          plan.direction)) is not None:
+                    self._skip(candle.ts, "gate_at_fill", why)
+                else:
+                    fill = self.broker.entry_fill(plan, candle, limit)
+                    self.position = Position(plan, fill, plan.qty, plan.stop,
+                                             realized=-fill.costs)
+                    self._hunt_logged = False
+                    self.risk.record_open(self.symbol,
+                                          self.position.risk_pts * plan.qty,
+                                          plan.direction)
+                    self.n_trades += 1
+                    self._log("trade_open", at=fill.ts, direction=plan.direction,
+                              qty=plan.qty, price=fill.price, stop=plan.stop,
+                              zone=list(plan.entry_zone), targets=plan.targets,
+                              costs=fill.costs, plan=plan.meta)
         self._run_exits(candle)
 
     def _run_exits(self, candle: Candle) -> None:
@@ -405,8 +433,11 @@ class Orchestrator:
     """Routes the feed to per-symbol pipelines; index first per ts batch.
 
     ``store``/``level_dir``/``timestats_dir`` wire cross-run persistence for
-    candles/levels/time-bucket sweep stats. Positions and RiskState stay
-    memory-only (see RiskState docstring)."""
+    candles/levels/time-bucket sweep stats. ``level_dir`` also persists a
+    per-symbol last-processed watermark: a resumed run (watch re-reading the
+    same CSVs) feeds rows at/before it to the store only -- no duplicate
+    detection/journaling, and no re-emitting history as current. Positions
+    and RiskState stay memory-only (see RiskState docstring)."""
 
     def __init__(self, settings: Settings, feed, symbols: list[str],
                  index_symbol: str | None = None, *, capital: float | None = None,

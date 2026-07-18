@@ -193,6 +193,25 @@ class RiskBudgetGate(Gate):
         return self._ok()
 
 
+def fill_time_caps(settings: Settings, risk: RiskState, direction) -> str | None:
+    """Fill-time re-check of RiskBudgetGate's hard caps (mirrors that gate;
+    keep in sync): a resting limit must not fill after the daily lock engaged
+    or into an exceeded portfolio-heat / same-direction correlation cap --
+    arm-time state can go stale while the order rests. Exits are never gated.
+    Returns the failure reason, or None to allow."""
+    if risk.locked:
+        return "risk locked for the day"
+    r, capital = settings.risk, Decimal(str(settings.capital))
+    new = capital * Decimal(str(r.per_trade_pct)) / 100
+    cap = capital * Decimal(str(r.portfolio_heat_pct)) / 100
+    if risk.open_risk + new > cap:
+        return f"portfolio heat {risk.open_risk + new} > cap {cap}"
+    same = sum(1 for d in risk.open_dirs.values() if d is direction)
+    if same >= r.max_correlated_positions:
+        return f"{same} open position(s) already {direction.name}"
+    return None
+
+
 class GateChain:
     """Fixed-order chain; cheap/static gates first, stateful budget last."""
 

@@ -4,9 +4,11 @@ nothing here ever mutates config.
 
 Precision proxy (honest attribution, not causality -- journals carry no
 per-zone counterfactual): every verdict entry journals the top zone's
-``members`` [(detector, event, strength), ...]. A trade is linked to the
-LAST verdict journaled for its symbol before its trade_open entry (arm and
-trigger happen on that closed M5; entries are appended in stream order).
+``members`` [(detector, event, strength), ...]. A trade is credited to the
+ARMING verdict's members, stamped into the plan meta at arm time and
+journaled with trade_open (a delayed limit fill must not credit whatever
+verdict happened to come last). Legacy journals without plan members fall
+back to the LAST verdict journaled for the symbol before its trade_open.
 
     precision(d) = d's member appearances in verdicts linked to trades that
                    closed net-positive (journaled pnl > 0, costs included)
@@ -75,7 +77,8 @@ def analyze(journal_dir: Path, start: date | None = None,
                 for det, *_ in last[sym]:
                     total[det] = total.get(det, 0) + 1
             elif kind == "trade_open":
-                open_[sym] = last.get(sym, [])
+                m = (e.get("plan") or {}).get("members")
+                open_[sym] = m if m is not None else last.get(sym, [])
             elif kind == "trade_close" and sym in open_:
                 rep.n_trades += 1
                 members = open_.pop(sym)

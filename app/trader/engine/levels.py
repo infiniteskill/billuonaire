@@ -280,6 +280,26 @@ class LevelStore:
             return []
         return [self._decode(d) for d in raw]
 
+    def save_watermark(self, symbol: str, ts: datetime) -> None:
+        """Persist the last-processed candle ts (watch-resume watermark:
+        SymbolPipeline replays rows at/before it into the store only)."""
+        path = self.root / symbol / "watermark.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(ts.isoformat()))
+        os.replace(tmp, path)  # atomic, like save()
+
+    def load_watermark(self, symbol: str) -> datetime | None:
+        path = self.root / symbol / "watermark.json"
+        if not path.exists():
+            return None
+        try:
+            return datetime.fromisoformat(json.loads(path.read_text()))
+        except (ValueError, TypeError, json.JSONDecodeError):
+            logger.warning("corrupt watermark.json for %s at %s; ignoring",
+                           symbol, path)
+            return None
+
     @staticmethod
     def _encode(level: Level) -> dict:
         return {
