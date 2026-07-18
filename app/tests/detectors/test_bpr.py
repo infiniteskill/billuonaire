@@ -10,15 +10,22 @@ equals it exactly, same convention as test_fvg.py/test_compression_fade.py.
 16 FLAT filler bars (TR=2) prime ATR-14 (~2.0-2.3 through the scenario) so
 the 0.3*ATR gap threshold sits around 0.6-0.7 points."""
 
+import subprocess
 from datetime import datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 from zoneinfo import ZoneInfo
+
+import pytest
 
 from trader.detectors.bpr import BprDetector, _Gap
 from trader.engine.context import DayState, StockContext
+from trader.feed.file import FileFeed
 from trader.models.candle import Candle, Timeframe, tick
 from trader.models.evidence import Direction
-from trader.store.candles import CandleStore
+from trader.models.market import NSE
+from trader.store.candles import CandleStore, _bucket_start
+from trader.tools.study import atr_series
 
 IST = ZoneInfo("Asia/Kolkata")
 SESSION_START = datetime(2026, 7, 15, 9, 15, tzinfo=IST)
@@ -186,3 +193,150 @@ def test_continuum_cross_day_bear_gap_fires():
     assert ev.direction is Direction.SHORT
     assert ev.zone == (tick("101.2"), tick(102))
     assert ev.meta["sl"] == str(tick(102))
+
+
+# --------------------------------------------------------------------------
+# PARITY GATE -- fidelity vs ict_pieces.py::bpr on real continuum data.
+# Pattern: test_inducement.py's parity test (inlined verbatim oracle,
+# tick-by-tick feed, exact-match assertion).
+# --------------------------------------------------------------------------
+_DIR = {1: Direction.LONG, -1: Direction.SHORT}
+REAL_SYMBOLS = ("RELIANCE", "INFY")  # LTIM/TATAMOTORS: empty CSVs in this fixture
+
+
+def _data_wide_dir() -> Path | None:
+    """Absolute path to the repo's data/wide fixture. It is untracked and
+    lives only in the MAIN worktree checkout, not this (or any) `git
+    worktree`, so resolve it via git's common dir rather than a path
+    relative to this file."""
+    try:
+        common = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=Path(__file__).resolve().parent, capture_output=True, text=True,
+            check=True, timeout=5).stdout.strip()
+    except Exception:
+        return None
+    d = Path(common).parent / "data" / "wide"
+    return d if d.is_dir() else None
+
+
+DATA_WIDE = _data_wide_dir()
+
+
+def _ref_find_gaps(m5, atrs):
+    """Verbatim ict_pieces.py::find_gaps -- fidelity ORACLE for bpr parity."""
+    H = [float(c.high) for c in m5]; L = [float(c.low) for c in m5]; z = []
+    for i in range(2, len(m5)):
+        a = atrs[i]
+        if a is None: continue
+        need = 0.3 * float(a)
+        if L[i] > H[i - 2] and (L[i] - H[i - 2]) >= need: z.append((i - 1, H[i - 2], L[i], 1))
+        if H[i] < L[i - 2] and (L[i - 2] - H[i]) >= need: z.append((i - 1, H[i], L[i - 2], -1))
+    return z
+
+
+def _ref_bpr(m5, atrs):
+    """Verbatim ict_pieces.py::bpr -- fidelity ORACLE for bpr parity."""
+    H = [float(c.high) for c in m5]; L = [float(c.low) for c in m5]; C = [float(c.close) for c in m5]
+    gaps = _ref_find_gaps(m5, atrs)
+    bulls = [g for g in gaps if g[3] == 1]; bears = [g for g in gaps if g[3] == -1]
+    die = {}
+    for g in gaps:
+        born, lo, hi, dr = g
+        die[g] = next((j for j in range(born + 1, len(m5))
+                       if (C[j] < lo if dr == 1 else C[j] > hi)), len(m5))
+    ev = []
+    for bb in bulls:
+        for br in bears:
+            lo = max(bb[1], br[1]); hi = min(bb[2], br[2])
+            if lo > hi: continue
+            start = max(bb[0], br[0]) + 1; end = min(die[bb], die[br])
+            newer_dr = 1 if bb[0] > br[0] else -1
+            for k in range(start, end):
+                if L[k] <= hi and H[k] >= lo and lo <= C[k] <= hi:
+                    ev.append((k, newer_dr, lo if newer_dr == 1 else hi))
+                    break
+    return ev
+
+
+def _load_m1_real(symbol: str) -> list[Candle]:
+    return FileFeed(DATA_WIDE)._load_candles(symbol)
+
+
+def _build_m5_real(m1: list[Candle], symbol: str) -> list[Candle]:
+    """Full continuum M5 series (session-anchored, all days concatenated),
+    built the same way production does (CandleStore bucketing) so bar
+    boundaries are byte-identical to the tick-fed detector's."""
+    store = CandleStore("/nonexistent")
+    for c in m1:
+        store.add(c)
+    view = store.view(symbol, m1[-1].ts + timedelta(days=1))
+    return view.last(1_000_000, M5)
+
+
+def _feed_real(m1: list[Candle], symbol: str, det, spec=NSE) -> list[tuple]:
+    """Feed M1 candles tick by tick (session-anchored M5, exactly as
+    SymbolPipeline.on_m1 drives closed-M5 detection): det.detect() at every
+    M5 close, det.on_session_end() at every session boundary; flush the
+    final pending bucket at the end (fair for a fixed-length replay -- live
+    production only closes it once a NEXT tick arrives, which never comes
+    for the last bar of a finite CSV). Returns [(bar_ts, Evidence), ...]
+    keyed by the CLOSED bar's own ts (ev.ts stamps the close INSTANT =
+    bar_ts + 5m, one bar later -- see ``_ref_bpr``'s touch-bar convention)."""
+    store = CandleStore("/nonexistent")
+    last_bucket = session_date = None
+    out: list[tuple] = []
+
+    def _flush(stop_bucket):
+        nonlocal last_bucket
+        if last_bucket is None:
+            return
+        t = last_bucket + timedelta(minutes=5)
+        stop = min(stop_bucket, spec.session_open_dt(last_bucket)
+                   + timedelta(minutes=spec.session_minutes))
+        while t <= stop:
+            ctx = StockContext(symbol=symbol, now=t, candles=store.view(symbol, t),
+                               levels=[], evidence_history=[],
+                               day=DayState(session_date=t.date()))
+            for ev in det.detect(ctx):
+                out.append((t - timedelta(minutes=5), ev))
+            t += timedelta(minutes=5)
+
+    for c in m1:
+        bucket = _bucket_start(c.ts, M5, spec)
+        if last_bucket is not None and bucket != last_bucket:
+            _flush(bucket)
+        if session_date is not None and c.ts.date() != session_date:
+            det.on_session_end()
+        session_date = c.ts.date()
+        store.add(c)
+        last_bucket = bucket
+    _flush(last_bucket + timedelta(minutes=5))
+    return out
+
+
+@pytest.mark.skipif(DATA_WIDE is None, reason="data/wide real-data fixture not available")
+def test_parity_with_reference_on_real_continuum_data():
+    """PARITY GATE vs ict_pieces.py::bpr, session-anchored M5, ALL sessions
+    concatenated (continuum -- exactly how ict_pieces.py validated the
+    edge), across 2 real symbols. Exact match expected: gap formation and
+    the overlap/touch check both read ``atr``/the newest closed bar at the
+    CURRENT tick on both the detector and the reference side (no
+    formation-vs-touch ATR-timing gap like mitigation's), so there is no
+    documented-allowed remainder here."""
+    expected, got = set(), set()
+    for sym in REAL_SYMBOLS:
+        m1 = _load_m1_real(sym)
+        m5 = _build_m5_real(m1, sym)
+        atrs = atr_series(m5)
+        for k, d, sl in _ref_bpr(m5, atrs):
+            expected.add((sym, m5[k].ts, _DIR[d], Decimal(str(sl))))
+        det = BprDetector({})
+        for ts, ev in _feed_real(m1, sym, det):
+            got.add((sym, ts, ev.direction, Decimal(ev.meta["sl"])))
+
+    assert got == expected
+    # guard: the real data must actually exercise the machine non-trivially
+    assert len(expected) >= 30
+    assert {sym for sym, *_ in expected} == set(REAL_SYMBOLS)
+    assert {d for _, _, d, _ in expected} == {Direction.LONG, Direction.SHORT}
