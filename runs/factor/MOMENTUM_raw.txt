@@ -1,0 +1,117 @@
+=== BENCHMARKS ===
+EW     <=2012     ann=  31.96%  vol= 27.9%  shp= 1.14  dd= -54.6%  n=113
+EW     2013-2019  ann=  18.52%  vol= 16.2%  shp= 1.14  dd= -15.8%  n=84
+EW     2020-2026  ann=  23.02%  vol= 20.5%  shp= 1.12  dd= -29.8%  n=78
+EW     pooled     ann=  25.19%  vol= 22.8%  shp= 1.11  dd= -54.6%  n=275
+
+NIFTY  <=2012     ann=   3.14%  vol= 29.6%  shp= 0.25  dd= -55.1%  n=63
+NIFTY  2013-2019  ann=  10.88%  vol= 13.4%  shp= 0.84  dd= -21.0%  n=84
+NIFTY  2020-2026  ann=  10.92%  vol= 18.0%  shp= 0.67  dd= -28.1%  n=78
+NIFTY  pooled     ann=   8.67%  vol= 20.5%  shp= 0.51  dd= -55.1%  n=225
+
+=== MOMENTUM CONFIGS (net of costs) ===
+
+--- 12-1/K10  turnover=0.280/mo  gross_ann=34.98% ---
+  <=2012     ann=  38.57%  vol= 31.8%  shp= 1.20  dd= -66.7%  n=113  | act=+0.52%/mo t=+1.15 hit=58.4% | randpct=0.970
+  2013-2019  ann=  22.93%  vol= 19.2%  shp= 1.17  dd= -17.7%  n=84  | act=+0.35%/mo t=+1.01 hit=50.0% | randpct=0.935
+  2020-2026  ann=  39.58%  vol= 28.9%  shp= 1.31  dd= -30.1%  n=78  | act=+1.24%/mo t=+2.21 hit=56.4% | randpct=1.000
+  pooled     ann=  33.87%  vol= 27.7%  shp= 1.21  dd= -66.7%  n=275  | act=+0.68%/mo t=+2.52 hit=55.3% | randpct=1.000
+  rand median ann (pooled): 23.52%
+
+--- 12-1/K15  turnover=0.254/mo  gross_ann=35.01% ---
+  <=2012     ann=  38.24%  vol= 29.4%  shp= 1.26  dd= -63.0%  n=113  | act=+0.44%/mo t=+1.09 hit=56.6% | randpct=0.985
+  2013-2019  ann=  25.83%  vol= 18.5%  shp= 1.34  dd= -17.3%  n=84  | act=+0.54%/mo t=+1.76 hit=58.3% | randpct=0.995
+  2020-2026  ann=  37.08%  vol= 26.0%  shp= 1.36  dd= -30.7%  n=78  | act=+1.02%/mo t=+2.30 hit=57.7% | randpct=1.000
+  pooled     ann=  34.01%  vol= 25.5%  shp= 1.29  dd= -63.0%  n=275  | act=+0.64%/mo t=+2.79 hit=57.5% | randpct=1.000
+  rand median ann (pooled): 24.03%
+
+--- 12-1/K20  turnover=0.236/mo  gross_ann=35.11% ---
+  <=2012     ann=  39.21%  vol= 28.4%  shp= 1.32  dd= -60.2%  n=113  | act=+0.48%/mo t=+1.33 hit=61.1% | randpct=1.000
+  2013-2019  ann=  27.32%  vol= 17.6%  shp= 1.47  dd= -15.4%  n=84  | act=+0.63%/mo t=+2.19 hit=59.5% | randpct=1.000
+  2020-2026  ann=  34.60%  vol= 25.0%  shp= 1.33  dd= -29.0%  n=78  | act=+0.85%/mo t=+2.29 hit=57.7% | randpct=1.000
+  pooled     ann=  34.18%  vol= 24.5%  shp= 1.34  dd= -60.2%  n=275  | act=+0.63%/mo t=+3.14 hit=59.6% | randpct=1.000
+  rand median ann (pooled): 24.18%
+
+--- 12-0/K10  turnover=0.268/mo  gross_ann=36.58% ---
+  <=2012     ann=  40.55%  vol= 31.3%  shp= 1.26  dd= -68.0%  n=113  | act=+0.63%/mo t=+1.27 hit=55.8% | randpct=0.995
+  2013-2019  ann=  22.49%  vol= 19.0%  shp= 1.17  dd= -17.5%  n=84  | act=+0.32%/mo t=+0.88 hit=47.6% | randpct=0.925
+  2020-2026  ann=  43.27%  vol= 29.4%  shp= 1.39  dd= -32.3%  n=78  | act=+1.48%/mo t=+2.57 hit=56.4% | randpct=1.000
+  pooled     ann=  35.51%  vol= 27.6%  shp= 1.25  dd= -68.0%  n=275  | act=+0.77%/mo t=+2.73 hit=53.5% | randpct=1.000
+  rand median ann (pooled): 23.43%
+
+--- 12-0/K15  turnover=0.248/mo  gross_ann=35.11% ---
+  <=2012     ann=  35.40%  vol= 29.1%  shp= 1.20  dd= -62.4%  n=113  | act=+0.26%/mo t=+0.67 hit=57.5% | randpct=0.935
+  2013-2019  ann=  26.15%  vol= 18.4%  shp= 1.36  dd= -18.7%  n=84  | act=+0.56%/mo t=+1.82 hit=59.5% | randpct=1.000
+  2020-2026  ann=  41.33%  vol= 26.8%  shp= 1.45  dd= -29.9%  n=78  | act=+1.30%/mo t=+2.83 hit=60.3% | randpct=1.000
+  pooled     ann=  34.13%  vol= 25.6%  shp= 1.29  dd= -62.4%  n=275  | act=+0.65%/mo t=+2.86 hit=58.9% | randpct=1.000
+  rand median ann (pooled): 23.99%
+
+--- 12-0/K20  turnover=0.225/mo  gross_ann=32.79% ---
+  <=2012     ann=  35.16%  vol= 27.5%  shp= 1.25  dd= -56.8%  n=113  | act=+0.20%/mo t=+0.61 hit=55.8% | randpct=0.955
+  2013-2019  ann=  24.63%  vol= 17.8%  shp= 1.33  dd= -18.5%  n=84  | act=+0.45%/mo t=+1.52 hit=54.8% | randpct=0.990
+  2020-2026  ann=  35.38%  vol= 24.8%  shp= 1.36  dd= -29.9%  n=78  | act=+0.89%/mo t=+2.29 hit=57.7% | randpct=1.000
+  pooled     ann=  31.92%  vol= 24.1%  shp= 1.28  dd= -56.8%  n=275  | act=+0.47%/mo t=+2.40 hit=56.0% | randpct=1.000
+  rand median ann (pooled): 24.09%
+
+--- 6-1/K10  turnover=0.422/mo  gross_ann=35.71% ---
+  <=2012     ann=  40.91%  vol= 31.9%  shp= 1.24  dd= -49.8%  n=113  | act=+0.65%/mo t=+1.46 hit=54.0% | randpct=0.995
+  2013-2019  ann=  23.90%  vol= 20.3%  shp= 1.16  dd= -17.7%  n=84  | act=+0.44%/mo t=+1.31 hit=57.1% | randpct=0.950
+  2020-2026  ann=  35.67%  vol= 29.4%  shp= 1.20  dd= -34.7%  n=78  | act=+1.01%/mo t=+1.86 hit=60.3% | randpct=1.000
+  pooled     ann=  34.03%  vol= 28.1%  shp= 1.19  dd= -49.8%  n=275  | act=+0.69%/mo t=+2.65 hit=56.7% | randpct=1.000
+  rand median ann (pooled): 23.43%
+
+--- 6-1/K15  turnover=0.385/mo  gross_ann=34.75% ---
+  <=2012     ann=  40.47%  vol= 30.7%  shp= 1.27  dd= -52.2%  n=113  | act=+0.59%/mo t=+1.64 hit=60.2% | randpct=1.000
+  2013-2019  ann=  24.65%  vol= 20.1%  shp= 1.20  dd= -19.0%  n=84  | act=+0.48%/mo t=+1.67 hit=61.9% | randpct=0.990
+  2020-2026  ann=  32.58%  vol= 26.6%  shp= 1.20  dd= -31.9%  n=78  | act=+0.75%/mo t=+1.76 hit=61.5% | randpct=0.995
+  pooled     ann=  33.23%  vol= 26.6%  shp= 1.22  dd= -52.2%  n=275  | act=+0.61%/mo t=+2.87 hit=61.1% | randpct=1.000
+  rand median ann (pooled): 23.23%
+
+--- 6-1/K20  turnover=0.351/mo  gross_ann=33.91% ---
+  <=2012     ann=  39.56%  vol= 29.3%  shp= 1.30  dd= -53.2%  n=113  | act=+0.51%/mo t=+1.68 hit=61.1% | randpct=1.000
+  2013-2019  ann=  24.66%  vol= 19.8%  shp= 1.22  dd= -19.8%  n=84  | act=+0.48%/mo t=+1.79 hit=59.5% | randpct=1.000
+  2020-2026  ann=  31.37%  vol= 25.1%  shp= 1.22  dd= -30.5%  n=78  | act=+0.64%/mo t=+1.74 hit=59.0% | randpct=1.000
+  pooled     ann=  32.53%  vol= 25.5%  shp= 1.24  dd= -53.2%  n=275  | act=+0.54%/mo t=+2.97 hit=60.0% | randpct=1.000
+  rand median ann (pooled): 23.59%
+
+--- 6-0/K10  turnover=0.389/mo  gross_ann=33.22% ---
+  <=2012     ann=  31.61%  vol= 30.3%  shp= 1.06  dd= -57.1%  n=113  | act=+0.03%/mo t=+0.07 hit=54.9% | randpct=0.640
+  2013-2019  ann=  26.41%  vol= 22.9%  shp= 1.15  dd= -28.2%  n=84  | act=+0.65%/mo t=+1.53 hit=59.5% | randpct=0.990
+  2020-2026  ann=  37.79%  vol= 29.7%  shp= 1.24  dd= -34.9%  n=78  | act=+1.15%/mo t=+1.99 hit=57.7% | randpct=1.000
+  pooled     ann=  31.71%  vol= 28.0%  shp= 1.13  dd= -57.1%  n=275  | act=+0.54%/mo t=+1.98 hit=57.1% | randpct=1.000
+  rand median ann (pooled): 23.48%
+
+--- 6-0/K15  turnover=0.357/mo  gross_ann=32.11% ---
+  <=2012     ann=  33.04%  vol= 29.3%  shp= 1.13  dd= -57.2%  n=113  | act=+0.10%/mo t=+0.27 hit=48.7% | randpct=0.785
+  2013-2019  ann=  26.22%  vol= 20.4%  shp= 1.25  dd= -18.3%  n=84  | act=+0.59%/mo t=+1.78 hit=58.3% | randpct=1.000
+  2020-2026  ann=  32.35%  vol= 26.5%  shp= 1.20  dd= -30.7%  n=78  | act=+0.74%/mo t=+1.59 hit=55.1% | randpct=1.000
+  pooled     ann=  30.73%  vol= 26.0%  shp= 1.17  dd= -57.2%  n=275  | act=+0.43%/mo t=+1.94 hit=53.5% | randpct=1.000
+  rand median ann (pooled): 23.29%
+
+--- 6-0/K20  turnover=0.321/mo  gross_ann=32.03% ---
+  <=2012     ann=  33.40%  vol= 29.0%  shp= 1.14  dd= -55.4%  n=113  | act=+0.12%/mo t=+0.36 hit=50.4% | randpct=0.850
+  2013-2019  ann=  26.17%  vol= 19.0%  shp= 1.33  dd= -13.4%  n=84  | act=+0.57%/mo t=+2.15 hit=56.0% | randpct=1.000
+  2020-2026  ann=  32.11%  vol= 24.4%  shp= 1.28  dd= -30.4%  n=78  | act=+0.68%/mo t=+1.87 hit=56.4% | randpct=1.000
+  pooled     ann=  30.79%  vol= 24.9%  shp= 1.21  dd= -55.4%  n=275  | act=+0.41%/mo t=+2.24 hit=53.8% | randpct=1.000
+  rand median ann (pooled): 23.90%
+
+=== DECILES (12-1, gross, EW within decile, monthly mean) ===
+  D1   1.867%
+  D2   1.842%
+  D3   1.907%
+  D4   1.693%
+  D5   1.786%
+  D6   1.933%
+  D7   2.440%
+  D8   2.238%
+  D9   2.557%
+  D10  2.839%
+  rho=0.794 p=0.0041  D10-D1 +0.97%/mo ann=12.3% t=2.07
+
+=== CRASH (12-1/K15) ===
+worst 3 abs: [('2008-10-31', '-27.2%'), ('2020-03-31', '-25.4%'), ('2008-01-31', '-21.8%')]
+worst 3 active (mom, ew): [('2009-05-31', '-22.2%', '35.3%'), ('2009-04-30', '-11.6%', '17.1%'), ('2014-03-31', '-10.0%', '12.2%')]
+2009 Mar-Sep: mom 64.6% ew 123.4%
+2020 Apr-Dec: mom 92.9% ew 83.1%
+
+window: 2003-07-31 -> 2026-06-30 hold months: 275
