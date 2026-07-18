@@ -177,7 +177,10 @@ class EntryFSM:
             return ArmResult(False, "costs_dominate")
         meta = {"final": zone.final, "mults": dict(zone.mults),
                 "entry": str(entry), "risk_pts": str(risk),
-                "cluster": [str(zone.zone[0]), str(zone.zone[1])]}
+                "cluster": [str(zone.zone[0]), str(zone.zone[1])],
+                # ARMING verdict's members, journaled with trade_open:
+                # calibration credits these, never a later verdict's
+                "members": list(zone.members)}
         if sig is not None:                          # journal the tiny-SL source
             meta["sl_source"] = sig.detector
         if snap_skipped:

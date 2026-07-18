@@ -114,6 +114,9 @@ def test_judas_two_day_orchestrator(tmp_path):
     assert opens[0]["at"][11:16] == "12:51" and opens[0]["stop"] == "100.40"
     assert opens[0]["price"] == "100.60"                  # AT the limit, no chase
     assert D(opens[0]["stop"]) < D(opens[0]["zone"][0])   # behind traded zone
+    # FIX 6: the ARMING verdict's members ride in the plan meta for calibrate
+    assert opens[0]["plan"]["members"] and any(
+        v["members"] == opens[0]["plan"]["members"] for v in verdicts)
     assert [p["reason"] for p in parts] == ["1R", "2R"]
     assert len(closes) == 1 and closes[0]["reason"] == ExitReason.EOD.value
     assert D(closes[0]["exit_price"]) > D(opens[0]["price"])
@@ -260,6 +263,57 @@ def test_orchestrator_level_dir_survives_across_runs(tmp_path):
     assert orch2.pipelines["ACME"].levels == persisted     # roundtrip: init loads it back
 
 
+def test_watch_resume_watermark_no_duplicate_processing(tmp_path):
+    """FIX 1: a resumed run re-reads every CSV row from the beginning, which
+    used to replay old data against end-state persisted levels (duplicate
+    signals/trades + leakage). The run now persists a last-processed
+    watermark next to the levels: run 2 over the SAME day feeds those rows
+    to the store only (no new journaling at/before the watermark), while an
+    appended day 2 processes normally with rebuilt history."""
+    ld, jd = tmp_path / "levels", tmp_path / "journal"
+    mk = lambda feed, j: Orchestrator(cfg(), feed, ["ACME"], capital=100000,
+                                      max_qty=50, journal_dir=j, level_dir=ld)
+    assert mk(ScenarioFeed([judas_reversal("ACME", DAY1, 100.0)]), jd).run()[
+        "trades"] == 1
+    wm = LevelStore(ld).load_watermark("ACME")
+    assert wm == datetime.combine(DAY1, time(15, 29), tzinfo=IST)
+    day1_entries = Journal(jd).read(DAY1)
+    orch2 = mk(ScenarioFeed([judas_reversal("ACME", DAY1, 100.0),
+                             judas_reversal("ACME", DAY2, 107.0)]), jd)
+    orch2.run()
+    d1 = Journal(jd).read(DAY1)
+    assert d1[:len(day1_entries)] == day1_entries       # nothing re-emitted
+    assert all(e["at"][11:16] >= "15:30"                # only the final-bucket
+               for e in d1[len(day1_entries):])         # close, past the wm
+    assert sum(e["kind"] == "trade_open" for e in d1) == 1   # no dup trade
+    assert Journal(jd).read(DAY2)                       # new rows DID process
+    # day-1 history rebuilt in the store (context for day 2), and the
+    # watermark advanced to day 2's last row
+    assert orch2.pipelines["ACME"].store.view(
+        "ACME", wm + timedelta(minutes=1)).last(1, Timeframe.M1)
+    assert LevelStore(ld).load_watermark("ACME").date() == DAY2
+
+
+def test_stale_index_view_treated_as_absent(tmp_path, monkeypatch):
+    """FIX 11: an IndexView older than index_stale_min (default 15) minutes
+    at the M5 close is dropped -- detectors/scoring see index=None instead
+    of consuming the last read forever after the index feed dies. Unstamped
+    views (ts=None, legacy/tests) are never considered stale."""
+    pipe, _ = make_pipeline(tmp_path)
+    seen = []
+    monkeypatch.setattr(pipe.registry, "run_all",
+                        lambda ctx: seen.append(ctx.index) or [])
+    t0 = datetime.combine(DAY1, time(10, 0), tzinfo=IST)
+    mk = lambda ts: IndexView(Direction.LONG, "MARKUP", 1.0, ts=ts)
+    views = [mk(t0 - timedelta(minutes=11)),   # 16 min old at the 10:05 close
+             mk(t0 + timedelta(minutes=5)),    # 5 min old at 10:10: fresh
+             IndexView(Direction.LONG, "MARKUP", 1.0)]      # ts=None: legacy
+    for m in range(16):
+        pipe.on_m1(m1("X", t0 + timedelta(minutes=m), 100, 101, 99, 100),
+                   views[max(0, (m - 1) // 5)])
+    assert seen == [None, views[1], views[2]]
+
+
 def _swing(kind, price, minute, tf=Timeframe.M15):
     born = datetime.combine(DAY1, time(10, 0), tzinfo=IST) + timedelta(minutes=minute)
     p = D(str(price))
@@ -319,8 +373,8 @@ def test_index_pipeline_runs_own_wyckoff_detect(tmp_path, monkeypatch):
 # --------------------------------------------- 2. broker+manager integration
 
 def test_partials_and_eod_exact_accounting(tmp_path):
-    """Scripted LONG 50 stop 95, entry limit AT zone CE 100 (half-spread
-    only, quantized back to 100.00): 1R (market) and T2-touch (limit AT 110)
+    """Scripted LONG 50 stop 95, entry limit filling AT zone CE 100.00
+    exactly: 1R (market) and T2-touch (limit AT 110)
     shave 16 each through the broker, EOD squares off the remaining 18;
     realized is the exact Decimal sum including entry + exit costs, and
     RiskState records the close."""
@@ -483,8 +537,8 @@ def _queue_limit(pipe, t0, direction=Direction.LONG, stop="490"):
 
 def test_limit_entry_fills_at_limit_long(tmp_path):
     """LONG: M1s whose lows stay above the 500 limit do NOT fill; the first
-    M1 trading through fills AT 500 + half-spread (2bps), never the market
-    open -- the chase is gone by construction. R off the limit price."""
+    M1 trading through fills AT 500 exactly -- a limit order can never fill
+    worse than its price, and never the market open. R off the limit price."""
     pipe, risk = make_pipeline(tmp_path)
     t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
     pipe.on_m1(m1("X", t0, 500, 500, 500, 500))
@@ -494,12 +548,12 @@ def test_limit_entry_fills_at_limit_long(tmp_path):
     pipe.on_m1(m1("X", t0 + timedelta(minutes=2), 502, 502, 499.90, 500.50))
     pos = pipe.position
     assert pos is not None and pipe._pending_plan is None
-    assert pos.entry.price == D("500.10")    # 500 x (1 + 2bps), no slippage
-    assert risk.open_risk == (D("500.10") - D("490")) * 10
+    assert pos.entry.price == D("500.00")    # AT the limit, no spread/slippage
+    assert risk.open_risk == (D("500.00") - D("490")) * 10
 
 
 def test_limit_entry_fills_at_limit_short(tmp_path):
-    """SHORT mirror: fills when an M1 high trades through, AT 500 - 2bps."""
+    """SHORT mirror: fills when an M1 high trades through, AT 500 exactly."""
     pipe, _ = make_pipeline(tmp_path)
     t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
     pipe.on_m1(m1("X", t0, 498, 498, 498, 498))
@@ -508,20 +562,19 @@ def test_limit_entry_fills_at_limit_short(tmp_path):
     assert pipe.position is None and pipe._pending_plan is plan  # high < limit
     pipe.on_m1(m1("X", t0 + timedelta(minutes=2), 499, 500.20, 498, 499))
     assert pipe.position is not None
-    assert pipe.position.entry.price == D("499.90")   # 500 x (1 - 2bps)
+    assert pipe.position.entry.price == D("500.00")   # AT the limit
 
 
 def test_limit_entry_gap_through_fills_at_limit(tmp_path):
     """An M1 gapping clean through the limit (opens beyond it) still fills
-    AT the limit -- always-adverse simulation, never a better-than-limit
-    price."""
+    AT the limit -- never a better-than-limit price."""
     pipe, _ = make_pipeline(tmp_path)
     t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
     pipe.on_m1(m1("X", t0, 502, 502, 502, 502))
     _queue_limit(pipe, t0)
     pipe.on_m1(m1("X", t0 + timedelta(minutes=1), 498, 499, 497, 498))
     assert pipe.position is not None
-    assert pipe.position.entry.price == D("500.10")   # AT limit, not the open
+    assert pipe.position.entry.price == D("500.00")   # AT limit, not the open
 
 
 def test_limit_entry_expires_unfilled(tmp_path):
@@ -543,22 +596,54 @@ def test_limit_entry_expires_unfilled(tmp_path):
 
 def test_journal_r_denominated_on_fill_risk(tmp_path):
     """Effective R (finding 5): the journaled r divides realized by the
-    FILL->stop risk (10.10 off the 500.10 limit fill), never the plan-CE
-    risk (10.00). RiskState's open-risk ledger uses the same denominator."""
+    FILL->stop risk (pos.risk_pts), never the plan-CE risk. Exact limit
+    fills make them coincide (fill 500.00 = CE); the denominator is still
+    read off the fill. RiskState's open-risk ledger uses the same one."""
     pipe, risk = make_pipeline(tmp_path)
     t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
     pipe.on_m1(m1("X", t0, 500, 500, 500, 500))
     _queue_limit(pipe, t0)                            # zone (495,505) stop 490
     pipe.on_m1(m1("X", t0 + timedelta(minutes=1), 500, 501, 499, 500))
     pos = pipe.position
-    assert pos.risk_pts == D("10.10")                 # fill 500.10 - stop 490
-    assert risk.open_risk == D("10.10") * 10
+    assert pos.risk_pts == D("10.00")                 # fill 500.00 - stop 490
+    assert risk.open_risk == D("10.00") * 10
     pipe._pending_exits = [Action("EXIT_STOP", None, "close_beyond_stop")]
     pipe.on_m1(m1("X", t0 + timedelta(minutes=2), 489, 489, 488, 488))
     assert pipe.position is None and pos.realized < 0
     [close] = [e for e in pipe.journal.read(t0.date())
                if e["kind"] == "trade_close"]
-    assert close["r"] == round(float(pos.realized / (D("10.10") * 10)), 3)
+    assert close["r"] == round(float(pos.realized / (D("10.00") * 10)), 3)
+
+
+def test_pending_fill_blocked_when_risk_locked(tmp_path):
+    """FIX 2: a resting limit must NOT fill after the daily loss-lock
+    engaged -- arm-time risk caps are re-checked at fill time, journaled as
+    skip 'gate_at_fill'. (Exits stay ungated: see
+    test_risk_state_shared_across_symbols.)"""
+    pipe, risk = make_pipeline(tmp_path)
+    t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
+    pipe.on_m1(m1("X", t0, 500, 500, 500, 500))
+    _queue_limit(pipe, t0)
+    risk.locked = True                       # lock engages while the limit rests
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=1), 500, 501, 499, 500))  # touch
+    assert pipe.position is None and pipe._pending_plan is None
+    assert risk.trades_today == 0 and pipe.n_trades == 0
+    [skip] = [e for e in pipe.journal.read(t0.date()) if e["kind"] == "skip"]
+    assert skip["gate"] == "gate_at_fill" and "locked" in skip["reason"]
+
+
+def test_pending_fill_blocked_on_correlation_cap(tmp_path):
+    """FIX 2: same re-check for the same-direction correlation cap (2): two
+    LONGs opened elsewhere while the limit rested block the fill."""
+    pipe, risk = make_pipeline(tmp_path)
+    t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
+    pipe.on_m1(m1("X", t0, 500, 500, 500, 500))
+    _queue_limit(pipe, t0)                                # LONG
+    risk.open_dirs = {"A": Direction.LONG, "B": Direction.LONG}
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=1), 500, 501, 499, 500))
+    assert pipe.position is None and pipe.n_trades == 0
+    [skip] = [e for e in pipe.journal.read(t0.date()) if e["kind"] == "skip"]
+    assert skip["gate"] == "gate_at_fill" and "LONG" in skip["reason"]
 
 
 def test_pending_limit_blocks_entry_flow(tmp_path, monkeypatch):

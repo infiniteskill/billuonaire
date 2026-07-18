@@ -1,8 +1,10 @@
 """PaperBroker: honest, always-adverse fill simulation for the dry run.
 
-Every fill executes at the given candle's OPEN pushed against us by
-(half_spread_bps + slippage_bps): a LONG entry buys higher, its exit sells
-lower; SHORT mirrors. Fill prices are tick-quantized; costs stay
+Every market-style fill executes at the given candle's OPEN pushed against
+us by (half_spread_bps + slippage_bps): a LONG entry buys higher, its exit
+sells lower; SHORT mirrors. A resting LIMIT traded through (explicit
+``price``) fills AT its price exactly -- a real limit order can never fill
+worse than its limit. Fill prices are tick-quantized; costs stay
 full-precision Decimal money (config floats cross into Decimal via str()).
 
 Cost semantics (verified): config stt_pct / exchange_pct are PERCENTS of
@@ -49,28 +51,28 @@ class PaperBroker:
     def __init__(self, settings: Settings):
         f = settings.fills
         self.spec = settings.market_spec()
-        self._half = Decimal(str(f.half_spread_bps)) / 10000
-        self._adverse = self._half + Decimal(str(f.slippage_bps)) / 10000
+        self._adverse = (Decimal(str(f.half_spread_bps))
+                         + Decimal(str(f.slippage_bps))) / 10000
         self._costs = f.costs
 
     def entry_fill(self, plan: TradePlan, candle: Candle,
                    price: Decimal | None = None) -> Fill:
         """Fill the whole plan at candle.open, adverse in trade direction.
-        ``price`` = resting limit traded through: fill AT it, half-spread
-        adverse only, no slippage -- limit orders don't slip."""
+        ``price`` = resting limit traded through: fill AT it exactly -- a
+        limit order can never fill worse than its price."""
         return self._fill(candle.open if price is None else price, candle.ts,
                           plan.qty, plan.direction.value,
-                          self._adverse if price is None else self._half)
+                          self._adverse if price is None else Decimal(0))
 
     def exit_fill(self, position: Position, candle: Candle, qty: int,
                   price: Decimal | None = None) -> Fill:
         """Exit qty at candle.open, adverse against the position (reversed).
-        ``price`` = limit fill AT that price (target exits): half-spread
-        adverse only, no slippage -- limit orders don't slip."""
+        ``price`` = limit fill AT that price exactly (target exits) -- a
+        limit order can never fill worse than its price."""
         sign = -position.plan.direction.value
         return (self._fill(candle.open, candle.ts, qty, sign, self._adverse)
                 if price is None
-                else self._fill(price, candle.ts, qty, sign, self._half))
+                else self._fill(price, candle.ts, qty, sign, Decimal(0)))
 
     def _fill(self, base: Decimal, ts, qty: int, sign: int, rate: Decimal) -> Fill:
         """sign +1 pays up (LONG buy / SHORT cover), -1 receives down (a SELL
