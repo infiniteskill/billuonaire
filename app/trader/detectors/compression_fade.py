@@ -78,12 +78,18 @@ class CompressionFadeDetector(Detector):
         return out
 
     def _is_compress(self, c: Candle) -> bool:
-        r = c.range
+        # float, not Decimal: rr.py::compress_fade classifies in float, and
+        # its 0.2/0.35*range rounding occasionally lands exactly on a tick-
+        # quantized wick/body (e.g. 0.2*1.5 == 0.30000000000000004 in float
+        # but == 0.3 in Decimal) -- Decimal here would silently reclassify
+        # those candles, diverging from the validated reference (parity-gated
+        # in test_compression_fade.py).
+        r = float(c.range)
         if r <= 0:
             return False
-        bf = Decimal(str(self.params["body_frac"]))
-        wf = Decimal(str(self.params["wick_frac"]))
-        return c.body <= bf * r and c.upper_wick >= wf * r and c.lower_wick >= wf * r
+        bf, wf = float(self.params["body_frac"]), float(self.params["wick_frac"])
+        return (float(c.body) <= bf * r and float(c.upper_wick) >= wf * r
+                and float(c.lower_wick) >= wf * r)
 
     def _strength(self, c: Candle) -> float:
         """Coil quality: tighter body + bigger min-wick => higher, linear in

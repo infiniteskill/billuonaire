@@ -8,8 +8,13 @@ only, no Levels.
 Fixtures use N=3 (not the N=20 production default) so a qualifying bar fits
 in a manageable number of bars (window = N+1 = 4)."""
 
+import csv
 from datetime import datetime, timedelta
+from decimal import Decimal
+from pathlib import Path
 from zoneinfo import ZoneInfo
+
+import pytest
 
 from trader.detectors.turtle_soup import TurtleSoupDetector
 from trader.engine.context import DayState, StockContext
@@ -141,3 +146,92 @@ def test_continuum_cross_day_fade():
     [ev] = det.detect(ctx)                  # window spans the boundary: fires
     assert ev.direction is Direction.LONG
     assert ev.meta["sl"] == str(tick(90))
+
+
+# --------------------------------------------------------------------------
+# PARITY GATE -- real continuum data vs liq_hunt.py::turtle_soup (validated ref)
+# --------------------------------------------------------------------------
+DATA_DIR = Path(__file__).resolve().parents[3] / "data" / "wide"
+_SYMBOLS = ("RELIANCE", "INFY")     # LTIM/TATAMOTORS excluded: empty in data/wide
+_BPD = 375                          # M1 bars/session (full 09:15-15:30 NSE day)
+
+
+def _load_m1(symbol):
+    with (DATA_DIR / f"{symbol}.csv").open() as f:
+        return [Candle(symbol, M1, datetime.fromisoformat(r["ts"]),
+                       Decimal(r["open"]), Decimal(r["high"]), Decimal(r["low"]),
+                       Decimal(r["close"]), int(float(r["volume"])))
+                for r in csv.DictReader(f)]
+
+
+def _turtle_soup_ref(m5, N=20):
+    """Verbatim port of the scratchpad reference liq_hunt.py::turtle_soup
+    (its ``atrs``/``mins`` params are unused in the body, so dropped here)."""
+    H = [float(c.high) for c in m5]
+    L = [float(c.low) for c in m5]
+    C = [float(c.close) for c in m5]
+    ev = []
+    for i in range(N, len(m5)):
+        if L[i] < min(L[i - N:i]) and C[i] > L[i - N]:
+            ev.append((i, 1, L[i]))
+        elif H[i] > max(H[i - N:i]) and C[i] < H[i - N]:
+            ev.append((i, -1, H[i]))
+    return ev
+
+
+def _feed_real(m1_rows, det, symbol):
+    """Drive the detector tick-by-tick: one M5 close per 5 real M1 minutes,
+    on_session_end() at each session boundary -- the same order as
+    SymbolPipeline.on_m1/_end_session (pipeline.py): a day's last M5 bucket
+    closes (and detect() runs on it) before on_session_end() fires, which
+    runs before the next day's first M1 is added. Real data/wide sessions
+    have no gaps (uniform 375 M1/day), so this reproduces that order exactly
+    without needing the gap-closing machinery pipeline.py needs for live/
+    partial feeds. Returns (events, full continuum M5 series)."""
+    store = CandleStore("/nonexistent")
+    got, day = [], None
+    for ds in range(0, len(m1_rows), _BPD):
+        rows = m1_rows[ds:ds + _BPD]
+        if day is not None:
+            det.on_session_end()
+        day = rows[0].ts.date()
+        for k in range(0, len(rows), 5):
+            for c in rows[k:k + 5]:
+                store.add(c)
+            now = rows[k].ts + timedelta(minutes=5)
+            ctx = StockContext(symbol=symbol, now=now, candles=store.view(symbol, now),
+                               levels=[], evidence_history=[],
+                               day=DayState(session_date=day))
+            for e in det.detect(ctx):
+                # e.ts is ctx.now (decision instant = bar close); pair with
+                # the closing bar's OWN ts (bucket start), matching m5[i].ts
+                got.append((rows[k].ts, e.direction, Decimal(e.meta["sl"])))
+    return got, store._data[symbol][M5]
+
+
+@pytest.mark.skipif(not (DATA_DIR / "RELIANCE.csv").exists(),
+                    reason="data/wide real fixtures not present")
+def test_parity_with_reference_over_real_continuum_data():
+    """PARITY GATE: for each symbol, run liq_hunt.py::turtle_soup (inlined,
+    verbatim, N=20) over the full session-anchored continuum M5 series, and
+    assert the detector -- driven tick-by-tick, on_session_end at every
+    session boundary -- reproduces EXACTLY the same event sequence (ts,
+    direction, sl). No allowed differences: unlike compress_fade, each
+    qualifying bar i maps to at most one event AT i itself (no lookahead), so
+    output order is already strictly chronological on both sides -- plain
+    list equality holds, no sorting needed. sl_floor is ATR-gated but
+    detect()'s emission itself is not, so there is no ATR-warmup gap either."""
+    total = 0
+    dirs = set()
+    for symbol in _SYMBOLS:
+        m1 = _load_m1(symbol)
+        det = TurtleSoupDetector({})            # default N=20, matches ref default
+        got, m5 = _feed_real(m1, det, symbol)
+        ref = _turtle_soup_ref(m5)
+        expected = [(m5[i].ts, Direction.LONG if d == 1 else Direction.SHORT,
+                    Decimal(str(x))) for i, d, x in ref]
+        assert got == expected, symbol
+        total += len(expected)
+        dirs |= {d for _, d, _ in expected}
+    assert total > 10                            # fixture exercises the detector
+    assert dirs == {Direction.LONG, Direction.SHORT}
