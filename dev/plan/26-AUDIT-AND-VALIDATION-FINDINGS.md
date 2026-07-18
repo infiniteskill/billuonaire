@@ -74,7 +74,7 @@ yet (C-1) so this is POTENTIAL RR motivating the SL-wiring; and it's pre-F-fix (
 
 | # | sev | where | bug | status |
 |---|---|---|---|---|
-| A-h | CRIT | study.py:120 | force-enables all 19 detectors → shared ctx.levels contamination (ob_lux+orderblock double OB pool; inflates volume/sweep). Numbers reflect 19-detector soup. | FIXED: `--only` added; v2-only re-run in flight |
+| A-h | CRIT | study.py:120 | force-enables all 19 detectors → shared ctx.levels contamination (ob_lux+orderblock double OB pool; inflates volume/sweep). Numbers reflect 19-detector soup. | FIXED in study.py; **CLI --only was parsed but NOT passed to run_study until 3c53ab8 (external-review catch) → val50_v2/val50_final were NOT isolated despite the doc's earlier claim. 60d battery/recall/hunt unaffected (enabled set in Python directly). Signal-emitters state-independent either way; ob_lux/fvg_cb rows in val50* remain contaminated.** |
 | B-1 | CRIT | levels.py + pipeline._end_session | LevelEngine memories (_since_swept/_pending_break/_pending_invert/_prev_close/_round_side) never reset at session boundary → day-2 first bar emits RECLAIMED treating overnight as "1 candle"; determinism break | fixer in flight |
 | B-2 | CRIT | pipeline._end_session/_fill_pending | EOD/exit can fill against NEXT day's open on a feed gap → overnight risk + misstated P&L; breaks "no overnight" | fixer in flight |
 | C-1 | CRIT | entry.py + 5 detectors | executor does NOT honor meta["sl"]; real stop = generic ATR/zone + min_stop_atr=1.0 floor → measured tiny-SL RR NOT achievable until wired (Wave-3) | Wave-3 SL-wiring |
