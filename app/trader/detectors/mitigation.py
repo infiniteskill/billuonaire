@@ -39,7 +39,12 @@ strength = linear 0..1 ramp of how far disp exceeds the ``disp_atr``
 threshold: 0 at disp==need, capped at 1.0 by disp==2*need (the source has no
 strength score of its own; this is the port's proxy for displacement
 conviction). Degenerate case: disp_atr == 0 -> need == 0 -> strength == 1.0
-(no ramp denominator, treated as maximally-conviction)."""
+(no ramp denominator, treated as maximally-conviction).
+
+Emission hygiene (``_collapse``): two different pending blocks can mitigate
+off the SAME touch candle in one tick (overlapping/adjacent body zones) --
+one physical price event should fire once, so same-direction clashes within
+a single ``detect()`` call collapse to the single strongest Evidence."""
 
 from __future__ import annotations
 
@@ -67,6 +72,24 @@ def _atr_of(candles: list[Candle], period: int = _PERIOD) -> Decimal | None:
     return sum(trs) / Decimal(period)
 
 
+def _collapse(evs: list[Evidence], tick: Decimal) -> list[Evidence]:
+    """Per-tick emission hygiene: two different pending blocks can both be
+    mitigated by the SAME touch candle (overlapping/adjacent body zones, or
+    sl within one tick) -- one physical price event, not two signals.
+    Collapse same-direction clashes to the single strongest (max strength;
+    tie -> tightest zone)."""
+    kept: list[Evidence] = []
+    for e in evs:
+        j = next((k for k, o in enumerate(kept) if o.direction is e.direction and
+                  (o.zone[0] <= e.zone[1] and e.zone[0] <= o.zone[1] or
+                   abs(Decimal(o.meta["sl"]) - Decimal(e.meta["sl"])) <= tick)), None)
+        if j is None:
+            kept.append(e)
+        elif (e.strength, e.zone[0] - e.zone[1]) > (kept[j].strength, kept[j].zone[0] - kept[j].zone[1]):
+            kept[j] = e
+    return kept
+
+
 @register
 class MitigationDetector(Detector):
     name = "mitigation"
@@ -92,7 +115,7 @@ class MitigationDetector(Detector):
         if len(window) >= lookback + 2 and window[-(lookback + 1)].ts not in self._seen:
             hist = ctx.candles.last(lookback + _PERIOD + 1, tf)
             self._form(window, hist, lookback)
-        return touches
+        return _collapse(touches, ctx.spec.tick_size)
 
     def _form(self, window: list[Candle], hist: list[Candle], lookback: int) -> None:
         blk = window[-(lookback + 1)]
@@ -111,7 +134,15 @@ class MitigationDetector(Detector):
             if any((c.close < c.open) if sign == 1 else (c.close > c.open) for c in seg):
                 continue
             disp = max((c.close - blk.close) * sign for c in seg)
-            if disp < need:
+            # float, not Decimal, and each close independently rounded to
+            # float BEFORE subtracting: ict_pieces.py::mitigation_block
+            # precomputes C = [float(c.close) for c in m5] once, then diffs
+            # those floats -- not the same value as float()-casting the
+            # Decimal-exact disp above (double rounding), so a boundary tie
+            # can disagree unless replicated bit-for-bit (parity-gated in
+            # test_mitigation.py, same fix as compression_fade's _is_compress).
+            disp_f = max((float(c.close) - float(blk.close)) * sign for c in seg)
+            if disp_f < float(self.params["disp_atr"]) * float(a):
                 continue
             self._seen.add(blk.ts)
             lo, hi = min(blk.open, blk.close), max(blk.open, blk.close)

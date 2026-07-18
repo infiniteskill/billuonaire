@@ -14,7 +14,13 @@ gap_atr * ATR), just not upserted into ctx.levels.
 CONTINUUM: the 3-candle window is ``ctx.candles.last(3)`` -- continuous
 multi-day history, never session-scoped -- and live gaps carry across
 sessions. That is how the edge was VALIDATED (ict_pieces.py ran one
-concatenated series): a day-1 FVG can pair with a day-2 FVG."""
+concatenated series): a day-1 FVG can pair with a day-2 FVG.
+
+Emission hygiene (``_collapse``): two different bull/bear gap pairs can
+straddle the SAME touch close in one tick (their overlap zones overlap each
+other, or share an sl) -- one physical price event should fire once, so
+same-direction clashes within a single ``detect()`` call collapse to the
+single strongest Evidence."""
 
 from __future__ import annotations
 
@@ -37,6 +43,23 @@ class _Gap:
     hi: Decimal
     bull: bool
     dead: bool = False
+
+
+def _collapse(evs: list[Evidence], tick: Decimal) -> list[Evidence]:
+    """Per-tick emission hygiene: two DIFFERENT bull/bear pairs can straddle
+    the SAME physical touch close (their overlap zones overlap each other,
+    or their sl sits within one tick) -- collapse same-direction clashes to
+    the single strongest (max strength; tie -> tightest zone)."""
+    kept: list[Evidence] = []
+    for e in evs:
+        j = next((k for k, o in enumerate(kept) if o.direction is e.direction and
+                  (o.zone[0] <= e.zone[1] and e.zone[0] <= o.zone[1] or
+                   abs(Decimal(o.meta["sl"]) - Decimal(e.meta["sl"])) <= tick)), None)
+        if j is None:
+            kept.append(e)
+        elif (e.strength, e.zone[0] - e.zone[1]) > (kept[j].strength, kept[j].zone[0] - kept[j].zone[1]):
+            kept[j] = e
+    return kept
 
 
 @register
@@ -69,7 +92,7 @@ class BprDetector(Detector):
         for g in self._gaps:
             if not g.dead and (last.close < g.lo if g.bull else last.close > g.hi):
                 g.dead = True
-        return self._overlaps(ctx, last, floor)
+        return _collapse(self._overlaps(ctx, last, floor), ctx.spec.tick_size)
 
     def _find_gap(self, window: list[Candle], atr: Decimal) -> None:
         c1, c2, c3 = window

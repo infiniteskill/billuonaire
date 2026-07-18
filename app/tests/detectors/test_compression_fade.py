@@ -54,8 +54,10 @@ def ctx_at(store, n_bars):
 
 
 def test_up_break_emits_short_with_sl_at_break_high():
-    store = make_store([COMPRESS, UP_BREAK])
-    [ev] = CompressionFadeDetector({}).detect(ctx_at(store, 2))
+    # FILLER anchors COMPRESS off bar 0 of the continuum (see the dedicated
+    # bar0 carve-out test below) -- this test is about the break mechanics.
+    store = make_store([FILLER, COMPRESS, UP_BREAK])
+    [ev] = CompressionFadeDetector({}).detect(ctx_at(store, 3))
     assert ev.detector == "compression_fade"
     assert ev.direction is Direction.SHORT
     # raw break high, no buffer; entry key dropped; atr None here -> sl_floor "0"
@@ -66,8 +68,8 @@ def test_up_break_emits_short_with_sl_at_break_high():
 
 
 def test_down_break_emits_long_with_sl_at_break_low():
-    store = make_store([COMPRESS, DOWN_BREAK])
-    [ev] = CompressionFadeDetector({}).detect(ctx_at(store, 2))
+    store = make_store([FILLER, COMPRESS, DOWN_BREAK])
+    [ev] = CompressionFadeDetector({}).detect(ctx_at(store, 3))
     assert ev.direction is Direction.LONG
     assert ev.meta == {"event": "COMPRESSION_FADE", "sl": str(tick(93)), "sl_floor": "0"}
     assert ev.zone == (tick(93), tick("93.5"))
@@ -88,11 +90,11 @@ def test_break_beyond_window_no_signal():
 
 
 def test_break_within_window_fires_on_third_bar():
-    store = make_store([COMPRESS, INSIDE, INSIDE, UP_BREAK])
+    store = make_store([FILLER, COMPRESS, INSIDE, INSIDE, UP_BREAK])
     det = CompressionFadeDetector({})
-    assert det.detect(ctx_at(store, 2)) == []
     assert det.detect(ctx_at(store, 3)) == []
-    [ev] = det.detect(ctx_at(store, 4))
+    assert det.detect(ctx_at(store, 4)) == []
+    [ev] = det.detect(ctx_at(store, 5))
     assert ev.direction is Direction.SHORT
 
 
@@ -111,32 +113,49 @@ def test_no_lookahead_before_break_bar_closes():
 
 
 def test_dedupe_one_fire_per_compression():
-    store = make_store([COMPRESS, UP_BREAK])
+    store = make_store([FILLER, COMPRESS, UP_BREAK])
     det = CompressionFadeDetector({})
-    [ev] = det.detect(ctx_at(store, 2))
-    assert det.detect(ctx_at(store, 2)) == []  # same tick again: no duplicate
+    [ev] = det.detect(ctx_at(store, 3))
+    assert det.detect(ctx_at(store, 3)) == []  # same tick again: no duplicate
 
 
 def test_on_session_end_keeps_recent_dedupe():
     # Continuum: dedupe survives the boundary; a fired coil still inside the
     # break window must NOT re-fire after on_session_end (age-prune only).
-    store = make_store([COMPRESS, UP_BREAK])
+    store = make_store([FILLER, COMPRESS, UP_BREAK])
     det = CompressionFadeDetector({})
-    det.detect(ctx_at(store, 2))
+    det.detect(ctx_at(store, 3))
     det.on_session_end()
     assert det._emitted  # coil ts retained (within break_window age)
-    assert det.detect(ctx_at(store, 2)) == []
+    assert det.detect(ctx_at(store, 3)) == []
+
+
+def test_bar0_of_continuum_never_a_compression_candidate():
+    """FIX (FINDER micro-divergence): rr.py::compress_fade loops i from 1,
+    so the very first bar of a symbol's WHOLE continuum can never be a
+    compression candidate there -- the parity gate below flags this as a
+    latent gap unexercised by the real fixture. Construct it directly: no
+    FILLER anchor, so COMPRESS really is bar 0 of this store's history, and
+    it breaks within its window -- pre-fix the detector would have fired
+    here (diverging from the reference); post-fix it must not."""
+    store = make_store([COMPRESS, UP_BREAK])
+    assert CompressionFadeDetector({}).detect(ctx_at(store, 2)) == []
 
 
 def test_continuum_cross_day_fade():
-    """CONTINUUM (validated): COMPRESS is day 1's last candle; UP_BREAK is
-    day 2's first candle and breaks its high. rr.py::compress_fade was
-    measured on one concatenated multi-day series, so the coil stays live
-    across the gap: the fade MUST fire on day 2's very first tick."""
+    """CONTINUUM (validated): FILLER (bar 0, non-compression) then COMPRESS
+    close out day 1; UP_BREAK is day 2's first candle and breaks its high.
+    rr.py::compress_fade was measured on one concatenated multi-day series,
+    so the coil stays live across the gap: the fade MUST fire on day 2's
+    very first tick. FILLER keeps COMPRESS off bar 0 of the continuum (see
+    test_bar0_of_continuum_never_a_compression_candidate) -- unrelated to
+    what this test validates."""
     day1 = SESSION_START
     day2 = day1 + timedelta(days=1)
     store = CandleStore("/nonexistent")
-    store.add(Candle("X", M1, day1, *(tick(x) for x in COMPRESS), 10))
+    store.add(Candle("X", M1, day1, *(tick(x) for x in FILLER), 10))
+    store.add(Candle("X", M1, day1 + timedelta(minutes=M5.minutes),
+                     *(tick(x) for x in COMPRESS), 10))
     store.add(Candle("X", M1, day2, *(tick(x) for x in UP_BREAK), 10))
 
     det = CompressionFadeDetector({})
@@ -243,13 +262,14 @@ def test_parity_with_reference_over_real_continuum_data():
     trading) is identical either way, so both sides are compared as sorted
     multisets, not raw sequences.
 
-    Known latent (unexercised) gap: the reference loops ``i`` from 1, so the
-    very first M5 bar of a symbol's whole continuum can never be a
-    compression candidate there, whereas the detector's window has no such
-    carve-out. On this fixture RELIANCE's bar 0 IS compression-shaped but
-    never breaks within its window, so no divergence is actually produced --
-    left as-is (this gate will catch it the day different data does trigger
-    it, rather than papering over a case that has never been observed)."""
+    Bar-0 carve-out (fixed): the reference loops ``i`` from 1, so the very
+    first M5 bar of a symbol's whole continuum can never be a compression
+    candidate there; ``detect()`` now carries the identical carve-out (the
+    ``bar0`` guard). On this fixture RELIANCE's bar 0 IS compression-shaped
+    but never breaks within its window, so this gate cannot exercise the
+    carve-out either way -- see
+    test_bar0_of_continuum_never_a_compression_candidate for a constructed
+    case that does."""
     key = lambda t: (t[0], t[1].value, t[2])       # noqa: E731 -- avoid Enum '<'
     dirs = set()
     total = 0

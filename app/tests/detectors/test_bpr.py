@@ -117,6 +117,22 @@ def test_no_overlap_no_signal():
     assert det.detect(ctx_at(store, 3)) == []
 
 
+def test_multi_zone_same_close_collapses_to_one_evidence():
+    """G finding: two DIFFERENT bull gaps both straddle the SAME bear gap,
+    and both overlap zones contain the same touch close in one tick -- both
+    pairs resolve SHORT (the bear gap is newer than either bull). Only the
+    tighter of the two straddling zones survives (bpr's strength is a
+    constant 0.8, so the tie always breaks on zone width)."""
+    store = make_store([FLAT, FLAT, TOUCH])  # 3 bars: atr is None, no new gaps
+    det = BprDetector({})
+    det._gaps = [_Gap(bar_ts(0), tick(100), tick(104), True),   # wide bull, oldest
+                _Gap(bar_ts(1), tick(101), tick(103), True),    # narrow bull
+                _Gap(bar_ts(2), tick(99), tick(102), False)]    # bear, newest of all
+    [ev] = det.detect(ctx_at(store, 3))
+    assert ev.direction is Direction.SHORT
+    assert ev.zone == (tick(101), tick(102))  # tighter of the two straddling pairs
+
+
 def test_dead_gap_not_paired():
     # Same as Case A, but a KILL candle (close 105 > bear.hi 102) breaks the
     # bear gap's far edge before TOUCH -> no BPR even though TOUCH's close
@@ -236,7 +252,11 @@ def _ref_find_gaps(m5, atrs):
 
 
 def _ref_bpr(m5, atrs):
-    """Verbatim ict_pieces.py::bpr -- fidelity ORACLE for bpr parity."""
+    """Verbatim ict_pieces.py::bpr -- fidelity ORACLE for bpr parity. Also
+    returns each event's own (lo, hi) overlap zone -- already computed
+    in-line by the verbatim algorithm below, just exposed too (no behavior
+    change) so the test can apply bpr.py's own per-tick collapse rule to
+    this raw, uncollapsed reference output (see ``_dedupe_price_events``)."""
     H = [float(c.high) for c in m5]; L = [float(c.low) for c in m5]; C = [float(c.close) for c in m5]
     gaps = _ref_find_gaps(m5, atrs)
     bulls = [g for g in gaps if g[3] == 1]; bears = [g for g in gaps if g[3] == -1]
@@ -254,9 +274,38 @@ def _ref_bpr(m5, atrs):
             newer_dr = 1 if bb[0] > br[0] else -1
             for k in range(start, end):
                 if L[k] <= hi and H[k] >= lo and lo <= C[k] <= hi:
-                    ev.append((k, newer_dr, lo if newer_dr == 1 else hi))
+                    ev.append((k, newer_dr, lo if newer_dr == 1 else hi, lo, hi))
                     break
     return ev
+
+
+def _dedupe_price_events(evs: list[tuple], tick: Decimal) -> list[tuple]:
+    """Test-side mirror of bpr.py::_collapse (FIX 3, the 'G finding'): two
+    DIFFERENT bull/bear pairs can straddle the SAME touch bar + direction --
+    the reference has no per-tick emission discipline, so group its raw
+    events by touch bar ``k`` (the reference's analogue of 'one detect()
+    call') and collapse same-direction clashes (zone overlap or sl within
+    one tick) to the single strongest -- bpr's strength is a constant 0.8,
+    so this always reduces to tie-break-by-tightest-zone. Documented,
+    intentional, hygiene-only divergence: applying the detector's own
+    dedupe rule to the oracle's output, not loosening the gate."""
+    by_k: dict[int, list[tuple]] = {}
+    for e in evs:
+        by_k.setdefault(e[0], []).append(e)
+    kept: list[tuple] = []
+    for group in by_k.values():
+        cluster: list[tuple] = []
+        for e in group:
+            _, dr, sl, lo, hi = e
+            j = next((idx for idx, c in enumerate(cluster) if c[1] == dr and
+                      (c[3] <= hi and lo <= c[4] or
+                       abs(Decimal(str(c[2])) - Decimal(str(sl))) <= tick)), None)
+            if j is None:
+                cluster.append(e)
+            elif (hi - lo) < (cluster[j][4] - cluster[j][3]):  # tighter zone wins (equal strength)
+                cluster[j] = e
+        kept.extend(cluster)
+    return kept
 
 
 def _load_m1_real(symbol: str) -> list[Candle]:
@@ -322,14 +371,23 @@ def test_parity_with_reference_on_real_continuum_data():
     edge), across 2 real symbols. Exact match expected: gap formation and
     the overlap/touch check both read ``atr``/the newest closed bar at the
     CURRENT tick on both the detector and the reference side (no
-    formation-vs-touch ATR-timing gap like mitigation's), so there is no
-    documented-allowed remainder here."""
+    formation-vs-touch ATR-timing gap like mitigation's).
+
+    One documented, intentional, hygiene-only divergence (FIX 3, the 'G
+    finding'): two DIFFERENT bull/bear pairs can straddle the SAME touch
+    close in one tick, and the reference -- an unbounded batch scan with no
+    notion of 'one tick' -- really does emit both on this real fixture. The
+    detector's ``_collapse`` keeps only the single strongest (bpr's
+    strength is constant, so this is always the tightest zone), so the
+    oracle side is put through the identical rule (``_dedupe_price_events``)
+    before comparing -- not a loosened gate, just the same collapse applied
+    to both sides."""
     expected, got = set(), set()
     for sym in REAL_SYMBOLS:
         m1 = _load_m1_real(sym)
         m5 = _build_m5_real(m1, sym)
         atrs = atr_series(m5)
-        for k, d, sl in _ref_bpr(m5, atrs):
+        for k, d, sl, *_ in _dedupe_price_events(_ref_bpr(m5, atrs), NSE.tick_size):
             expected.add((sym, m5[k].ts, _DIR[d], Decimal(str(sl))))
         det = BprDetector({})
         for ts, ev in _feed_real(m1, sym, det):
