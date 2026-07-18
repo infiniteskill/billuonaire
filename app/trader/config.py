@@ -28,12 +28,13 @@ class RiskCfg(StrictModel):
 
 
 class TimeCfg(StrictModel):
-    observe_until: str
+    # NB: no observe_until knob -- the observation window is observe_min ONLY
+    # (a second clock-time value could silently disagree with it)
     no_entry_after: str
     squareoff: str
     observe_min: int = Field(default=105, ge=0)  # entry window opens open+observe_min
 
-    @field_validator("observe_until", "no_entry_after", "squareoff")
+    @field_validator("no_entry_after", "squareoff")
     @classmethod
     def _check_hhmm(cls, v: str) -> str:
         _minutes(v)  # raises on malformed HH:MM

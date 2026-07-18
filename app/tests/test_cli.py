@@ -1,6 +1,7 @@
 import json
 from datetime import date, datetime, timedelta
 from decimal import Decimal as D
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from typer.testing import CliRunner
@@ -19,6 +20,31 @@ def test_init_scaffolds(tmp_path):
     r = runner.invoke(app, ["init", "--dir", str(tmp_path)])
     assert r.exit_code == 0
     assert (tmp_path / "config.json").exists() and (tmp_path / "stocks.json").exists()
+
+
+def test_init_installs_v2_profile_and_baseline(tmp_path):
+    """init writes the evidence-backed v2 profile as config.json (never the
+    obsolete baseline) + config.baseline.json alongside for A/B replay."""
+    from trader.config import load_settings
+
+    runner.invoke(app, ["init", "--dir", str(tmp_path)])
+    s = load_settings(tmp_path / "config.json")
+    assert s.confluence.threshold == 6 and "bpr" in s.detectors.enabled
+    assert "structure" not in s.detectors.enabled        # measured harmful
+    b = load_settings(tmp_path / "config.baseline.json")
+    assert b.confluence.weights["structure"] == 15 and b.confluence.weights["breaker"] == 10
+
+
+def test_templates_resolve_from_package_path(tmp_path):
+    """BUG: pyproject packaged only trader*; templates now live INSIDE the
+    package (trader/templates + package-data) so a non-editable wheel still
+    scaffolds. _TEMPLATE_DIR must resolve under the trader package."""
+    import trader
+    from trader.cli import _TEMPLATE_DIR
+
+    assert _TEMPLATE_DIR == Path(trader.__file__).resolve().parent / "templates"
+    for name in ("config.json", "config.baseline.json", "stocks.json"):
+        assert (_TEMPLATE_DIR / name).is_file()
 
 def test_init_refuses_overwrite(tmp_path):
     runner.invoke(app, ["init", "--dir", str(tmp_path)])
@@ -121,17 +147,17 @@ def test_watch_creates_debug_log_file(tmp_path):
 def test_detector_exception_lands_in_log_file(tmp_path, monkeypatch):
     """A raising detector must not crash the run AND its traceback must land
     in --dir/logs/trader.log (registry logs it; _setup_logging makes it land)."""
-    from trader.detectors.breaker import BreakerDetector
+    from trader.detectors.liquidity import LiquidityDetector   # v2-enabled
 
     def boom(self, ctx):
         raise RuntimeError("kaboom-for-log-test")
 
-    monkeypatch.setattr(BreakerDetector, "detect", boom)
+    monkeypatch.setattr(LiquidityDetector, "detect", boom)
     _init(tmp_path, ["ACME"])
     r = runner.invoke(app, ["watch", "1", "--dir", str(tmp_path), "--feed", "mock"])
     assert r.exit_code == 0                       # run_all swallowed it
     text = (tmp_path / "logs" / "trader.log").read_text()
-    assert "detector 'breaker' failed" in text
+    assert "detector 'liquidity' failed" in text
     assert "kaboom-for-log-test" in text          # full traceback in the file
 
 
@@ -370,7 +396,7 @@ def _report_fixture(root):
 
 
 def test_calibrate_prints_suggestions_and_never_writes(tmp_path):
-    """calibrate: >=30 sweep appearances earn a suggestion, thin detectors
+    """calibrate: >=30 wyckoff appearances earn a suggestion, thin detectors
     read insufficient, a copy-paste weights block prints -- and config.json
     is byte-identical after (PRINT ONLY)."""
     _init(tmp_path, ["ACME"])
@@ -379,7 +405,7 @@ def test_calibrate_prints_suggestions_and_never_writes(tmp_path):
     at = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
     for m in range(30):
         j.log("verdict", {"symbol": "ACME",
-                          "members": [["sweep", "SWEEP", 0.8]]},
+                          "members": [["wyckoff", "SPRING", 0.8]]},
               day=day, ts=at + timedelta(minutes=5 * m))
     j.log("trade_open", {"symbol": "ACME"}, day=day, ts=at + timedelta(hours=3))
     j.log("trade_close", {"symbol": "ACME", "pnl": "100"}, day=day,
@@ -388,8 +414,8 @@ def test_calibrate_prints_suggestions_and_never_writes(tmp_path):
     r = runner.invoke(app, ["calibrate", "--journal", str(tmp_path / "journal"),
                             "--dir", str(tmp_path)])
     assert r.exit_code == 0
-    assert "sweep" in r.output and "insufficient" in r.output
-    assert "copy-paste" in r.output and '"sweep"' in r.output
+    assert "wyckoff" in r.output and "insufficient" in r.output
+    assert "copy-paste" in r.output and '"wyckoff"' in r.output
     assert (tmp_path / "config.json").read_bytes() == before
 
 

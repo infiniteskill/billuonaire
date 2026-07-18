@@ -20,7 +20,7 @@ from trader.models.position import Fill, Position
 from trader.models.signal import TradePlan
 
 IST = ZoneInfo("Asia/Kolkata")
-CONFIG = Path(__file__).resolve().parents[2] / "config" / "config.json"
+CONFIG = Path(__file__).resolve().parents[2] / "trader" / "templates" / "config.baseline.json"
 TODAY = datetime(2026, 7, 15, tzinfo=IST)
 D = Decimal
 TS = TODAY.replace(hour=10, minute=0)

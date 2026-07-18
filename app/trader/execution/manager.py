@@ -37,6 +37,15 @@ _STALL_CANDLES = 18            # M5 candles without progress (06 early-exit)
 _STALL_R = Decimal("0.5")
 _ATR_PAD = Decimal("0.1")      # trail pad: swing edge -/+ 0.1 x ATR(M5)
 _M5 = timedelta(minutes=5)
+LADDER_EXITS = 3               # worst case: 1R + T2/2R partials + final third
+SIGNAL_EXITS = 2               # signal-driven: 1R partial + take-profit rest
+
+
+def ladder_exits(settings: Settings, sl_source: str | None = None) -> int:
+    """Worst-case exit-tranche count the ladder can emit for a plan (cost
+    gates size flat brokerage off this, one fee per order)."""
+    return (SIGNAL_EXITS if sl_source in settings.exits.target_r_by_source
+            else LADDER_EXITS)
 
 
 @dataclass(frozen=True)

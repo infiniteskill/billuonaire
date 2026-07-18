@@ -18,8 +18,9 @@ import trader.detectors.timestats  # noqa: F401
 import trader.detectors.volume  # noqa: F401
 import trader.detectors.wyckoff  # noqa: F401
 
-SHIPPED_CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.json"
-V2_CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.v2.json"
+_TEMPLATES = Path(__file__).resolve().parent.parent / "trader" / "templates"
+BASELINE_CONFIG = _TEMPLATES / "config.baseline.json"   # obsolete, A/B replay
+V2_CONFIG = _TEMPLATES / "config.json"                  # shipped default = v2
 
 def write(tmp_path, cfg):
     p = tmp_path / "config.json"
@@ -30,7 +31,7 @@ BASE = {
     "capital": 100000,
     "risk": {"per_trade_pct": 0.5, "daily_loss_pct": 1.5, "max_trades_day": 3,
              "max_per_stock": 1, "consecutive_loss_stop": 2, "expiry_size_mult": 0.5},
-    "time": {"observe_until": "10:45", "no_entry_after": "14:30", "squareoff": "15:10"},
+    "time": {"no_entry_after": "14:30", "squareoff": "15:10"},
     "stops": {"atr_buffer": 0.25, "round_offset_ticks": 3},
     "confluence": {"threshold": 65, "weights": {"sweep": 50, "structure": 30, "orderblock": 20}},
     "detectors": {"enabled": ["sweep", "structure"], "disabled": ["orderblock"], "params": {}},
@@ -65,20 +66,26 @@ def test_wick_tolerance_key_rejected(tmp_path):
     with pytest.raises(Exception):
         load_settings(write(tmp_path, bad))
 
+def test_observe_until_key_rejected(tmp_path):
+    # dead knob (window derives from observe_min ONLY): must not load
+    bad = dict(BASE, time=dict(BASE["time"], observe_until="10:45"))
+    with pytest.raises(Exception):
+        load_settings(write(tmp_path, bad))
+
 def test_index_symbol_optional(tmp_path):
     assert load_settings(write(tmp_path, BASE)).index_symbol is None      # default
     s = load_settings(write(tmp_path, dict(BASE, index_symbol="NIFTY50")))
     assert s.index_symbol == "NIFTY50"
 
-def test_shipped_config_has_index_weight():
-    s = load_settings(SHIPPED_CONFIG)
+def test_baseline_config_has_index_weight():
+    s = load_settings(BASELINE_CONFIG)
     assert s.index_symbol is None and s.confluence.weights["index"] == 5
     assert "index" in s.enabled_weights()          # enabled => renormalized in
 
-def test_shipped_config_registry_constructs():
+def test_baseline_config_registry_constructs():
     # Regression: the shipped template must only enable detectors that are
     # actually implemented, or DetectorRegistry's typo-guard raises.
-    settings = load_settings(SHIPPED_CONFIG)
+    settings = load_settings(BASELINE_CONFIG)
     registry = DetectorRegistry(settings)
     assert {d.name for d in registry.detectors} == set(settings.detectors.enabled)
 

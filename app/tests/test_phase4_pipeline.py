@@ -24,6 +24,7 @@ from trader.engine.levels import LevelStore
 from trader.engine.pipeline import Orchestrator, SymbolPipeline
 from trader.execution.manager import Action, PositionManager
 from trader.execution.paper import PaperBroker
+from trader.feed.base import FeedEvent
 from trader.feed.mock import ScenarioFeed, judas_reversal, trend_day
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction
@@ -34,7 +35,7 @@ from trader.store.candles import CandleStore
 from trader.store.journal import Journal
 
 IST = ZoneInfo("Asia/Kolkata")
-CONFIG = Path(__file__).resolve().parent.parent / "config" / "config.json"
+CONFIG = Path(__file__).resolve().parent.parent / "trader" / "templates" / "config.baseline.json"
 D = Decimal
 DAY1, DAY2 = date(2026, 7, 14), date(2026, 7, 15)
 PCT_EXCH = D("0.00297") / 100                    # exchange_pct, both legs
@@ -126,7 +127,9 @@ def test_judas_two_day_orchestrator(tmp_path):
     assert [e for e in day2_skips if e["reason"] == "unfilled"]
     assert not [e for e in day2 if e["kind"] == "trade_open"]
     assert summary["trades"] == 1 and summary["wins"] == 1
-    assert set(summary) == {"trades", "wins", "losses", "pnl", "skips"}
+    assert set(summary) == {"trades", "wins", "losses", "pnl", "skips",
+                            "open_positions"}
+    assert summary["open_positions"] == 0
     assert summary["skips"] == len([e for e in entries if e["kind"] == "skip"])
 
 
@@ -634,6 +637,111 @@ def test_overnight_gap_stops_at_session_close(tmp_path, monkeypatch):
     pipe.on_m1(m1("X", datetime(2026, 7, 14, 15, 25, tzinfo=IST), 100, 100, 100, 100))
     pipe.on_m1(m1("X", datetime(2026, 7, 15, 9, 15, tzinfo=IST), 100, 100, 100, 100))
     assert closes == [datetime(2026, 7, 14, 15, 30, tzinfo=IST)]
+
+
+# ------------------------------- 2d. truncated feed / day-boundary settlement
+
+class _Feed:
+    """Minimal candle-list feed for scripted orchestrator runs."""
+
+    def __init__(self, candles):
+        self._c = candles
+
+    def subscribe(self, symbols):
+        pass
+
+    def events(self):
+        return (FeedEvent(c) for c in self._c)
+
+
+def test_finalize_force_closes_truncated_feed_position(tmp_path):
+    """Feed exhausted mid-session with an open position (truncated feed):
+    finalize() force-closes at the last known same-day price, journals an
+    EOD close ("feed_end"), lands it in .closed, releases the risk ledger
+    and flushes queued exits -- nothing dangles open and unreported."""
+    pipe, risk = make_pipeline(tmp_path)
+    t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
+    pipe.on_m1(m1("X", t0, 100, 100, 100, 100))          # warm-up: sets DAY1
+    pipe._pending_plan = TradePlan("X", Direction.LONG, (D("99"), D("101")),
+                                   D("95"), [D("107")], 10, 70.0, t0, {})
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=5), 100, 104, 100, 104))  # fill
+    pos = pipe.position
+    assert pos is not None and risk.open_risk > 0
+    pipe._pending_exits = [Action("PARTIAL", 3, "1R")]   # queued, feed dies now
+    pipe.finalize()
+    assert pipe.position is None and pipe._pending_exits == []
+    assert pipe.closed == [pos] and pos.remaining_qty == 0
+    [close] = [e for e in pipe.journal.read(DAY1) if e["kind"] == "trade_close"]
+    assert close["reason"] == ExitReason.EOD.value and close["why"] == "feed_end"
+    assert D(close["exit_price"]) > D("103")   # ~104: the last same-day price
+    assert risk.open_risk == 0                           # ledger released
+
+
+def test_truncated_feed_position_reported_in_summary(tmp_path):
+    """Orchestrator summary must never hide a truncated-feed position: it is
+    closed by finalize, counted in wins/losses, and the defensive
+    open_positions counter reads 0 (nonzero = loud anomaly)."""
+    t0 = datetime.combine(DAY1, time(11, 0), tzinfo=IST)
+    feed = _Feed([m1("A", t0, 106, 106, 105, 105),
+                  m1("A", t0 + timedelta(minutes=5), 105, 105, 99, 100)])
+    orch = Orchestrator(cfg(), feed, ["A"], capital=100000, max_qty=10,
+                        journal_dir=tmp_path)
+    pipe = orch.pipelines["A"]
+    pipe._pending_plan = TradePlan("A", Direction.LONG, (D("99"), D("101")),
+                                   D("95"), [D("107")], 10, 70.0, t0, {})
+    summary = orch.run()                                 # feed ends mid-session
+    assert pipe.position is None and len(pipe.closed) == 1
+    assert summary["trades"] == 1 and summary["open_positions"] == 0
+    assert summary["wins"] + summary["losses"] == 1      # reported, not dropped
+    [close] = [e for e in orch.journal.read(DAY1) if e["kind"] == "trade_close"]
+    assert close["why"] == "feed_end"
+
+
+def test_summary_open_positions_flags_leak(tmp_path, monkeypatch):
+    """If finalize somehow leaves a position open, the summary surfaces it
+    loudly instead of the trade silently vanishing from the report."""
+    orch = Orchestrator(cfg(), _Feed([]), ["A"], capital=100000, max_qty=10,
+                        journal_dir=tmp_path)
+    t = datetime.combine(DAY1, time(11, 0), tzinfo=IST)
+    plan = TradePlan("A", Direction.LONG, (D("99"), D("101")), D("95"),
+                     [D("107")], 10, 70.0, t, {})
+    orch.pipelines["A"].position = Position(plan, Fill(D("100"), 10, t, D("20")),
+                                            10, D("95"))
+    monkeypatch.setattr(SymbolPipeline, "finalize", lambda self: None)
+    assert orch.run()["open_positions"] == 1
+
+
+def test_prev_day_open_position_settles_before_risk_reset(tmp_path):
+    """reset_day() used to fire on the FIRST new-day event, BEFORE pipelines
+    force-closed a previous-day open position -- charging its loss (pnl_R,
+    consecutive_losses, lock) to the NEW day's ledger. The orchestrator now
+    settles every pipeline into the OLD day first: the close journals on day
+    1 and day 2's ledger starts clean."""
+    t1 = datetime.combine(DAY1, time(14, 0), tzinfo=IST)
+    t2 = datetime.combine(DAY2, time(9, 15), tzinfo=IST)
+    orch = pipe = None
+
+    def events():
+        yield FeedEvent(m1("A", t1, 100, 100, 100, 100))
+        plan = TradePlan("A", Direction.LONG, (D("99"), D("101")), D("95"),
+                         [D("107")], 10, 70.0, t1, {})     # scripted open pos
+        pipe.day = DayState(session_date=DAY1)
+        pipe.position = Position(plan, Fill(D("100"), 10, t1, D("20")), 10, D("95"))
+        orch.risk.record_open("A", D("50"), Direction.LONG)
+        yield FeedEvent(m1("A", t2, 80, 80, 80, 80))       # overnight crash
+    feed = SimpleNamespace(subscribe=lambda syms: None, events=events)
+    orch = Orchestrator(cfg(), feed, ["A"], capital=100000, max_qty=10,
+                        journal_dir=tmp_path)
+    pipe = orch.pipelines["A"]
+    orch.run()
+    assert pipe.position is None
+    [close] = [e for e in orch.journal.read(DAY1) if e["kind"] == "trade_close"]
+    assert close["at"][:10] == DAY1.isoformat()            # old-day squareoff
+    assert D(close["exit_price"]) > D("99")    # last DAY1 price, NOT the 80 gap
+    # the losing close charged DAY1's ledger; DAY2 then reset onto a clean slate
+    assert orch.risk.daily_pnl_R == 0.0 and orch.risk.consecutive_losses == 0
+    assert not orch.risk.locked
+    assert orch.risk.open_risk == 0 and orch.risk.trades_today == 0
 
 
 # ------------------------------------------------------ 3. shared RiskState

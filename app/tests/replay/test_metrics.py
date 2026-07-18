@@ -70,3 +70,21 @@ def test_empty_journal(tmp_path):
     t = rep.totals
     assert t["trades"] == 0 and t["wr"] == 0.0 and t["pf_net"] is None
     assert rep.day_stats["n_days"] == 0 and rep.notes
+
+
+def test_unmatched_opens_zero_when_all_close(journal_dir):
+    rep = compute(journal_dir)
+    assert rep.totals["unmatched_opens"] == 0
+    assert not any("unmatched" in n for n in rep.notes)
+
+
+def test_unmatched_open_counted_not_silently_dropped(journal_dir):
+    # a trade_open with no trade_close (engine anomaly) must surface as a
+    # metric + note, never vanish from the report
+    Journal(journal_dir).log("trade_open", {"symbol": "BBB", "direction": "LONG",
+                                            "qty": 1, "price": D("50"),
+                                            "stop": D("49")}, day=D2)
+    rep = compute(journal_dir)
+    assert rep.totals["unmatched_opens"] == 1
+    assert rep.totals["trades"] == 2               # matched trades unaffected
+    assert any("unmatched_opens=1" in n for n in rep.notes)

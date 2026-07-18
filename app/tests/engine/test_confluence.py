@@ -23,7 +23,7 @@ IST = ZoneInfo("Asia/Kolkata")
 DAY = date(2026, 7, 15)
 NOW = datetime.combine(DAY, time(11, 0), tzinfo=IST)
 LONG, SHORT, NEUTRAL = Direction.LONG, Direction.SHORT, Direction.NEUTRAL
-CONFIG = Path(__file__).resolve().parent.parent.parent / "config" / "config.json"
+CONFIG = Path(__file__).resolve().parent.parent.parent / "trader" / "templates" / "config.baseline.json"
 WEIGHTS = {"sweep": 20, "structure": 15, "orderblock": 15, "fvg": 10,
            "liquidity": 10, "wyckoff": 10, "breaker": 10, "compression": 5,
            "timestats": 5}  # sum 100

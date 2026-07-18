@@ -36,6 +36,15 @@ def round_trip_cost(c: CostsCfg, price: Decimal, qty: int) -> Decimal:
     return leg_cost(c, price, qty, True) + leg_cost(c, price, qty, False)
 
 
+def trade_cost(c: CostsCfg, price: Decimal, qty: int, exits: int = 1) -> Decimal:
+    """Full-trade estimate: entry + ``exits`` exit tranches (manager ladder),
+    all priced at ``price``. Percentage costs are turnover-proportional so
+    splitting the exit changes nothing there (STT still one full sell side),
+    but EVERY extra order pays brokerage_flat again."""
+    return round_trip_cost(c, price, qty) \
+        + (exits - 1) * Decimal(str(c.brokerage_flat))
+
+
 class PaperBroker:
     def __init__(self, settings: Settings):
         f = settings.fills

@@ -13,7 +13,7 @@ from trader.store.candles import CandleStore
 
 CRYPTO = MarketSpec(tz="UTC", session_open="00:00", session_close="24:00",
                     tick_size=Decimal("0.01"))
-TEMPLATE = Path(__file__).parents[2] / "config" / "config.json"
+TEMPLATE = Path(__file__).parents[2] / "trader" / "templates" / "config.json"
 
 
 def test_nse_derived_fields():

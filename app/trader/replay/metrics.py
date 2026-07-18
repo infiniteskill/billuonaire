@@ -80,7 +80,7 @@ def compute(journal_dir: Path, start: date | None = None,
     """Read day JSONLs in [start, end] (None = unbounded) into a Report."""
     root = Path(journal_dir)
     j = Journal(root)
-    trades, per_gate, per_day = [], {}, []
+    trades, per_gate, per_day, unmatched = [], {}, [], 0
     for day in _days(root, start, end):
         tmpl: dict[str, str] = {}
         open_: dict[str, tuple[dict, str]] = {}
@@ -108,6 +108,7 @@ def compute(journal_dir: Path, start: date | None = None,
                                     else 0.0, e["r"]))
         per_day.append((day.isoformat(), len(trades) - n0,
                         float(sum(t.net_r for t in trades[n0:]))))
+        unmatched += len(open_)      # trade_open without trade_close: anomaly
 
     n = len(trades)
     wins = sum(1 for t in trades if t.net > 0)
@@ -122,7 +123,8 @@ def compute(journal_dir: Path, start: date | None = None,
                 "pf_gross": _pf([t.gross for t in trades]),
                 "pf_net": _pf([t.net for t in trades]),
                 "expectancy_r": mean(t.net_r for t in trades) if n else 0.0,
-                "max_dd_r": _max_dd([t.net_r for t in trades])},
+                "max_dd_r": _max_dd([t.net_r for t in trades]),
+                "unmatched_opens": unmatched},
         per_template=_by(trades, lambda t: t.template),
         per_symbol=_by(trades, lambda t: t.symbol),
         per_exit=_by(trades, lambda t: t.reason),
@@ -133,4 +135,7 @@ def compute(journal_dir: Path, start: date | None = None,
                      "n_days": len(daily)}
     if len(daily) < MIN_DAYS_FOR_CI:
         rep.notes.append(f"n_days={len(daily)}<{MIN_DAYS_FOR_CI}: CIs unreliable")
+    if unmatched:
+        rep.notes.append(f"unmatched_opens={unmatched}: trade_open without "
+                         "trade_close -- engine anomaly, totals understate")
     return rep
