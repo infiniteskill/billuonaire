@@ -479,7 +479,9 @@ def study(
         typer.echo(f"--from {start} is after --to {end}", err=True)
         raise typer.Exit(code=1)
     feed = _RangeFeed(FileFeed(data, settings.market_spec()), start, end)
-    df, sdf = run_study(settings, feed, syms, index, out)
+    df, sdf = run_study(settings, feed, syms, index, out,
+                        enable_only=[s.strip() for s in only.split(",")
+                                     if s.strip()] if only else None)
     table = Table(title=f"Detector accuracy ({len(df)} evidences, "
                         f"{df['symbol'].nunique()} symbols)")
     for col in ("detector", "event", "n", "hit%", "base%", "edge", "fwd12",
