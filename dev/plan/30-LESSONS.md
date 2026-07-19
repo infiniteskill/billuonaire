@@ -109,6 +109,15 @@ LTF zone → far-liquidity target. Every prior lesson is one organ of this anima
 - Code: pd_pos/pd_cls context exists in engine; re-anchor the range to zigzag extremes
   (currently session/window-based). Gate CHoCH-family evidence by half.
 
+## Lesson 9 — ZONE SELECTION + ENTRY CONSTRUCTION
+- Zones COINCIDE/cross/sit very near — OB, FVG, breaker stack into one cluster; "which zone"
+  is moot. The stacked cluster's MIDPOINT = safest entry level at HTF.
+- The REAL entry is built on a SMALLER TF inside the HTF cluster: find the LTF FVG/OB that
+  price tests but does NOT violate. LONG: entry = LTF zone top, SL = below LTF zone bottom.
+  SHORT: entry = LTF zone bottom, SL = above LTF zone top.
+- The LTF zone's height IS the stop distance: tiny structural risk nested inside the HTF area
+  (the 1:9 anatomy). HTF cluster = WHERE; LTF zone = the exact entry+SL pair.
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
