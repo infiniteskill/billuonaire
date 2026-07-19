@@ -96,13 +96,14 @@ def _scripted_position_day(tmp: Path):
     bar = lambda m, o, h, lo, c: Candle(          # noqa: E731
         SYMBOL, Timeframe.M1, t0 + timedelta(minutes=m),
         D(str(o)), D(str(h)), D(str(lo)), D(str(c)), 1000)
-    pipe.on_m1(bar(0, 100, 100, 100, 100))                    # warm-up M5
+    from tests.harness import pump_m1              # audit 5: complete buckets
+    pump_m1(pipe, bar(0, 100, 100, 100, 100))                 # warm-up M5
     pipe._pending_plan = TradePlan(                           # scripted arm
         SYMBOL, Direction.LONG, (D("99"), D("101")), D("95"),
         [D("107"), D("110")], MAX_QTY, ARM_THRESHOLD, t0,
         {"final": ARM_THRESHOLD, "mults": {"align": 1.0}})
     for m in range(5, 60, 5):                # fill 14:25, hold to 15:15 (EOD 15:10)
-        pipe.on_m1(bar(m, 100, 101, 99, 100))
+        pump_m1(pipe, bar(m, 100, 101, 99, 100))
     return pipe, pipe.journal.read(DAY)
 
 
@@ -208,13 +209,14 @@ def test_target_ladder_exit_journaled(tmp_path):
     bar = lambda m, o, h, lo, c: Candle(          # noqa: E731
         SYMBOL, Timeframe.M1, t0 + timedelta(minutes=m),
         D(str(o)), D(str(h)), D(str(lo)), D(str(c)), 1000)
-    pipe.on_m1(bar(0, 100, 100, 100, 100))
+    from tests.harness import pump_m1             # audit 5: complete buckets
+    pump_m1(pipe, bar(0, 100, 100, 100, 100))
     pipe._pending_plan = TradePlan(               # scripted arm, T = 104/106/108
         SYMBOL, Direction.LONG, (D("99"), D("101")), D("95"),
         [D("104"), D("106"), D("108")], MAX_QTY, ARM_THRESHOLD, t0,
         {"final": ARM_THRESHOLD, "mults": {"align": 1.0}})
-    pipe.on_m1(bar(5, 100, 101, 99, 100))         # entry fills 11:05 @ ~100.05
-    pipe.on_m1(bar(10, 110, 112, 109, 111))       # spike M5 through T2 and T3
+    pump_m1(pipe, bar(5, 100, 101, 99, 100))      # entry fills 11:05 @ ~100.05
+    pump_m1(pipe, bar(10, 110, 112, 109, 111))    # spike M5 through T2 and T3
     pipe.on_m1(bar(15, 111, 111, 111, 111))       # close evaluates the spike
     entries = pipe.journal.read(DAY)
     parts, closes = _kind(entries, "trade_partial"), _kind(entries, "trade_close")

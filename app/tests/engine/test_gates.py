@@ -1,4 +1,5 @@
 """Phase-4 Task 2: decision gates -- each gate isolated, RiskState, chain order."""
+import json
 from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -63,6 +64,17 @@ def run(gate, ctx, direction=Direction.LONG, plan_zone=None, htf="RANGING", risk
 def test_time_window_boundaries(settings, hh, mm, allowed):
     v = run(TimeWindowGate(settings), gate_ctx(now=at(TODAY, hh, mm)))
     assert v.allow is allowed and v.gate == "time_window" and v.reason
+
+
+@pytest.mark.parametrize("hh,mm,allowed", [(11, 0, False), (11, 29, False),
+                                           (11, 30, True)])
+def test_time_window_entry_after_lock(hh, mm, allowed):
+    """Audit 5: entry_after_lock waits for the template lock -- the window
+    opens at max(observe_min 105, lock_min 135) = 11:30, not 11:00."""
+    raw = json.loads(CONFIG.read_text())
+    raw["time"]["entry_after_lock"] = True
+    gate = TimeWindowGate(Settings.model_validate(raw))
+    assert run(gate, gate_ctx(now=at(TODAY, hh, mm))).allow is allowed
 
 
 # --- TemplateGate ---

@@ -93,16 +93,20 @@ def test_baseline_config_registry_constructs():
 
 
 LEVELS_ONLY = {"swings"}  # documented exception: writes levels, never Evidence
+# audit 5 single-count: these are excluded from cluster mass AND distinct
+# (volume: flat booster; timestats: global time multiplier only), so a
+# confluence weight for them would be dead config.
+UNWEIGHTED = LEVELS_ONLY | {"volume", "timestats"}
 
 
 def test_v2_config_loads_and_no_free_rider():
     # E-2: every ENABLED evidence-capable detector must carry a confluence
     # weight, else it is a free-rider (counts toward distinct/
-    # min_zone_detectors while scoring 0). LEVELS_ONLY detectors never emit
-    # Evidence, so they can neither free-ride nor use a weight.
+    # min_zone_detectors while scoring 0). UNWEIGHTED detectors can neither
+    # free-ride nor use a weight.
     s = load_settings(V2_CONFIG)
     missing = [d for d in s.detectors.enabled
-               if d not in s.confluence.weights and d not in LEVELS_ONLY]
+               if d not in s.confluence.weights and d not in UNWEIGHTED]
     assert missing == [], f"enabled detectors without a weight: {missing}"
     assert all(w > 0 for w in s.enabled_weights().values())
     # the two RR-profitable entry signals carry NONZERO weight
@@ -112,12 +116,14 @@ def test_v2_config_loads_and_no_free_rider():
 
 def test_v2_config_no_dead_weight():
     # Audit-3 B: a weight whose detector can't score is dead config. Every
-    # weight key must be an enabled detector, and levels-only detectors
-    # (swings: no Evidence, ever) stay ENABLED but carry no weight.
+    # weight key must be an enabled detector, and UNWEIGHTED detectors
+    # (swings: no Evidence; timestats: time multiplier only since audit 5)
+    # stay ENABLED but carry no weight.
     s = load_settings(V2_CONFIG)
     assert set(s.confluence.weights) <= set(s.detectors.enabled)
-    assert LEVELS_ONLY.isdisjoint(s.confluence.weights)
+    assert UNWEIGHTED.isdisjoint(s.confluence.weights)
     assert "swings" in s.detectors.enabled       # its levels still matter
+    assert "timestats" in s.detectors.enabled    # multiplier + learning live on
 
 
 def test_v2_config_structure_context_reaches_trend():
@@ -146,6 +152,13 @@ def test_v2_config_elite_solo_settings():
     # baseline orderblock/fvg dropped (C-2: they clobber ob_lux/fvg_cb levels)
     assert "orderblock" not in s.detectors.enabled
     assert "fvg" not in s.detectors.enabled
+
+
+def test_entry_after_lock_flag(tmp_path):
+    # audit 5: shipped v2 config waits for the template lock before entries;
+    # the pydantic default stays False so older configs keep their window
+    assert load_settings(write(tmp_path, BASE)).time.entry_after_lock is False
+    assert load_settings(V2_CONFIG).time.entry_after_lock is True
 
 
 def test_v2_config_registry_constructs():

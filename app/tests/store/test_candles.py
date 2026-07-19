@@ -133,6 +133,63 @@ def test_duplicate_and_out_of_order_adds(tmp_path):
     assert agg2 == agg
 
 
+# --- completeness fail-closed (audit 5): missing M1 members hide the bucket
+# from complete_only (detector-facing) views; plain views keep raw access ---
+
+def test_incomplete_bucket_hidden_until_backfilled(tmp_path):
+    """An M5 bucket missing an M1 member (feed gap) is closed by clock but
+    incomplete -- hidden from complete_only views; a backfill of the missing
+    minute makes it visible again."""
+    s = CandleStore(tmp_path)
+    for i in (0, 1, 2, 3, 5, 6, 7, 8, 9):       # 09:19 missing
+        s.add(m1(i, 100 + i, 101 + i, 99 + i, 100.5 + i))
+    now = D.replace(hour=9, minute=25)
+    v = s.view("X", now, complete_only=True)
+    assert [c.ts.minute for c in v.last(10, Timeframe.M5)] == [20]  # 4/5 hidden
+    assert [c.ts.minute for c in v.today(Timeframe.M5)] == [20]
+    raw = s.view("X", now)                      # store keeps it: raw view sees it
+    assert [c.ts.minute for c in raw.last(10, Timeframe.M5)] == [15, 20]
+    s.add(m1(4, 104, 105, 103, 104.5))          # backfill completes the bucket
+    v2 = s.view("X", now, complete_only=True)
+    assert [c.ts.minute for c in v2.last(10, Timeframe.M5)] == [15, 20]
+
+
+def test_missing_m1_hides_exactly_the_affected_buckets(tmp_path):
+    s = CandleStore(tmp_path)
+    for i in range(375):
+        if i != 100:                            # 10:55 missing
+            s.add(m1(i, 100, 101, 99, 100.5))
+    v = s.view("X", D.replace(hour=16, minute=15), complete_only=True)
+    assert v.last(1, Timeframe.D1) == []                       # whole day 374/375
+    assert [(c.ts.hour, c.ts.minute) for c in v.last(10, Timeframe.H1)] == [
+        (9, 15), (11, 15), (12, 15), (13, 15), (14, 15), (15, 15)]  # 10:15 gone
+    m5 = v.last(100, Timeframe.M5)
+    assert len(m5) == 74 and all(c.ts != D.replace(hour=10, minute=55) for c in m5)
+
+
+def test_session_truncated_last_bucket_counts_as_complete(tmp_path):
+    """The session's last H1 bucket (15:15-16:15 by clock) only ever holds 15
+    M1s; expected-member accounting respects the close truncation, so a full
+    session marks NOTHING incomplete -- complete data => no behavior change."""
+    s = CandleStore(tmp_path)
+    fill(s, 375)
+    v = s.view("X", D.replace(hour=16, minute=15), complete_only=True)
+    h1 = v.last(10, Timeframe.H1)
+    assert len(h1) == 7 and h1[-1].ts == D.replace(hour=15, minute=15)
+    assert len(v.last(1, Timeframe.D1)) == 1
+    assert s._incomplete == set()
+
+
+def test_incompleteness_survives_parquet_roundtrip(tmp_path):
+    s = CandleStore(tmp_path)
+    for i in (0, 1, 2, 3, 5, 6, 7, 8, 9):
+        s.add(m1(i, 100, 101, 99, 100.5))
+    s.save("X")
+    s2 = CandleStore(tmp_path); s2.load("X")    # marks re-derived from M1
+    v = s2.view("X", D.replace(hour=9, minute=25), complete_only=True)
+    assert [c.ts.minute for c in v.last(10, Timeframe.M5)] == [20]
+
+
 def test_d1_visible_only_after_session_close(tmp_path):
     s = CandleStore(tmp_path)
     fill(s, 375)                            # full session 09:15..15:29

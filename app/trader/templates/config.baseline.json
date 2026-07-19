@@ -55,7 +55,6 @@
       "liquidity": 10,
       "wyckoff": 10,
       "cage": 10,
-      "timestats": 5,
       "compression": 12,
       "index": 5
     }
