@@ -96,6 +96,19 @@ Numbered exactly as the setup unfolds:
 SL beyond the swept low. This is the complete tree: context → sweep → CHoCH → FVG → nested
 LTF zone → far-liquidity target. Every prior lesson is one organ of this animal.
 
+## Lesson 8 — PREMIUM / DISCOUNT (the dealing range)
+- Range = between the current dealing-range HIGH and LOW (the last opposing pair of valid
+  zigzag extremes). Equilibrium = 50% (fib). Above = PREMIUM (expensive), below = DISCOUNT (cheap).
+- **Rules: buy only in discount, sell only in premium. MID = NEUTRAL — no trade.**
+- At the range extremes price "likely goes opposite — premium and discount travel toward each
+  other", manufacturing the features (swings, FVG, OB, iFVG) on the way.
+- **CHoCH validity is GATED by location**: bullish CHoCH in PREMIUM = false signal; bullish
+  CHoCH in DISCOUNT = high-probability HL. (Photon rule — structure signal only counts in the
+  right half of the range.)
+- The range cycles over TIME: BSL grab in premium → travel → sell-side liquidity in discount.
+- Code: pd_pos/pd_cls context exists in engine; re-anchor the range to zigzag extremes
+  (currently session/window-based). Gate CHoCH-family evidence by half.
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
