@@ -235,6 +235,31 @@ def test_arm_prefers_unsnapped_stop_over_stop_too_wide(fsm):
     assert p.qty == 126                               # floor(500 / 3.95)
 
 
+def test_arm_signal_sl_beyond_max_stop_atr_rejected(fsm):
+    # audit 5: signal-meta stops must not bypass the max_stop_atr budget --
+    # sl 94.00 => risk 5.00 > 2.0*ATR = 4.00 rejects (was: armed verbatim);
+    # exactly AT the budget (sl 95.00, risk 4.00) still arms (strict >).
+    far = lvl(LevelKind.SWING_H, "107.00", "107.50")
+    r = fsm.arm(zone("98.00", "100.00"),
+                ctx_at(at(11, 0), calm(), [far], history=[sig_ev("94.00")]), 1000)
+    assert (r.armed, r.reason, r.plan) == (False, "stop_too_wide", None)
+    p = fsm.arm(zone("98.00", "100.00"),
+                ctx_at(at(11, 0), calm(), [far], history=[sig_ev("95.00")]), 1000).plan
+    assert p.stop == D("95.00") and p.meta["risk_pts"] == "4.00"
+
+
+def test_arm_floor_widened_resnap_past_max_stop_atr_rejected():
+    # audit 5: the budget check must re-run AFTER all stop adjustments --
+    # with min_stop_atr 2.0 (== max_stop_atr) the cost floor lands the stop
+    # at 95.00 and the ROUND re-snap drags it to 94.85: risk 4.15 > 4.00
+    # rejects (was: floor-widened past budget unchecked, armed).
+    fsm = fsm_cfg({"stops.min_stop_atr": 2.0})
+    levels = [lvl(LevelKind.ROUND, "95.00", "95.00"),
+              lvl(LevelKind.SWING_H, "106.00", "106.50")]
+    r = fsm.arm(zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), levels), 1000)
+    assert (r.armed, r.reason, r.plan) == (False, "stop_too_wide", None)
+
+
 # genuinely wide even un-snapped (trap 94.50 pushes stop to 94.00, risk
 # 5.00 > 4.00): round-snap present but irrelevant -- still skips.
 def test_arm_stop_too_wide_skips_even_with_round_nearby(fsm):
@@ -294,21 +319,40 @@ def test_arm_costs_dominate_boundary_vs_reward():
 
 
 def test_arm_cost_gate_reads_ladder_shape_per_plan():
+    # (updated for audit 5: the old numbers rewarded the MAPPED plan with the
+    # full T1 distance 3.50 the manager never rides to.)
     # A signal-driven plan whose sl_source maps in exits.target_r_by_source
     # exits in at most 2 tranches (1R partial + take-profit remainder) = 3
-    # orders: the gate charges 3 flat fees. Same reward geometry as above
-    # (qty 100, T1 102.50, cap 52.50; pct costs 14.85): 3f + 14.85 => f
-    # 12.55 exactly 52.50 ARMS, 12.56 skips -- and WITHOUT the mapping the
-    # same 12.55 flat pays the 4-order default ladder (65.05) and skips.
+    # orders AND takes profit at 2.0R x risk 0.60 = 1.20/share, NOT the T1
+    # 3.50 away: reward 120 (qty 100), cap 0.15 x 120 = 18.00; pct costs
+    # 14.85. 3f + 14.85 => f 1.05 exactly 18.00 ARMS, 1.06 skips -- and
+    # WITHOUT the mapping the same 1.05 flat rides to T1 (reward 350, cap
+    # 52.50) through the 4-order default ladder (19.05) and arms, while
+    # 12.55 (the old mapped boundary) pays 65.05 and skips.
     base = {"fills.costs.stt_pct": 0.05, "fills.costs.exchange_pct": 0.05,
             "exits": {"target_r_by_source": {"compression_fade": 2.0}}}
     args = (zone("98.00", "100.00"),
             ctx_at(at(11, 0), calm(), [t_lvl()], history=[sig_ev("98.40")]), 100)
-    assert fsm_cfg({**base, "fills.costs.brokerage_flat": 12.55}).arm(*args).armed
-    r = fsm_cfg({**base, "fills.costs.brokerage_flat": 12.56}).arm(*args)
+    assert fsm_cfg({**base, "fills.costs.brokerage_flat": 1.05}).arm(*args).armed
+    r = fsm_cfg({**base, "fills.costs.brokerage_flat": 1.06}).arm(*args)
     assert (r.armed, r.reason) == (False, "costs_dominate")
     unmapped = {k: v for k, v in base.items() if k != "exits"}
+    assert fsm_cfg({**unmapped, "fills.costs.brokerage_flat": 1.05}).arm(*args).armed
     r = fsm_cfg({**unmapped, "fills.costs.brokerage_flat": 12.55}).arm(*args)
+    assert (r.armed, r.reason) == (False, "costs_dominate")
+
+
+def test_arm_cost_gate_charges_actual_exit_count_at_tiny_qty():
+    # audit 5: qty 3 => the manager's 33% partial rounds to ZERO, so only the
+    # final exit can emit -- 2 orders total (entry + exit), not the 4-order
+    # full-ladder budget. reward 3 x 3.50 = 10.50, cap 0.15 x 10.50 = 1.575;
+    # pct costs (0.05 + 2 x 0.05)% x 297 = 0.4455. 2f + 0.4455: f 0.56475 =>
+    # exactly 1.575 ARMS (the old 4-order estimate charged 2.7045, a phantom
+    # skip); 0.57 => 1.5855 skips.
+    base = {"fills.costs.stt_pct": 0.05, "fills.costs.exchange_pct": 0.05}
+    args = (zone("98.00", "100.00"), ctx_at(at(11, 0), calm(), [t_lvl()]), 3)
+    assert fsm_cfg({**base, "fills.costs.brokerage_flat": 0.56475}).arm(*args).armed
+    r = fsm_cfg({**base, "fills.costs.brokerage_flat": 0.57}).arm(*args)
     assert (r.armed, r.reason) == (False, "costs_dominate")
 
 

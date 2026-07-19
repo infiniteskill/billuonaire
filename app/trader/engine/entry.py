@@ -24,6 +24,8 @@ journalling the skip/disarm reasons returned here.
            risk under min_stop_atr x ATR is hunt food that percentage costs
            swamp -- the stop WIDENS to entry -/+ floor (still beyond the
            level/trap extreme, re-snapped off ROUND), qty shrinks with it.
+           After ALL adjustments (signal-meta stops included) a FINAL
+           max_stop_atr check rejects any stop still past budget.
   TARGETS  opposing liquidity map: ACTIVE/TESTED levels + opposing
            ScoredZones beyond entry (near edge, quantized). T1 = nearest
            >= 1.5R (none => skip "no_room"); T2 = next beyond T1 (else 2.5R);
@@ -38,10 +40,12 @@ journalling the skip/disarm reasons returned here.
            risk-derived size fundable on intraday margin; 0 => skip
            "qty_zero". Worst-case trade costs (shared PaperBroker costing:
            STT sell-leg only, all legs at entry, one flat brokerage per
-           order the manager's ladder can emit -- entry + up to 3 exit
-           tranches) > max_cost_reward_ratio x expected reward to T1
-           (|T1 - entry| x qty) => skip "costs_dominate" (the trade must
-           PAY for its friction).
+           order the manager's ladder can ACTUALLY emit for the planned
+           qty -- under qty 4 the 33% partials round to zero, leaving
+           entry + final exit only) > max_cost_reward_ratio x expected
+           reward to the planned exit (|T1 - entry| x qty, capped at the
+           mapped target_r_by_source R x risk when the signal source maps)
+           => skip "costs_dominate" (the trade must PAY for its friction).
   TRIGGER  latest closed M5 enters the zone AND (rejection wick >= 60% of
            range off the far side | same-direction CHoCH/VSA evidence
            overlapping the zone, stamped in (c.ts, c.ts + 5m]).
@@ -144,6 +148,7 @@ class EntryFSM:
                     "entry: wrong-side signal sl dropped (%s sl=%s entry=%s)",
                     zone.direction, sl, entry)
                 sig = None
+        max_risk = Decimal(str(self.s.entry.max_stop_atr)) * atr
         if sig is not None:  # signal-emitter drives the zone: honor its tiny stop
             # raw structural extreme, floored at 0.15xATR sl_floor -- NOT the
             # min_stop_atr cost-floor widening that would kill the RR edge.
@@ -154,7 +159,7 @@ class EntryFSM:
             risk = abs(entry - stop)
         else:               # generic ATR/zone stop + min_stop_atr cost floor
             stop, unsnapped = self._stop(lo, hi, up, atr, ctx)
-            risk, max_risk = abs(entry - stop), Decimal(str(self.s.entry.max_stop_atr)) * atr
+            risk = abs(entry - stop)
             if risk > max_risk:
                 un_risk = abs(entry - unsnapped)
                 if un_risk > max_risk:
@@ -168,6 +173,8 @@ class EntryFSM:
                 risk = abs(entry - stop)
         if risk <= 0:       # zero ATR + collapsed zone: nothing to size safely
             return ArmResult(False, "no_risk")
+        if risk > max_risk:  # FINAL budget check after ALL stop adjustments:
+            return ArmResult(False, "stop_too_wide")  # signal sl + floor/re-snap
         targets = self._targets(entry, risk, up, zone.zone, ctx, opps,
                                 sig.detector if sig is not None else None)
         if targets is None:
@@ -178,9 +185,14 @@ class EntryFSM:
         qty = min(max_qty, int(budget // risk), int(notional // entry))
         if qty <= 0:
             return ArmResult(False, "qty_zero")
-        reward = abs(targets[0] - entry) * qty       # expected reward to T1
+        tgt = abs(targets[0] - entry)                # candidate T1 distance
+        mapped = (self.s.exits.target_r_by_source.get(sig.detector)
+                  if sig is not None else None)
+        if mapped is not None:  # manager exits AT mapped R, never rides to a farther T1
+            tgt = min(tgt, Decimal(str(mapped)) * risk)
+        reward = tgt * qty                           # expected reward to actual exit
         from trader.execution.manager import ladder_exits  # local: manager imports us
-        n_exits = ladder_exits(self.s, sig.detector if sig else None)
+        n_exits = ladder_exits(self.s, sig.detector if sig else None, qty)
         if trade_cost(self.s.fills.costs, entry, qty, n_exits) > (
                 Decimal(str(self.s.risk.max_cost_reward_ratio)) * reward):
             return ArmResult(False, "costs_dominate")
