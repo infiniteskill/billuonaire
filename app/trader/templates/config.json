@@ -26,7 +26,8 @@
   "time": {
     "no_entry_after": "14:45",
     "squareoff": "15:10",
-    "observe_min": 105
+    "observe_min": 105,
+    "entry_after_lock": true
   },
   "entry": {
     "arm_proximity_atr": 1.0,
@@ -50,7 +51,6 @@
       "liquidity": 3,
       "structure": 2,
       "wyckoff": 5,
-      "timestats": 2,
       "compression_fade": 30,
       "bpr": 30
     }

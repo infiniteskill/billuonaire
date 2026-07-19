@@ -19,7 +19,9 @@ the sweep even if the SWEPT row predates level persistence):
     TREND          no OR edge ever RECLAIMED AND >=2 structure BOS evidence
                    in the same direction (a swept-but-unreclaimed edge is
                    fine: trend days may blow through an edge)
-    RANGE_PIN      no edge swept AND fewer than 2 BOS total
+    RANGE_PIN      both OR edges EXIST, no edge swept AND fewer than 2 BOS
+                   (missing OR levels are genuine no-information: that is
+                   UNCLASSIFIED, never a tradable pin -- audit 5 fail-closed)
     UNCLASSIFIED   anything else
 
 Gap fade-bias (axiom 18): a session opening with |gap| > 1xATR vs the prev
@@ -128,6 +130,7 @@ class TemplateClassifier:
         gd = ctx.day.gap_dir
         if gd is not None and dirs.get(gd, 0):     # gap-direction drive short
             return "UNCLASSIFIED"                  # of TREND proof: gap trap
-        if not swept_high and not swept_low and len(bos) < 2:
-            return "RANGE_PIN"
+        if (orh is not None and orl is not None      # no OR levels = no info,
+                and not swept_high and not swept_low and len(bos) < 2):
+            return "RANGE_PIN"                       # not a tradable pin
         return "UNCLASSIFIED"

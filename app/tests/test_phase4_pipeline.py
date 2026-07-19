@@ -33,6 +33,10 @@ from trader.models.position import ExitReason, Fill, Position
 from trader.models.signal import TradePlan
 from trader.store.candles import CandleStore
 from trader.store.journal import Journal
+# audit 5: sparse scripted M1s (one per M5 bucket) now leave INCOMPLETE
+# buckets that detector-facing views hide; pump_m1/bucket_pads pad each to a
+# complete bucket with a bit-identical M5 aggregate.
+from tests.harness import bucket_pads, pump_m1
 
 IST = ZoneInfo("Asia/Kolkata")
 CONFIG = Path(__file__).resolve().parent.parent / "trader" / "templates" / "config.baseline.json"
@@ -380,22 +384,22 @@ def test_partials_and_eod_exact_accounting(tmp_path):
     RiskState records the close."""
     pipe, risk = make_pipeline(tmp_path)
     t0 = datetime(2026, 7, 14, 9, 55, tzinfo=IST)
-    pipe.on_m1(m1("X", t0, 100, 100, 100, 100))                    # warm-up M5
+    pump_m1(pipe, m1("X", t0, 100, 100, 100, 100))                 # warm-up M5
     plan = TradePlan("X", Direction.LONG, (D("99"), D("101")), D("95"),
                      [D("107"), D("110"), D("115")], 50, 70.0, t0,
                      {"final": 70.0, "mults": {"align": 1.0}})
     pipe._pending_plan = plan                                      # scripted arm
-    pipe.on_m1(m1("X", t0 + timedelta(minutes=5), 100, 106, 100, 106))   # fill @100
+    pump_m1(pipe, m1("X", t0 + timedelta(minutes=5), 100, 106, 100, 106))  # fill @100
     pos = pipe.position
     assert pos is not None and pos.remaining_qty == 50
     assert pos.entry.price == D("100.00")                          # AT the limit
     assert risk.open_risk == D("5.00") * 50                        # B8 ledger on
     assert risk.open_dirs == {"X": Direction.LONG}
-    pipe.on_m1(m1("X", t0 + timedelta(minutes=10), 106, 111, 106, 111))  # 1R seen
+    pump_m1(pipe, m1("X", t0 + timedelta(minutes=10), 106, 111, 106, 111))  # 1R seen
     assert pos.remaining_qty == 34 and "1R" in pos.partials
-    pipe.on_m1(m1("X", t0 + timedelta(minutes=15), 111, 112, 110, 111))  # T2 touch
+    pump_m1(pipe, m1("X", t0 + timedelta(minutes=15), 111, 112, 110, 111))  # T2 touch
     assert pos.remaining_qty == 18 and "2R" in pos.partials
-    pipe.on_m1(m1("X", t0.replace(hour=15, minute=10), 111, 111, 110, 111))
+    pump_m1(pipe, m1("X", t0.replace(hour=15, minute=10), 111, 111, 110, 111))
     pipe.on_m1(m1("X", t0.replace(hour=15, minute=15), 111, 111, 110, 111))  # EOD
     assert pipe.position is None and pos.remaining_qty == 0
     expected = (-cost_buy(D("100.00"), 50)   # entry BUY leg; T2=110 touched: limit fill AT 110
@@ -503,8 +507,8 @@ def test_pending_plan_dropped_on_new_session(tmp_path):
     not survive the session change either."""
     pipe, _ = make_pipeline(tmp_path)
     t = datetime(2026, 7, 14, 15, 20, tzinfo=IST)
-    pipe.on_m1(m1("X", t, 100, 100, 100, 100))
-    pipe.on_m1(m1("X", t + timedelta(minutes=5), 100, 100, 100, 100))  # day set
+    pump_m1(pipe, m1("X", t, 100, 100, 100, 100))
+    pump_m1(pipe, m1("X", t + timedelta(minutes=5), 100, 100, 100, 100))  # day set
     plan = TradePlan("X", Direction.LONG, (D("99"), D("101")), D("95"),
                      [D("107")], 10, 70.0, t + timedelta(minutes=5), {})
     pipe._pending_plan = plan
@@ -524,8 +528,8 @@ def test_fill_after_no_entry_cutoff_dropped(tmp_path):
     is dropped, journaled as skip 'too_late', and opens nothing."""
     pipe, risk = make_pipeline(tmp_path)
     t = datetime(2026, 7, 14, 14, 25, tzinfo=IST)
-    pipe.on_m1(m1("X", t, 100, 100, 100, 100))
-    pipe.on_m1(m1("X", t + timedelta(minutes=5), 100, 100, 100, 100))  # day set
+    pump_m1(pipe, m1("X", t, 100, 100, 100, 100))
+    pump_m1(pipe, m1("X", t + timedelta(minutes=5), 100, 100, 100, 100))  # day set
     pipe._pending_plan = TradePlan("X", Direction.LONG, (D("99"), D("101")),
                                    D("95"), [D("107")], 10, 70.0,
                                    t + timedelta(minutes=5), {})
@@ -659,6 +663,53 @@ def test_pending_fill_blocked_on_correlation_cap(tmp_path):
     assert skip["gate"] == "gate_at_fill" and "LONG" in skip["reason"]
 
 
+def test_pending_killed_when_zone_level_goes_terminal(tmp_path):
+    """Audit 5: a resting limit's SETUP is re-validated at every M5 close --
+    when the traded-zone level dies in the levels engine the plan is killed
+    (skip 'setup_stale') instead of resting on into a dead location."""
+    pipe, risk = make_pipeline(tmp_path)
+    t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
+    pipe.on_m1(m1("X", t0, 510, 510, 510, 510))
+    _queue_limit(pipe, t0)                                # zone (495,505)
+    pipe.levels.append(Level("X-OB", "X", LevelKind.OB_BULL,
+                             (D("495"), D("505")), t0, Timeframe.M5,
+                             LevelState.DEAD))            # zone went terminal
+    for m in range(1, 6):                                 # cross the 11:05 close
+        pipe.on_m1(m1("X", t0 + timedelta(minutes=m), 510, 511, 509, 510))
+    assert pipe._pending_plan is None and pipe.position is None
+    skips = [e for e in pipe.journal.read(t0.date()) if e["kind"] == "skip"]
+    assert any(e["gate"] == "fill" and e["reason"] == "setup_stale" for e in skips)
+    pipe.on_m1(m1("X", t0 + timedelta(minutes=6), 499, 511, 499, 510))  # through limit
+    assert pipe.position is None and risk.trades_today == 0
+
+
+def test_pending_killed_on_opposite_verdict(tmp_path, monkeypatch):
+    """Audit 5: an opposite-direction verdict at/above the arm threshold
+    while the limit rests invalidates the setup; same-direction or
+    sub-threshold zones leave the order working."""
+    pipe, _ = make_pipeline(tmp_path)
+    t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
+    pipe.on_m1(m1("X", t0, 510, 510, 510, 510))
+    _queue_limit(pipe, t0)                                # LONG
+    thr = pipe.s.confluence.threshold
+    mk_z = lambda dirn, f: [ScoredZone((D("508"), D("512")), dirn, [], 5,
+                                       f, f, {})]
+    out = [mk_z(Direction.LONG, thr + 10),                # 11:05 same-dir
+           mk_z(Direction.SHORT, thr - 1),                # 11:10 sub-threshold
+           mk_z(Direction.SHORT, thr)]                    # 11:15 kills it
+    monkeypatch.setattr(pipe.confluence, "score",
+                        lambda *a, **k: out.pop(0) if out else [])
+    for m in range(1, 11):
+        pipe.on_m1(m1("X", t0 + timedelta(minutes=m), 510, 511, 509, 510))
+    assert pipe._pending_plan is not None                 # survived 11:05+11:10
+    for m in range(11, 16):
+        pipe.on_m1(m1("X", t0 + timedelta(minutes=m), 510, 511, 509, 510))
+    assert pipe._pending_plan is None and pipe.position is None
+    [skip] = [e for e in pipe.journal.read(t0.date())
+              if e["kind"] == "skip" and e["reason"] == "setup_stale"]
+    assert skip["gate"] == "fill"
+
+
 def test_pending_limit_blocks_entry_flow(tmp_path, monkeypatch):
     """While a limit rests, the M5 entry flow is paused -- a second arm must
     not clobber the working order."""
@@ -706,12 +757,12 @@ def test_open_position_force_closed_same_day_on_overnight_gap(tmp_path):
     different-date candle). Upholds the 'no overnight' guarantee."""
     pipe, risk = make_pipeline(tmp_path)
     t0 = datetime(2026, 7, 14, 14, 0, tzinfo=IST)      # before the 14:30 cutoff
-    pipe.on_m1(m1("X", t0, 100, 100, 100, 100))        # warm-up: sets DAY1
+    pump_m1(pipe, m1("X", t0, 100, 100, 100, 100))     # warm-up: sets DAY1
     plan = TradePlan("X", Direction.LONG, (D("99"), D("101")), D("95"),
                      [D("107"), D("110"), D("115")], 10, 70.0, t0,
                      {"final": 70.0, "mults": {"align": 1.0}})
     pipe._pending_plan = plan                          # scripted resting limit
-    pipe.on_m1(m1("X", t0 + timedelta(minutes=5), 100, 104, 100, 104))  # fill @~100
+    pump_m1(pipe, m1("X", t0 + timedelta(minutes=5), 100, 104, 100, 104))  # fill @~100
     pos = pipe.position
     assert pos is not None and pos.entry.price >= D("100")
     assert risk.open_risk > 0
@@ -759,10 +810,10 @@ def test_finalize_force_closes_truncated_feed_position(tmp_path):
     and flushes queued exits -- nothing dangles open and unreported."""
     pipe, risk = make_pipeline(tmp_path)
     t0 = datetime(2026, 7, 14, 11, 0, tzinfo=IST)
-    pipe.on_m1(m1("X", t0, 100, 100, 100, 100))          # warm-up: sets DAY1
+    pump_m1(pipe, m1("X", t0, 100, 100, 100, 100))       # warm-up: sets DAY1
     pipe._pending_plan = TradePlan("X", Direction.LONG, (D("99"), D("101")),
                                    D("95"), [D("107")], 10, 70.0, t0, {})
-    pipe.on_m1(m1("X", t0 + timedelta(minutes=5), 100, 104, 100, 104))  # fill
+    pump_m1(pipe, m1("X", t0 + timedelta(minutes=5), 100, 104, 100, 104))  # fill
     pos = pipe.position
     assert pos is not None and risk.open_risk > 0
     pipe._pending_exits = [Action("PARTIAL", 3, "1R")]   # queued, feed dies now
@@ -780,8 +831,9 @@ def test_truncated_feed_position_reported_in_summary(tmp_path):
     closed by finalize, counted in wins/losses, and the defensive
     open_positions counter reads 0 (nonzero = loud anomaly)."""
     t0 = datetime.combine(DAY1, time(11, 0), tzinfo=IST)
-    feed = _Feed([m1("A", t0, 106, 106, 105, 105),
-                  m1("A", t0 + timedelta(minutes=5), 105, 105, 99, 100)])
+    feed = _Feed([c for sparse in (m1("A", t0, 106, 106, 105, 105),
+                                   m1("A", t0 + timedelta(minutes=5), 105, 105, 99, 100))
+                  for c in (sparse, *bucket_pads(sparse))])
     orch = Orchestrator(cfg(), feed, ["A"], capital=100000, max_qty=10,
                         journal_dir=tmp_path)
     pipe = orch.pipelines["A"]

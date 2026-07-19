@@ -8,6 +8,7 @@ the session), and -- when ``classify`` is on -- TemplateClassifier.update.
 """
 
 import json
+from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 from typing import NamedTuple
@@ -39,6 +40,22 @@ PHASE2 = ("swings", "liquidity", "structure", "sweep")
 ALL_IMPLEMENTED = ("swings", "liquidity", "orderblock", "fvg", "structure",
                    "sweep", "breaker", "wyckoff", "volume", "compression",
                    "timestats", "index")
+
+
+def bucket_pads(candle, n: int = 4):
+    """Flat zero-volume M1s at the candle's close for the next ``n`` minutes.
+    Audit 5: detector-facing views drop INCOMPLETE buckets, so the old
+    one-M1-per-M5-bucket test shorthand fabricates invisible candles; padding
+    completes the bucket while leaving its M5 aggregate bit-identical."""
+    return [replace(candle, ts=candle.ts + timedelta(minutes=k),
+                    open=candle.close, high=candle.close, low=candle.close,
+                    volume=0) for k in range(1, n + 1)]
+
+
+def pump_m1(pipe, candle) -> None:
+    """pipe.on_m1 for a scripted sparse M1 plus its completing pads."""
+    for c in (candle, *bucket_pads(candle)):
+        pipe.on_m1(c)
 
 
 class Run(NamedTuple):

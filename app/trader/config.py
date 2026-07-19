@@ -33,6 +33,9 @@ class TimeCfg(StrictModel):
     no_entry_after: str
     squareoff: str
     observe_min: int = Field(default=105, ge=0)  # entry window opens open+observe_min
+    # audit 5: entries before the template lock (135m) trade an unlocked read;
+    # True opens the window at max(observe_min, lock) -- False = old behavior
+    entry_after_lock: bool = False
 
     @field_validator("no_entry_after", "squareoff")
     @classmethod

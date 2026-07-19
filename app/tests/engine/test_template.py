@@ -109,13 +109,19 @@ def test_range_pin_no_sweep_few_bos():
     assert classify(135, lvls, [ev("BOS", Direction.LONG)]) == "RANGE_PIN"
 
 
-def test_range_pin_without_or_levels_yet():
-    assert classify(10) == "RANGE_PIN"  # provisional: nothing swept, no BOS
+def test_missing_or_levels_fail_closed_unclassified():
+    # audit 5: no opening-range levels = no information, never a tradable
+    # RANGE_PIN (the old RANGE_PIN answer here was the fail-open bug)
+    assert classify(10) == "UNCLASSIFIED"
+    assert classify(135) == "UNCLASSIFIED"
+    assert classify(135, [level(ORH)]) == "UNCLASSIFIED"   # one edge alone too
 
 
 def test_ignores_other_symbols_levels():
     foreign = [level(ORH, SWEPT, symbol="Y"), level(ORL, SWEPT, symbol="Y")]
-    assert classify(135, foreign) == "RANGE_PIN"
+    # foreign sweeps never classify this symbol; with no OWN OR levels the
+    # answer is UNCLASSIFIED (audit 5 fail-closed; was RANGE_PIN)
+    assert classify(135, foreign) == "UNCLASSIFIED"
 
 
 def test_only_structure_evidence_counts():
@@ -172,10 +178,13 @@ def test_gap_fade_direction_unaffected():
 
 # ------------------------------------------------------------ locking + state
 
+EDGES = [level(ORH), level(ORL)]  # quiet OR pair: classifies RANGE_PIN
+
+
 def test_provisional_before_lock_tracks_changes_and_writes_day():
     clf = TemplateClassifier(NSE)
     day = DayState(session_date=DAY)
-    assert clf.update(ctx(30, day=day)) == "RANGE_PIN"
+    assert clf.update(ctx(30, EDGES, day=day)) == "RANGE_PIN"
     assert day.template == "RANGE_PIN"
     c = ctx(60, BOTH_SWEPT, day=day)
     assert clf.update(c) == "DOUBLE_TRAP"
@@ -185,8 +194,8 @@ def test_provisional_before_lock_tracks_changes_and_writes_day():
 def test_locks_at_lock_minute_and_freezes():
     clf = TemplateClassifier(NSE)
     day = DayState(session_date=DAY)
-    assert clf.update(ctx(130, day=day)) == "RANGE_PIN"     # still provisional
-    assert clf.update(ctx(135, day=day)) == "RANGE_PIN"     # locks here (11:30)
+    assert clf.update(ctx(130, EDGES, day=day)) == "RANGE_PIN"  # still provisional
+    assert clf.update(ctx(135, EDGES, day=day)) == "RANGE_PIN"  # locks here (11:30)
     after = ctx(200, BOTH_SWEPT, day=day)                   # evidence now says DOUBLE_TRAP
     assert clf.update(after) == "RANGE_PIN"                 # but the lock holds
     assert day.template == "RANGE_PIN"
@@ -195,13 +204,13 @@ def test_locks_at_lock_minute_and_freezes():
 def test_lock_minute_param():
     clf = TemplateClassifier(NSE, {"lock_min": 30})
     day = DayState(session_date=DAY)
-    assert clf.update(ctx(30, day=day)) == "RANGE_PIN"
+    assert clf.update(ctx(30, EDGES, day=day)) == "RANGE_PIN"
     assert clf.update(ctx(60, BOTH_SWEPT, day=day)) == "RANGE_PIN"
 
 
 def test_new_session_resets_lock():
     clf = TemplateClassifier(NSE)
-    assert clf.update(ctx(140)) == "RANGE_PIN"              # locked for DAY
+    assert clf.update(ctx(140, EDGES)) == "RANGE_PIN"       # locked for DAY
     nxt = DAY + timedelta(days=1)
     c = StockContext(symbol="X", now=at(140) + timedelta(days=1), candles=None,
                      levels=BOTH_SWEPT, evidence_history=[],

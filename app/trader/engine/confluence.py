@@ -8,6 +8,9 @@ ScoredZones, then multiplies in cross-TF alignment and session context:
            sum(enabled_weight x strength) per side; the losing side subtracts
            at 0.8x; NEUTRAL members feed 0.5 x weight x strength to the
            winner's pool; weightless volume adds a flat +3 booster instead.
+           timestats contributes NO cluster mass at all (audit 5
+           single-count: it is the global time multiplier below, and must
+           not also pad the pool of whatever cluster its candle lands in).
   ALIGN    D1 regime veto (MARKDOWN kills LONG, MARKUP kills SHORT); M15
            trend agreement: oppose 0 / agree 1 / NEUTRAL 0.8. htf_phase and
            m15_trend are ARGUMENTS -- the orchestrator supplies them, the
@@ -95,8 +98,8 @@ class ConfluenceEngine:
                 best[e.detector] = e
         mass, pool = {Direction.LONG: 0.0, Direction.SHORT: 0.0}, 0.0
         for det, e in best.items():
-            if det == "volume":              # weightless flat booster below
-                continue
+            if det in ("volume", "timestats"):   # volume: flat booster below;
+                continue                         # timestats: time mult ONLY
             w = self.weights.get(det, 0.0) * e.strength
             if e.direction is Direction.NEUTRAL:
                 pool += self.pool_f * w
@@ -112,7 +115,8 @@ class ConfluenceEngine:
         if "volume" in best:
             raw += self.vol_boost
         distinct = 0 if dirn is Direction.NEUTRAL else sum(
-            1 for d, e in best.items() if d != "volume" and e.direction is dirn)
+            1 for d, e in best.items()
+            if d not in ("volume", "timestats") and e.direction is dirn)
         mults = {"align": self._align(dirn, htf, m15), "time": time_mult,
                  "template": self._template_mult(dirn, ctx.day.template, play,
                                                  lo, hi, ctx),

@@ -14,7 +14,9 @@ M1 -- the next M1 open, no lookahead. A triggered ENTRY rests as a LIMIT at
 the plan entry (traded-zone CE): it fills when a later M1 trades through it
 (AT the limit exactly -- a limit can never fill worse than its price, and
 no chase), and expires unfilled after entry.fill_ttl_candles M5 (journal
-skip "unfilled").
+skip "unfilled"). While it rests, each M5 close re-validates the SETUP:
+a dead traded-zone level or an opposite-direction verdict at/above the arm
+threshold kills the order early (skip "setup_stale", audit 5).
 """
 
 from __future__ import annotations
@@ -239,9 +241,9 @@ class SymbolPipeline:
         if (index is not None and index.ts is not None
                 and now - index.ts > timedelta(minutes=self.s.index_stale_min)):
             index = None    # index feed died: a stale read is NO context
-        view = self.store.view(self.symbol, now)
-        if not (last := view.last(1, Timeframe.M5)):
-            return
+        view = self.store.view(self.symbol, now, complete_only=True)  # audit 5:
+        if not (last := view.last(1, Timeframe.M5)):  # detectors never read a
+            return                                    # feed-gap bucket as real
         c5 = last[-1]
         if self.day is None or c5.ts.date() != self.day.session_date:
             self.day = DayState(session_date=c5.ts.date(),  # fresh po3 dict too
@@ -283,8 +285,26 @@ class SymbolPipeline:
                       members=z.members)    # (detector, event, strength): calibration food
         if self.position is not None:
             self._manage(ctx, zones)
-        elif self._pending_plan is None:     # resting limit blocks re-arming
+        elif self._pending_plan is not None:  # resting limit blocks re-arming
+            self._revalidate_pending(ctx, zones)
+        else:
             self._entry_flow(ctx, zones, htf, evidence)
+
+    def _revalidate_pending(self, ctx, zones) -> None:
+        """Audit 5: a resting limit lives up to fill_ttl_candles with risk
+        caps re-checked at fill but the SETUP never re-validated. Each M5
+        close: kill the plan (skip "setup_stale") when its traded-zone level
+        went terminal in the levels engine or an opposite-direction verdict
+        at/above the arm threshold fired."""
+        plan = self._pending_plan
+        z = (min(plan.entry_zone), max(plan.entry_zone))
+        if (any(lv.symbol == self.symbol and lv.state in TERMINAL
+                and (min(lv.zone), max(lv.zone)) == z for lv in ctx.levels)
+            or any(s.final >= self.s.confluence.threshold
+                   and s.direction.value == -plan.direction.value
+                   for s in zones)):
+            self._pending_plan = None
+            self._skip(ctx.now, "fill", "setup_stale")
 
     def _entry_flow(self, ctx, zones, htf, evidence) -> None:
         top = zones[0] if zones else None

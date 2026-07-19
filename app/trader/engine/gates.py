@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from trader.config import Settings
+from trader.engine.template import _DEFAULTS as _TEMPLATE
 from trader.models.candle import Timeframe
 from trader.models.evidence import Direction
 from trader.models.market import _minutes
@@ -85,7 +86,10 @@ class TimeWindowGate(Gate):
     name = "time_window"
 
     def __init__(self, settings: Settings):
-        self.observe_min, self.until = settings.time.observe_min, settings.time.no_entry_after
+        t = settings.time                  # entry_after_lock: never trade an
+        self.observe_min = (max(t.observe_min, _TEMPLATE["lock_min"])  # unlocked
+                            if t.entry_after_lock else t.observe_min)  # template
+        self.until = t.no_entry_after
 
     def check(self, ctx, direction, plan_zone, htf_phase, risk) -> Verdict:
         start = ctx.spec.session_open_dt(ctx.now) + timedelta(minutes=self.observe_min)

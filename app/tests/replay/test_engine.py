@@ -42,6 +42,18 @@ def test_gate_replay_matches_scenariofeed(tmp_path):
     assert Journal(tmp_path / "replay").read(DAY) == live
 
 
+# Audit 5 (candle completeness fail-closed): fixture CSVs carry every session
+# minute, so a full-CSV replay must mark NO bucket incomplete -- the
+# detector-facing views are then bit-identical to the unguarded store, and
+# journal equality above stays the cross-layer proof.
+def test_full_csv_replay_marks_nothing_incomplete(tmp_path):
+    sc = judas_reversal("ACME", DAY, 100.0)
+    orch = Orchestrator(_cfg(), ScenarioFeed([sc]), ["ACME"], capital=CAPITAL,
+                        max_qty=MAX_QTY, journal_dir=tmp_path)
+    orch.run()
+    assert orch.store._incomplete == set()
+
+
 @pytest.fixture(scope="module")
 def two_day_csv(tmp_path_factory):
     data = tmp_path_factory.mktemp("data")

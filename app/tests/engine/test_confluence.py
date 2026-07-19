@@ -145,6 +145,16 @@ def test_time_mult_from_latest_timestats_default_half():
     assert main.final == pytest.approx(39 * 0.7 * 1.0, abs=0.05)
 
 
+def test_timestats_single_count_no_cluster_mass():
+    """Audit 5: timestats is the global time multiplier ONLY -- its Evidence
+    adds no neutral-pool mass to the cluster it lands in (it used to count
+    twice: pool mass AND multiplier)."""
+    z, = score(TRIO + [ev("timestats", NEUTRAL, 0.8)])   # same 100-101 zone
+    assert z.raw == pytest.approx(39.0)                  # no +0.5 x 5 x 0.8
+    assert z.mults["time"] == 0.8                        # multiplier kept
+    assert z.distinct == 3                               # never counts distinct
+
+
 def test_template_unclassified_zeroes_range_pin_halves():
     assert score(TRIO, template="UNCLASSIFIED")[0].final == 0.0
     assert score(TRIO, template="RANGE_PIN")[0].final == pytest.approx(
