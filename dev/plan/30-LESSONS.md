@@ -152,6 +152,19 @@ LTF zone → far-liquidity target. Every prior lesson is one organ of this anima
   parent's authority (the tap PROVED the parent). Child dies with the parent (parent linkage
   mandatory — old detector lost this; fix required).
 
+## Lesson 15 — POWER OF 3 / AMD (the Rosetta stone)
+- PO3 = the anatomy of ONE higher-TF candle opened at LTF: Open = accumulation (coil around
+  open, pools build), WICK = manipulation ("wicks are big" — the sweep/Judas beyond the range),
+  BODY = distribution (the real move, opposite the manipulation, leaves FVGs).
+- Phase→organ map: accumulation births ranges/EQ pools/compression; manipulation births
+  rejection blocks/OBs/breaker fuel at the swept extreme; distribution births FVG/propulsion/
+  BOS/CHoCH.
+- THE LADDER ALREADY ENCODES IT: rung 3 (sweep-aligned birth) = the manipulation→distribution
+  turn = the PO3 entry. compression_fade = accumulation detector.
+- Signatures: small-body/big-wick HTF candle = completed PO3, wick side reveals true direction;
+  live entry = manipulation ending (break beyond range edge + reversal back inside), never
+  mid-accumulation, never chasing distribution.
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
