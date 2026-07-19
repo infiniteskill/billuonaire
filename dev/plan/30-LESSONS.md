@@ -132,6 +132,14 @@ LTF zone → far-liquidity target. Every prior lesson is one organ of this anima
 - Trail SL SLOWLY (lag it, never choke). 1:3 is good; KEEP TRAILING toward 1:5+ when it runs.
   The trail does the exiting, not a greedy fixed target.
 
+## Lesson 12 — MITIGATION vs BREAKER (the one-question test)
+- Did the failing swing TAKE the old extreme first?
+  YES (grab then structure break) → BREAKER. NO ("failure to swing", no-break lower high /
+  higher low) → MITIGATION block. Same flip mechanics on retest; breaker ranks above mitigation
+  (liquidity taken = more fuel). M/W neckline law usually births breakers (second peak sweeps
+  the first). Flip family complete: OB (never violated) / breaker (violated, swept) /
+  mitigation (violated, unswept) / iFVG (violated gap) / overlap (intersection outranks).
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
