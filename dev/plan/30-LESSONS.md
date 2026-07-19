@@ -165,6 +165,13 @@ LTF zone → far-liquidity target. Every prior lesson is one organ of this anima
   live entry = manipulation ending (break beyond range edge + reversal back inside), never
   mid-accumulation, never chasing distribution.
 
+## Lesson 16 — LIQUIDITY VOID vs FVG
+- Void = the CONTAINER (full one-sided run, multi-candle or marubozu); FVGs = discrete 3-candle
+  bricks inside it. FVGs fill fast; voids fill slowly — but once re-entered price travels the
+  void FAST (no traded opposition inside; frictionless corridor).
+- Void's far edge = the origin (usually the OB/base) = the decision point; FVGs inside =
+  stepping stones. Void re-entry is NOT a reversal signal by itself.
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
