@@ -1,0 +1,39 @@
+[
+  {
+    "id": "A",
+    "symbol": "NIFTY",
+    "kind": "PDH",
+    "zone": [
+      "22150.05",
+      "22160.10"
+    ],
+    "born": "2026-07-15T09:15:00+05:30",
+    "tf": null,
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "B",
+    "symbol": "NIFTY",
+    "kind": "OB_BULL",
+    "zone": [
+      "22000",
+      "22020.55"
+    ],
+    "born": "2026-07-15T09:15:00+05:30",
+    "tf": "M15",
+    "state": "SWEPT",
+    "touches": 3,
+    "state_history": [
+      [
+        "2026-07-15T09:15:00+05:30",
+        "TESTED"
+      ],
+      [
+        "2026-07-15T09:20:00+05:30",
+        "SWEPT"
+      ]
+    ]
+  }
+]

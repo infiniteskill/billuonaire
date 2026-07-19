@@ -1,0 +1,152 @@
+# Researcher B strict-SMC preregistration
+
+Frozen before running the independent strict-lineage payoff evaluation.
+
+## Scope and epistemic status
+
+The source dataset is the existing `data/long5m` corpus: 138 stocks plus
+NIFTY, 57 sessions, 2026-04-27 through 2026-07-17. Existing broad-study
+aggregate results were already visible before this audit, so no split can be
+called pristine external out-of-sample data. The experiment below is new and
+threshold-frozen, and its guarded test split is an internal holdout only.
+
+No production detector output or archived signal label is used to construct
+the strict events. Recognizers are rebuilt directly from closed native 5-minute
+OHLC bars. NIFTY is excluded from the traded universe.
+
+## Frozen partitions
+
+- Development dates: 34 sessions, 2026-04-27 through 2026-06-15.
+- Validation dates: 11 sessions, 2026-06-16 through 2026-07-01.
+- Guarded test dates: 12 sessions, 2026-07-02 through 2026-07-17.
+- Symbol fold: first 32 bits of SHA-256(symbol), modulo 5.
+- Development symbols: folds 0, 1, 2 (95 stocks).
+- Validation symbols: fold 3 (23 stocks).
+- Guarded test symbols: fold 4 (20 stocks).
+
+The doubly held-out cells are:
+
+- DEV: development dates × development symbols.
+- VALIDATION: validation dates × validation symbols.
+- FINAL: guarded test dates × guarded test symbols.
+
+For power/context, pure chronology and pure symbol-fold slices will also be
+reported, but they overlap model-development dimensions and are diagnostic.
+
+## Causal recognizers
+
+All indices below refer to closed 5-minute bars.
+
+1. Swing:
+   - Strength 2 strict five-bar pivot.
+   - A pivot at `p` becomes available only after bar `p+2` closes.
+   - Equal extremes disqualify a swing.
+   - Each event stores pivot time and availability time separately.
+
+2. Liquidity state and sweep:
+   - A confirmed swing is ACTIVE until first terminal event.
+   - Wick strictly through the level with close back on the origin side is a
+     SWEEP.
+   - A close through the level without reclaim on that bar is BROKEN.
+   - Each swing can be swept or broken once.
+   - Multiple levels swept on one bar remain auditable, but a strategy lineage
+     uses the most recently formed swept parent for that bar and direction.
+
+3. Displacement:
+   - Direction agrees with the sweep reversal.
+   - It may be the sweep candle itself or one of the next three bars.
+   - Body is at least 0.8 × causal 14-bar SMA true-range ATR.
+   - Body/range is at least 0.60.
+   - Close is in the terminal 25% of the candle in the displacement direction.
+   - Close is beyond the preceding candle's high (bull) or low (bear).
+
+4. Fair value gap:
+   - Three consecutive bars in one session.
+   - The displacement candle is the middle bar.
+   - Bull: third-bar low strictly above first-bar high. Bear: third-bar high
+     strictly below first-bar low.
+   - Gap width is at least 0.10 × causal ATR at confirmation.
+   - The FVG is available only after the third bar closes.
+   - One lineage/FVG maximum per sweep parent.
+
+5. Fresh revisit and entry:
+   - A CE limit becomes eligible after FVG confirmation for six bars, same
+     session only.
+   - The first future candle whose range overlaps the FVG consumes freshness.
+   - A trade exists only if that first touch reaches the consequent
+     encroachment midpoint. A shallow first touch cannot be followed by a
+     later cherry-picked entry.
+   - Limit fill is exactly at tick-rounded CE, including a gap through it,
+     matching the current paper broker's conservative limit convention.
+   - Entries are permitted 11:00–14:30 Asia/Kolkata.
+
+6. Market-structure shift (MSS):
+   - At sweep time, freeze the most recent available opposing swing.
+   - The displacement close must close beyond that frozen swing.
+
+7. Premium/discount:
+   - Use only the previous completed session's high and low.
+   - Long CE must be at/below its midpoint; short CE at/above it.
+
+## Frozen decision trees
+
+- `A_SWEEP_DISP_FVG_CE`: swing sweep → displacement → FVG → fresh first-touch
+  CE fill.
+- `B_A_PLUS_MSS`: Tree A plus the frozen-parent MSS requirement.
+- `C_B_PLUS_PD`: Tree B plus previous-session favorable premium/discount.
+
+Trees are nested and all three are reported. No threshold grid is allowed.
+Selection, if any, is by the validation lower confidence bound, not the
+development mean. If no tree clears the profitability gate, the prescribed
+decision is NO TRADE rather than choosing the least-negative tree.
+
+## Stops, targets, cadence, and fills
+
+- Raw stop is beyond the sweep candle's extreme by 0.25 ATR.
+- Production stop floor: widen risk to at least 1.0 ATR.
+- Reject risk greater than 2.0 ATR.
+- Target is the nearest still-active opposing confirmed swing available at
+  entry and at least 1.5R away. If none exists, skip.
+- One full-position exit; no partials or trailing rules.
+- If stop and target are both reachable in one 5-minute candle, stop wins.
+- Gap-through stop fills at the adverse open; otherwise at stop.
+- Stop and time exits incur 2 bp half-spread + 3 bp slippage.
+- Limit entry and target fill exactly at their prices.
+- Costs: ₹20 per order; 0.025% STT on the sell leg; 0.00297% exchange charge
+  on both legs.
+- Capital ₹100,000; risk budget 0.5% (₹500); 5× notional cap.
+- Quantity is the smaller of risk-budget and notional-cap sizes.
+- Net R denominator is actual initial rupee risk (`quantity × stop distance`),
+  not the unfilled budget.
+- Open trades time-exit at the last close at/before 15:10, with adverse market
+  friction.
+- Main analysis keeps the earliest qualifying trade per symbol/session/tree.
+
+## Nulls and inference
+
+- Direction-randomization null: same entries, risk distance, target R, time,
+  and symbols; independently randomize direction and recompute paths.
+- Matched-time null: deterministic random eligible time in the same
+  symbol/session/30-minute bucket, carrying the observed direction and
+  risk/target-R geometry.
+- 500 null repetitions per tree/slice.
+- 2,000 deterministic bootstrap repetitions, separately resampling symbol
+  clusters, session clusters, and symbol-session clusters. The reported
+  conservative 95% interval is the envelope of those intervals.
+- Report gross R, net R, rupees, win rate, profit factor, maximum daily
+  drawdown, counts, and null percentile.
+- Holm-adjust the three tree-level confirmatory p-values.
+
+## Profitability gate
+
+A feasible winner requires all of:
+
+1. At least 100 main-analysis trades in VALIDATION and 100 in FINAL.
+2. Mean net R > 0 in both VALIDATION and FINAL.
+3. Conservative clustered 95% CI lower bound > 0 in both.
+4. Positive net R for long and short subsets in both.
+5. Positive pure-temporal-test and pure-symbol-test diagnostics.
+6. Holm-adjusted one-sided p < 0.05 versus zero and observed expectancy above
+   the 95th percentile of both nulls in FINAL.
+
+Failure of any gate means the result is research-only and not deployable.

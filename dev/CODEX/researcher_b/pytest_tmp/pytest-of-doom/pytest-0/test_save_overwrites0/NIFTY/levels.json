@@ -1,0 +1,16 @@
+[
+  {
+    "id": "A",
+    "symbol": "NIFTY",
+    "kind": "PDH",
+    "zone": [
+      "22150.05",
+      "22160.10"
+    ],
+    "born": "2026-07-15T09:15:00+05:30",
+    "tf": null,
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  }
+]

@@ -1,0 +1,26 @@
+{
+  "study_id": "researcher_a_strict_smc_lineage_v2_feasibility",
+  "frozen_on": "2026-07-19",
+  "reason": "Strict v1 produced zero trades before any payoff existed: 775 parent first revisits -> 3 M5 MSS -> 3 child zones -> 0 child-CE fills. This amendment is based only on the causal event-count funnel, not trade outcomes.",
+  "unchanged": [
+    "all HTF root, first-sweep/reclaim, H1 structure-break, parent FVG/OB ancestry",
+    "first-touch freshness and parent delay policies",
+    "nested child FVG/OB and child-CE limit entry",
+    "structural stop, opposing unswept-liquidity target, costs and stop-first ambiguity",
+    "time and symbol holdouts, policy selection rule and success/failure gates"
+  ],
+  "amended_m5_internal_structure": {
+    "swing": "strict 1-left/1-right internal fractal, available only after the right M5 bar closes; ties disqualify",
+    "recency": "pivot must be after H1 parent confirmation OR within the 24 M5 bars before parent revisit",
+    "mss_window": "first qualifying break within 12 M5 bars after parent first revisit",
+    "break": "directional close >=0.05 M5 ATR through the latest causally confirmed unbroken swing; body >=0.60 M5 ATR; close-location >=0.65",
+    "same_session": true
+  },
+  "amended_child": {
+    "fvg": "unchanged directional 3-candle gap >=0.10 M5 ATR; all three candles at/after parent revisit",
+    "ob": "unchanged last opposite-color full-range candle at/after parent revisit",
+    "entry_ttl": "unchanged 6 M5 bars",
+    "nested_midpoint": "unchanged"
+  },
+  "holdout_rule": "The v2 development policy is selected without inspecting v2 holdout payoffs. If no policy passes the original development feasibility gate, freeze P0_PRIMARY and report failure/inconclusive exactly as v1 specified."
+}

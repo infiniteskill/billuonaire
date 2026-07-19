@@ -1,0 +1,2 @@
+{"symbol": "ACME", "at": "2026-07-14T14:25:00+05:30", "direction": "LONG", "qty": 50, "price": "100.00", "stop": "95", "zone": ["99", "101"], "targets": ["107", "110"], "costs": "20.148500000", "plan": {"final": 18.0, "mults": {"align": 1.0}}, "ts": "2026-07-14T14:25:00+05:30", "kind": "trade_open"}
+{"symbol": "ACME", "at": "2026-07-14T15:10:00+05:30", "reason": "EXIT_EOD", "why": "squareoff", "pnl": "-44.046300750", "r": -0.176, "exit_price": "99.95", "costs": "21.397800750", "ts": "2026-07-14T15:10:00+05:30", "kind": "trade_close"}

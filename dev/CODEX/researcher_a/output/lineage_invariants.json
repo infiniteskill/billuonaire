@@ -1,0 +1,11 @@
+{
+  "rows": 22,
+  "sweep_before_reclaim": true,
+  "reclaim_before_h1_break_close": true,
+  "parent_touch_after_confirm": true,
+  "mss_after_parent_touch": true,
+  "m5_swing_confirmed_before_mss": true,
+  "child_fill_after_mss": true,
+  "positive_delays": true,
+  "nested_child_mid": true
+}

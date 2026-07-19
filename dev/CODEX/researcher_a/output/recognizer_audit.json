@@ -1,0 +1,237 @@
+{
+  "separation": {
+    "test_parity": "Does implementation match its current tests/reference port?",
+    "causal_timing": "Can the event be known from closed bars at emission time?",
+    "strict_lineage": "Can downstream prove every event belongs to the same root episode?"
+  },
+  "junit": {
+    "present": true,
+    "tests": 193,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "path": "dev/CODEX/researcher_a/output/recognizer_tests.xml"
+  },
+  "recognizers": [
+    {
+      "recognizer": "HTF/M5 swings",
+      "source": "app/trader/detectors/swings.py",
+      "tests": "app/tests/detectors/test_swings.py",
+      "parity_level": "unit-contract",
+      "causal": "PASS",
+      "lineage": "CONDITIONAL",
+      "evidence": [
+        "Strict symmetric window over fully closed candles; confirmation occurs only after N right bars.",
+        "Level.born is pivot time, not confirmation time; Level has no confirmed_at or parent/origin metadata.",
+        "Downstream code must reconstruct confirmation lag to avoid treating the pivot as known early."
+      ],
+      "source_sha256": "01f97dde340a92d118c013526defd3cfbcc047fcaef0777f290d35cf7edbdece",
+      "tests_sha256": "8fd290bf75a1ff5a7d44d07b351e1183b24190f80c907ab403267f5060e4e750",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    },
+    {
+      "recognizer": "external liquidity",
+      "source": "app/trader/detectors/liquidity.py",
+      "tests": "app/tests/detectors/test_liquidity.py",
+      "parity_level": "unit-contract",
+      "causal": "PASS",
+      "lineage": "PASS_TO_LEVEL",
+      "evidence": [
+        "PDH/PDL, prior-week, opening-range and EQ levels have stable level_id values.",
+        "EQ grouping consumes only already-confirmed swing Levels.",
+        "The detector does not distinguish external/important H1 swings; that importance gate is a research-layer definition."
+      ],
+      "source_sha256": "855e22a1ee91b1542573db47481b2c9988bdc978b470e8328a837ce29e03bf39",
+      "tests_sha256": "305027941c2e3430eedd5efafaebb6aeb9375a28254c7c54915449b631ec49e2",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    },
+    {
+      "recognizer": "sweep/reclaim",
+      "source": "app/trader/detectors/sweep.py",
+      "tests": "app/tests/detectors/test_sweep.py",
+      "parity_level": "unit-contract + LevelEngine tests",
+      "causal": "PASS",
+      "lineage": "PASS_TO_LEVEL",
+      "evidence": [
+        "Sweep and upgrade are keyed to exact level_id and SWEPT state timestamp.",
+        "Reclaim upgrade requires the LevelEngine transition inside the configured closed-bar window.",
+        "Episode base memory is instance-only and is cleared at session end/restart, so replay/live restart parity is conditional."
+      ],
+      "source_sha256": "65064ccbf836198381a42e002d50cdb28ade1329e36ef13867c3dd30e62ab05f",
+      "tests_sha256": "8f96ea8ec2296d2e99cdab32db0503f7c6e8287fc2a228919c5b9c90a42c20f3",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    },
+    {
+      "recognizer": "BOS/CHOCH",
+      "source": "app/trader/detectors/structure.py",
+      "tests": "app/tests/detectors/test_structure.py",
+      "parity_level": "unit-contract",
+      "causal": "PASS",
+      "lineage": "FAIL_STRICT",
+      "evidence": [
+        "Break evidence records the exact swing_id and uses closed-candle close breaks.",
+        "CHOCH strength boost scans every Level.state_history, without filtering the level timeframe, kind, direction or same root episode.",
+        "BOS/CHOCH does not require a displacement body, close location, or an FVG/OB born from the same break.",
+        "All historical swing Levels are considered regardless of terminal state."
+      ],
+      "source_sha256": "b4312e763449c2be0e29ecb9058e79366a4782a35a5741a6449f21e3302dc50a",
+      "tests_sha256": "44119d82a2b12ee70b5d635553229fd01c69d3add1846cc6e14b97d56865ec96",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    },
+    {
+      "recognizer": "FVG/IFVG",
+      "source": "app/trader/detectors/fvg.py",
+      "tests": "app/tests/detectors/test_fvg.py",
+      "parity_level": "unit-contract",
+      "causal": "PASS",
+      "lineage": "PASS_TO_FVG_LEVEL",
+      "evidence": [
+        "Three-closed-candle creation and IFVG inversion are keyed to exact FVG level_id and inversion timestamp.",
+        "Generic FVG evidence episodes clear each session, allowing a carried zone to fire again; this is not first-lifetime-touch freshness.",
+        "The shared Level stores origin bar as born but no explicit c3 confirmation time or parent structure-break id."
+      ],
+      "source_sha256": "73049e90788e9dcf2d76a3869dbfe1eef107c6986f857314923a926c6752b6e4",
+      "tests_sha256": "a757099f9bf2ce4962224d0c279863600ab13a0f91e7643a1476f520cc34ae68",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    },
+    {
+      "recognizer": "close-beyond FVG",
+      "source": "app/trader/detectors/fvg_cb.py",
+      "tests": "app/tests/detectors/test_fvg_cb.py",
+      "parity_level": "real-data reference parity",
+      "causal": "PASS",
+      "lineage": "CONDITIONAL",
+      "evidence": [
+        "Actual c3 timestamp is separately retained and same-c3 entries are excluded.",
+        "Real-data gap/event parity is tested against the durable reference.",
+        "Session-end deliberately clears retest/CE dedupe so carried levels re-fire; reference-continuum parity test documents this as the sole divergence."
+      ],
+      "source_sha256": "6c8287e0a748a5dfea66e907c73ce01fbedb37283e1194f259fec0415447d889",
+      "tests_sha256": "16e94550e501768409032e791713a835203d5736b7cfac050011d04bacd94aa3",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    },
+    {
+      "recognizer": "generic order block",
+      "source": "app/trader/detectors/orderblock.py",
+      "tests": "app/tests/detectors/test_orderblock.py",
+      "parity_level": "unit-contract",
+      "causal": "PASS_WITH_MOVING_WINDOW",
+      "lineage": "FAIL_STRICT",
+      "evidence": [
+        "An opposite candle plus close displacement can form an OB without a causal swing break/BOS/CHOCH.",
+        "Evidence carries level_id but no source swing_id, break timestamp, displacement event id or parent FVG id.",
+        "Historical candidates in the small rolling window are thresholded with current ATR, not their own-bar ATR."
+      ],
+      "source_sha256": "d5d3db765d202e7a7a32287520b5d58e55aba706e4f808580696be23ac0ff139",
+      "tests_sha256": "60752134e490c812a1eb5b495062d7e981f41a32f802e7fded3140d0e20b3e8d",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    },
+    {
+      "recognizer": "Lux order block",
+      "source": "app/trader/detectors/ob_lux.py",
+      "tests": "app/tests/detectors/test_ob_lux.py",
+      "parity_level": "real-data reference parity",
+      "causal": "PASS",
+      "lineage": "CONDITIONAL",
+      "evidence": [
+        "Incremental pivot-break-anchor state and real-data birth parity are strongly tested.",
+        "The internal pivot/confirm/anchor relationship is not serialized into Level or Evidence; downstream sees only level_id.",
+        "It is parity to one LuxAlgo OB definition, not proof that it belongs to a separate liquidity-sweep event."
+      ],
+      "source_sha256": "7b1e0ece11cb6bc233676f2db258331867531eb136e5312040be98ab051bacc5",
+      "tests_sha256": "e939b682a045816d1dcee57f9d77636bccfec59eb47c776f1de166e74176a1c7",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    },
+    {
+      "recognizer": "generic breaker",
+      "source": "app/trader/detectors/breaker.py",
+      "tests": "app/tests/detectors/test_breaker.py",
+      "parity_level": "unit-contract",
+      "causal": "PASS",
+      "lineage": "CONDITIONAL",
+      "evidence": [
+        "Retest is tied to exact level_id and latest INVERTED episode.",
+        "Eligible parents include OB, swing and opening-range Levels, so the label does not guarantee a swept-OB-to-MSS breaker lineage.",
+        "No root sweep id or structure-break id is carried downstream."
+      ],
+      "source_sha256": "c735b2e18103c9c2494060c45ad33f8b6b714c13178b1807efc37aca622d832f",
+      "tests_sha256": "6909012e8aa46468e030d04ff8cfac54d0159d3d207cfc4e5223f892ce5733ea",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    },
+    {
+      "recognizer": "MSB breaker block",
+      "source": "app/trader/detectors/breaker_msb.py",
+      "tests": "app/tests/detectors/test_breaker_msb.py",
+      "parity_level": "real-data reference parity",
+      "causal": "PASS",
+      "lineage": "INTERNAL_PASS_EXTERNAL_FAIL",
+      "evidence": [
+        "The stateful zigzag -> swept older swing -> MSB -> breaker box -> later retest chain is internally ordered and parity-tested.",
+        "Evidence metadata omits box id, source swing ids and MSB id, so it cannot be joined strictly to an external HTF root downstream."
+      ],
+      "source_sha256": "f6a54666c1ab0bf2ba444a5c2a252d2cb84fc16f714a364e6c91ab0cc01705bd",
+      "tests_sha256": "8600c519db486dcb052ce7f5d303a6e6b911d83df518b585a635b388b150fe0e",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    },
+    {
+      "recognizer": "propulsion block",
+      "source": "app/trader/detectors/propulsion_block.py",
+      "tests": "app/tests/detectors/test_propulsion_block.py",
+      "parity_level": "unit-contract",
+      "causal": "PASS",
+      "lineage": "FAIL_STRICT",
+      "evidence": [
+        "Tap is checked only against live parent OBs and confirmation occurs on a later bar.",
+        "Pending and confirmed blocks are keyed only by (tap timestamp, direction), not parent level_id; same-side parents can overwrite one another.",
+        "Confirmed blocks retain no parent reference and are not invalidated when the parent OB later becomes terminal."
+      ],
+      "source_sha256": "e20061d7a0da282350b3f05c075a8e93b90a30d72e6641a17e08475372d90b74",
+      "tests_sha256": "94ddfa93fad9efa64f630bee72e03d1c28b8010907b774a7a3959887e15855c5",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    },
+    {
+      "recognizer": "mitigation block",
+      "source": "app/trader/detectors/mitigation.py",
+      "tests": "app/tests/detectors/test_mitigation.py",
+      "parity_level": "real-data reference parity",
+      "causal": "PASS",
+      "lineage": "FAIL_STRICT",
+      "evidence": [
+        "Candidate formation uses the block candle's causal ATR and real-data parity is tested.",
+        "It is a standalone displacement block with no root sweep, structure break, FVG or parent level id.",
+        "Touch metadata exposes no block timestamp/id, so downstream cannot prove same-event ancestry."
+      ],
+      "source_sha256": "f30d4f07cb762239479f486a7c1435450fdf4aaae9581093b5363b113e6e8485",
+      "tests_sha256": "635f58ba4b86dfdf38c349bb4f69941d209d990386ed2707b7432f9f2f8aa056",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    },
+    {
+      "recognizer": "shared level state/freshness",
+      "source": "app/trader/models/level.py",
+      "tests": "app/tests/engine/test_levels.py",
+      "parity_level": "state-machine unit-contract",
+      "causal": "PASS_WITH_RESTART_CONDITIONS",
+      "lineage": "SCHEMA_FAIL",
+      "evidence": [
+        "State history timestamps transitions, but Level schema has no confirmed_at, parent_id, root_event_id, origin_break_id, first_touch_at or invalidation reason.",
+        "A strict ordered strategy therefore cannot be proven from shared Level objects alone; it needs a lineage ledger such as the isolated study emits."
+      ],
+      "source_sha256": "efb05a235b246d3b69ed42014cbfabdc21012428131910d91ac88900b27b44a2",
+      "tests_sha256": "cb5510e6a2b83b5282192127633d69ec3d46913611f9c2e58cb3aa9373e9c41b",
+      "required_code_tokens_present": true,
+      "missing_tokens": []
+    }
+  ]
+}

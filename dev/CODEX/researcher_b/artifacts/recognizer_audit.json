@@ -1,0 +1,36 @@
+{
+  "event_id_duplicate_excess": 0,
+  "lineage_id_duplicate_excess": 0,
+  "tree_trade_key_duplicate_excess": 0,
+  "bad_swing_order": 0,
+  "bad_lineage_order": 0,
+  "reused_sweep_parent_excess": 0,
+  "bad_entry_order": 0,
+  "nonfresh_entry": 0,
+  "wrong_direction": 0,
+  "cost_gate_pass_rows": 867,
+  "events_by_type": {
+    "DISPLACEMENT": 77964,
+    "FVG_CONFIRM": 5269,
+    "FVG_FIRST_TOUCH": 3851,
+    "SWEEP": 56588,
+    "SWING_BREAK": 74523,
+    "SWING_CONFIRM": 137102
+  },
+  "tree_rows": {
+    "A_SWEEP_DISP_FVG_CE": 741,
+    "B_A_PLUS_MSS": 101,
+    "C_B_PLUS_PD": 60
+  },
+  "symbols": 138,
+  "swings": 137102,
+  "sweeps": 56588,
+  "lineages": 5269,
+  "raw_tree_rows": 902,
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+  "pandas": "3.0.3",
+  "numpy": "2.5.1",
+  "script_sha256": "16ecba3cc68d09ddd7049e05c8c4b746312b2a5d924efbc2e3bdaccadecf134e",
+  "prereg_sha256": "bdd70784e34da4ee6d16877e7d64743a4dd24a080d58ed95779b11fc9d07817c"
+}

@@ -1,0 +1,92 @@
+{
+  "capital": 100000,
+  "index_symbol": null,
+  "market": {
+    "tz": "Asia/Kolkata",
+    "session_open": "09:15",
+    "session_close": "15:30",
+    "tick_size": "0.05",
+    "expiry_weekday": 1
+  },
+  "risk": {
+    "per_trade_pct": 0.5,
+    "daily_loss_pct": 1.5,
+    "max_trades_day": 3,
+    "max_per_stock": 1,
+    "consecutive_loss_stop": 2,
+    "expiry_size_mult": 0.5,
+    "daily_profit_lock_R": 2.0,
+    "day_after_trend_mult": 0.75,
+    "portfolio_heat_pct": 1.0,
+    "max_correlated_positions": 2,
+    "min_minutes_between_trades": 15,
+    "leverage": 5.0,
+    "max_cost_reward_ratio": 0.15
+  },
+  "time": {
+    "no_entry_after": "14:30",
+    "squareoff": "15:10",
+    "observe_min": 105
+  },
+  "entry": {
+    "arm_proximity_atr": 1.0,
+    "chase_tolerance_atr": 0.1,
+    "max_stop_atr": 2.0,
+    "arm_ttl_candles": 12,
+    "fill_ttl_candles": 6
+  },
+  "events": {
+    "big_candle_atr": 3.0,
+    "cooldown_candles": 6
+  },
+  "stops": {
+    "atr_buffer": 0.25,
+    "round_offset_ticks": 3,
+    "min_stop_atr": 1.0
+  },
+  "confluence": {
+    "threshold": 18,
+    "weights": {
+      "sweep": 20,
+      "structure": 15,
+      "orderblock": 12,
+      "breaker": 10,
+      "fvg": 8,
+      "liquidity": 10,
+      "wyckoff": 10,
+      "cage": 10,
+      "timestats": 5,
+      "compression": 12,
+      "index": 5
+    }
+  },
+  "detectors": {
+    "enabled": [
+      "swings",
+      "liquidity",
+      "orderblock",
+      "fvg",
+      "structure",
+      "sweep",
+      "breaker",
+      "wyckoff",
+      "volume",
+      "compression",
+      "timestats",
+      "index"
+    ],
+    "disabled": [
+      "cage"
+    ],
+    "params": {}
+  },
+  "fills": {
+    "slippage_bps": 3,
+    "half_spread_bps": 2,
+    "costs": {
+      "brokerage_flat": 20,
+      "stt_pct": 0.025,
+      "exchange_pct": 0.00297
+    }
+  }
+}

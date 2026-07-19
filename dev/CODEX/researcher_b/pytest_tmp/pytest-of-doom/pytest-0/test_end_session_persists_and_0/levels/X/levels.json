@@ -1,0 +1,16 @@
+[
+  {
+    "id": "X-PDH-ACTIVE",
+    "symbol": "X",
+    "kind": "PDH",
+    "zone": [
+      "99",
+      "101"
+    ],
+    "born": "2026-07-14T15:25:00+05:30",
+    "tf": null,
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  }
+]

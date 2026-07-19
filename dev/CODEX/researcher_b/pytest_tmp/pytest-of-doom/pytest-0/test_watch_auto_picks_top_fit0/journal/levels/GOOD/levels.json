@@ -1,0 +1,90 @@
+[
+  {
+    "id": "GOOD-PWH-2026-W29",
+    "symbol": "GOOD",
+    "kind": "PWH",
+    "zone": [
+      "129.95",
+      "130.05"
+    ],
+    "born": "2026-07-19T09:20:00+05:30",
+    "tf": null,
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "GOOD-PWL-2026-W29",
+    "symbol": "GOOD",
+    "kind": "PWL",
+    "zone": [
+      "97.45",
+      "97.55"
+    ],
+    "born": "2026-07-19T09:20:00+05:30",
+    "tf": null,
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "GOOD-ROUND-50-100.00",
+    "symbol": "GOOD",
+    "kind": "ROUND",
+    "zone": [
+      "99.95",
+      "100.05"
+    ],
+    "born": "2026-07-19T09:20:00+05:30",
+    "tf": null,
+    "state": "RECLAIMED",
+    "touches": 0,
+    "state_history": [
+      [
+        "2026-07-19T09:30:00+05:30",
+        "SWEPT"
+      ],
+      [
+        "2026-07-19T09:35:00+05:30",
+        "RECLAIMED"
+      ]
+    ]
+  },
+  {
+    "id": "GOOD-ROUND-100-100.00",
+    "symbol": "GOOD",
+    "kind": "ROUND",
+    "zone": [
+      "99.95",
+      "100.05"
+    ],
+    "born": "2026-07-19T09:20:00+05:30",
+    "tf": null,
+    "state": "RECLAIMED",
+    "touches": 0,
+    "state_history": [
+      [
+        "2026-07-19T09:30:00+05:30",
+        "SWEPT"
+      ],
+      [
+        "2026-07-19T09:35:00+05:30",
+        "RECLAIMED"
+      ]
+    ]
+  },
+  {
+    "id": "GOOD-EQL-2026-07-19T12:25:00+05:30-100.10",
+    "symbol": "GOOD",
+    "kind": "EQL",
+    "zone": [
+      "100.05",
+      "100.15"
+    ],
+    "born": "2026-07-19T12:25:00+05:30",
+    "tf": null,
+    "state": "ACTIVE",
+    "touches": 2,
+    "state_history": []
+  }
+]

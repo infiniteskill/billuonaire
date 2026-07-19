@@ -1,0 +1,305 @@
+[
+  {
+    "id": "S4-ROUND-50-100.00",
+    "symbol": "S4",
+    "kind": "ROUND",
+    "zone": [
+      "99.95",
+      "100.05"
+    ],
+    "born": "2026-07-14T09:20:00+05:30",
+    "tf": null,
+    "state": "RECLAIMED",
+    "touches": 0,
+    "state_history": [
+      [
+        "2026-07-14T09:30:00+05:30",
+        "SWEPT"
+      ],
+      [
+        "2026-07-14T09:35:00+05:30",
+        "RECLAIMED"
+      ]
+    ]
+  },
+  {
+    "id": "S4-ROUND-100-100.00",
+    "symbol": "S4",
+    "kind": "ROUND",
+    "zone": [
+      "99.95",
+      "100.05"
+    ],
+    "born": "2026-07-14T09:20:00+05:30",
+    "tf": null,
+    "state": "RECLAIMED",
+    "touches": 0,
+    "state_history": [
+      [
+        "2026-07-14T09:30:00+05:30",
+        "SWEPT"
+      ],
+      [
+        "2026-07-14T09:35:00+05:30",
+        "RECLAIMED"
+      ]
+    ]
+  },
+  {
+    "id": "S4-OB_BULL-5m-2026-07-14T10:05:00+05:30",
+    "symbol": "S4",
+    "kind": "OB_BULL",
+    "zone": [
+      "100.00",
+      "100.15"
+    ],
+    "born": "2026-07-14T10:05:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S4-FVG_BULL-5m-2026-07-14T10:35:00+05:30",
+    "symbol": "S4",
+    "kind": "FVG_BULL",
+    "zone": [
+      "100.70",
+      "100.80"
+    ],
+    "born": "2026-07-14T10:35:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 4,
+    "state_history": [
+      [
+        "2026-07-14T10:45:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "S4-OB_BULL-5m-2026-07-14T11:10:00+05:30",
+    "symbol": "S4",
+    "kind": "OB_BULL",
+    "zone": [
+      "101.10",
+      "101.25"
+    ],
+    "born": "2026-07-14T11:10:00+05:30",
+    "tf": "M5",
+    "state": "RECLAIMED",
+    "touches": 0,
+    "state_history": [
+      [
+        "2026-07-14T12:00:00+05:30",
+        "SWEPT"
+      ],
+      [
+        "2026-07-14T12:05:00+05:30",
+        "RECLAIMED"
+      ]
+    ]
+  },
+  {
+    "id": "S4-OB_BULL-5m-2026-07-14T11:55:00+05:30",
+    "symbol": "S4",
+    "kind": "OB_BULL",
+    "zone": [
+      "100.70",
+      "101.15"
+    ],
+    "born": "2026-07-14T11:55:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S4-FVG_BULL-5m-2026-07-14T12:05:00+05:30",
+    "symbol": "S4",
+    "kind": "FVG_BULL",
+    "zone": [
+      "101.35",
+      "101.45"
+    ],
+    "born": "2026-07-14T12:05:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S4-FVG_BULL-5m-2026-07-14T12:10:00+05:30",
+    "symbol": "S4",
+    "kind": "FVG_BULL",
+    "zone": [
+      "101.60",
+      "101.75"
+    ],
+    "born": "2026-07-14T12:10:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S4-FVG_BULL-5m-2026-07-14T12:20:00+05:30",
+    "symbol": "S4",
+    "kind": "FVG_BULL",
+    "zone": [
+      "102.10",
+      "102.20"
+    ],
+    "born": "2026-07-14T12:20:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S4-EQL-2026-07-14T11:45:00+05:30-100.725",
+    "symbol": "S4",
+    "kind": "EQL",
+    "zone": [
+      "100.65",
+      "100.80"
+    ],
+    "born": "2026-07-14T11:45:00+05:30",
+    "tf": null,
+    "state": "ACTIVE",
+    "touches": 2,
+    "state_history": []
+  },
+  {
+    "id": "S4-OB_BULL-5m-2026-07-14T12:35:00+05:30",
+    "symbol": "S4",
+    "kind": "OB_BULL",
+    "zone": [
+      "102.45",
+      "102.90"
+    ],
+    "born": "2026-07-14T12:35:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S4-FVG_BULL-5m-2026-07-14T12:50:00+05:30",
+    "symbol": "S4",
+    "kind": "FVG_BULL",
+    "zone": [
+      "103.10",
+      "103.25"
+    ],
+    "born": "2026-07-14T12:50:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S4-FVG_BULL-5m-2026-07-14T13:00:00+05:30",
+    "symbol": "S4",
+    "kind": "FVG_BULL",
+    "zone": [
+      "103.65",
+      "103.80"
+    ],
+    "born": "2026-07-14T13:00:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 1,
+    "state_history": [
+      [
+        "2026-07-14T13:15:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "S4-OB_BULL-5m-2026-07-14T13:10:00+05:30",
+    "symbol": "S4",
+    "kind": "OB_BULL",
+    "zone": [
+      "103.75",
+      "104.10"
+    ],
+    "born": "2026-07-14T13:10:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S4-FVG_BULL-5m-2026-07-14T13:20:00+05:30",
+    "symbol": "S4",
+    "kind": "FVG_BULL",
+    "zone": [
+      "104.05",
+      "104.20"
+    ],
+    "born": "2026-07-14T13:20:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S4-FVG_BULL-5m-2026-07-14T13:25:00+05:30",
+    "symbol": "S4",
+    "kind": "FVG_BULL",
+    "zone": [
+      "104.40",
+      "104.55"
+    ],
+    "born": "2026-07-14T13:25:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S4-OB_BULL-5m-2026-07-14T13:45:00+05:30",
+    "symbol": "S4",
+    "kind": "OB_BULL",
+    "zone": [
+      "104.95",
+      "105.35"
+    ],
+    "born": "2026-07-14T13:45:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S4-OB_BULL-5m-2026-07-14T14:20:00+05:30",
+    "symbol": "S4",
+    "kind": "OB_BULL",
+    "zone": [
+      "106.30",
+      "106.65"
+    ],
+    "born": "2026-07-14T14:20:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S4-OB_BULL-5m-2026-07-14T14:55:00+05:30",
+    "symbol": "S4",
+    "kind": "OB_BULL",
+    "zone": [
+      "107.50",
+      "107.90"
+    ],
+    "born": "2026-07-14T14:55:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  }
+]

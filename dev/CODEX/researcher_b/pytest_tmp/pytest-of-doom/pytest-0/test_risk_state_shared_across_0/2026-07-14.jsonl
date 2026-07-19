@@ -1,0 +1,2 @@
+{"symbol": "A", "at": "2026-07-14T11:30:00+05:30", "reason": "EXIT_STOP", "why": "close_beyond_stop", "pnl": "-70.765575150", "r": -1.415, "exit_price": "94.95", "costs": "20.265575150", "ts": "2026-07-14T11:30:00+05:30", "kind": "trade_close"}
+{"symbol": "B", "at": "2026-07-14T11:30:00+05:30", "reason": "EXIT_STOP", "why": "close_beyond_stop", "pnl": "-70.765575150", "r": -1.415, "exit_price": "94.95", "costs": "20.265575150", "ts": "2026-07-14T11:30:00+05:30", "kind": "trade_close"}

@@ -1,0 +1,587 @@
+[
+  {
+    "id": "ACME-ROUND-50-100.00",
+    "symbol": "ACME",
+    "kind": "ROUND",
+    "zone": [
+      "99.95",
+      "100.05"
+    ],
+    "born": "2026-07-14T09:20:00+05:30",
+    "tf": null,
+    "state": "RECLAIMED",
+    "touches": 0,
+    "state_history": [
+      [
+        "2026-07-14T09:30:00+05:30",
+        "SWEPT"
+      ],
+      [
+        "2026-07-14T09:35:00+05:30",
+        "RECLAIMED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-ROUND-100-100.00",
+    "symbol": "ACME",
+    "kind": "ROUND",
+    "zone": [
+      "99.95",
+      "100.05"
+    ],
+    "born": "2026-07-14T09:20:00+05:30",
+    "tf": null,
+    "state": "RECLAIMED",
+    "touches": 0,
+    "state_history": [
+      [
+        "2026-07-14T09:30:00+05:30",
+        "SWEPT"
+      ],
+      [
+        "2026-07-14T09:35:00+05:30",
+        "RECLAIMED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-OB_BULL-5m-2026-07-14T10:05:00+05:30",
+    "symbol": "ACME",
+    "kind": "OB_BULL",
+    "zone": [
+      "100.00",
+      "100.15"
+    ],
+    "born": "2026-07-14T10:05:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 1,
+    "state_history": [
+      [
+        "2026-07-14T12:25:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-OB_BULL-5m-2026-07-14T12:20:00+05:30",
+    "symbol": "ACME",
+    "kind": "OB_BULL",
+    "zone": [
+      "100.25",
+      "100.55"
+    ],
+    "born": "2026-07-14T12:20:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 1,
+    "state_history": [
+      [
+        "2026-07-14T12:45:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-14T12:30:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "100.45",
+      "100.55"
+    ],
+    "born": "2026-07-14T12:30:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 1,
+    "state_history": [
+      [
+        "2026-07-14T12:45:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-OB_BULL-5m-2026-07-14T12:40:00+05:30",
+    "symbol": "ACME",
+    "kind": "OB_BULL",
+    "zone": [
+      "100.45",
+      "100.65"
+    ],
+    "born": "2026-07-14T12:40:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-14T13:00:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "100.90",
+      "101.05"
+    ],
+    "born": "2026-07-14T13:00:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-EQL-2026-07-14T12:25:00+05:30-100.10",
+    "symbol": "ACME",
+    "kind": "EQL",
+    "zone": [
+      "100.05",
+      "100.15"
+    ],
+    "born": "2026-07-14T12:25:00+05:30",
+    "tf": null,
+    "state": "ACTIVE",
+    "touches": 2,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-14T13:05:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "101.15",
+      "101.35"
+    ],
+    "born": "2026-07-14T13:05:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-14T13:10:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "101.40",
+      "101.50"
+    ],
+    "born": "2026-07-14T13:10:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-14T13:20:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "101.90",
+      "102.00"
+    ],
+    "born": "2026-07-14T13:20:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-14T13:25:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "102.15",
+      "102.25"
+    ],
+    "born": "2026-07-14T13:25:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-OB_BULL-5m-2026-07-14T13:45:00+05:30",
+    "symbol": "ACME",
+    "kind": "OB_BULL",
+    "zone": [
+      "102.50",
+      "102.85"
+    ],
+    "born": "2026-07-14T13:45:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-14T14:15:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "103.85",
+      "104.00"
+    ],
+    "born": "2026-07-14T14:15:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-14T14:20:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "104.10",
+      "104.25"
+    ],
+    "born": "2026-07-14T14:20:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 2,
+    "state_history": [
+      [
+        "2026-07-14T14:35:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-OB_BULL-5m-2026-07-14T14:35:00+05:30",
+    "symbol": "ACME",
+    "kind": "OB_BULL",
+    "zone": [
+      "104.25",
+      "104.60"
+    ],
+    "born": "2026-07-14T14:35:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-PDL-2026-07-15",
+    "symbol": "ACME",
+    "kind": "PDL",
+    "zone": [
+      "99.65",
+      "99.75"
+    ],
+    "born": "2026-07-15T09:20:00+05:30",
+    "tf": null,
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-OB_BULL-5m-2026-07-14T15:25:00+05:30",
+    "symbol": "ACME",
+    "kind": "OB_BULL",
+    "zone": [
+      "106.00",
+      "106.35"
+    ],
+    "born": "2026-07-14T15:25:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-14T15:25:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "106.45",
+      "106.95"
+    ],
+    "born": "2026-07-14T15:25:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 5,
+    "state_history": [
+      [
+        "2026-07-15T09:20:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-15T09:15:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "106.35",
+      "106.95"
+    ],
+    "born": "2026-07-15T09:15:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 4,
+    "state_history": [
+      [
+        "2026-07-15T09:30:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-15T10:15:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "107.20",
+      "107.35"
+    ],
+    "born": "2026-07-15T10:15:00+05:30",
+    "tf": "M5",
+    "state": "RECLAIMED",
+    "touches": 4,
+    "state_history": [
+      [
+        "2026-07-15T10:35:00+05:30",
+        "TESTED"
+      ],
+      [
+        "2026-07-15T12:25:00+05:30",
+        "SWEPT"
+      ],
+      [
+        "2026-07-15T12:30:00+05:30",
+        "RECLAIMED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-OB_BULL-5m-2026-07-15T10:05:00+05:30",
+    "symbol": "ACME",
+    "kind": "OB_BULL",
+    "zone": [
+      "107.00",
+      "107.15"
+    ],
+    "born": "2026-07-15T10:05:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 1,
+    "state_history": [
+      [
+        "2026-07-15T12:25:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-OB_BULL-5m-2026-07-15T12:20:00+05:30",
+    "symbol": "ACME",
+    "kind": "OB_BULL",
+    "zone": [
+      "107.25",
+      "107.55"
+    ],
+    "born": "2026-07-15T12:20:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 1,
+    "state_history": [
+      [
+        "2026-07-15T12:45:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-15T12:30:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "107.45",
+      "107.55"
+    ],
+    "born": "2026-07-15T12:30:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 1,
+    "state_history": [
+      [
+        "2026-07-15T12:45:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-OB_BULL-5m-2026-07-15T12:40:00+05:30",
+    "symbol": "ACME",
+    "kind": "OB_BULL",
+    "zone": [
+      "107.45",
+      "107.65"
+    ],
+    "born": "2026-07-15T12:40:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-15T13:00:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "107.90",
+      "108.05"
+    ],
+    "born": "2026-07-15T13:00:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-EQL-2026-07-15T12:25:00+05:30-107.10",
+    "symbol": "ACME",
+    "kind": "EQL",
+    "zone": [
+      "107.05",
+      "107.15"
+    ],
+    "born": "2026-07-15T12:25:00+05:30",
+    "tf": null,
+    "state": "ACTIVE",
+    "touches": 2,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-15T13:05:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "108.15",
+      "108.25"
+    ],
+    "born": "2026-07-15T13:05:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-15T13:15:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "108.65",
+      "108.80"
+    ],
+    "born": "2026-07-15T13:15:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-15T13:20:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "108.95",
+      "109.05"
+    ],
+    "born": "2026-07-15T13:20:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-15T13:30:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "109.40",
+      "109.55"
+    ],
+    "born": "2026-07-15T13:30:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 2,
+    "state_history": [
+      [
+        "2026-07-15T13:45:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "ACME-OB_BULL-5m-2026-07-15T13:45:00+05:30",
+    "symbol": "ACME",
+    "kind": "OB_BULL",
+    "zone": [
+      "109.50",
+      "109.85"
+    ],
+    "born": "2026-07-15T13:45:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-15T14:10:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "110.65",
+      "110.80"
+    ],
+    "born": "2026-07-15T14:10:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-OB_BULL-5m-2026-07-15T14:35:00+05:30",
+    "symbol": "ACME",
+    "kind": "OB_BULL",
+    "zone": [
+      "111.25",
+      "111.60"
+    ],
+    "born": "2026-07-15T14:35:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-15T14:45:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "111.70",
+      "111.85"
+    ],
+    "born": "2026-07-15T14:45:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "ACME-FVG_BULL-5m-2026-07-15T14:50:00+05:30",
+    "symbol": "ACME",
+    "kind": "FVG_BULL",
+    "zone": [
+      "111.85",
+      "112.10"
+    ],
+    "born": "2026-07-15T14:50:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  }
+]

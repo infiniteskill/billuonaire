@@ -10,3 +10,5 @@ runs/val50*/
 runs/study/
 runs/rel1/
 pine_h1.out
+dev/CODEX/**/__pycache__/
+dev/CODEX/**/graphify-out/

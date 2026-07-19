@@ -1,0 +1,18 @@
+--- dev/CODEX/integration/recognizer_audit.py
++++ dev/CODEX/integration/recognizer_audit.py
+@@ -21,12 +21,15 @@
+ import pandas as pd
+ 
+ ROOT = Path(__file__).resolve().parents[3]
+ sys.path.insert(0, str(ROOT / "app"))
+ 
++from trader.detectors.bpr import BprDetector, _Gap
+ from trader.detectors.fvg import FvgDetector
+ from trader.detectors.orderblock import OrderblockDetector
++from trader.detectors.propulsion_block import PropulsionBlockDetector
+ from trader.detectors.structure import StructureDetector
+ from trader.detectors.swings import SwingsDetector
+ from trader.engine.confluence import ConfluenceEngine
+ from trader.engine.entry import EntryFSM
+ from trader.engine.levels import LevelEngine
++from trader.engine.pipeline import SymbolPipeline

@@ -1,0 +1,14 @@
+--- test_strict_smc_study.py
++++ test_strict_smc_study.py
+@@ -28,9 +28,9 @@
+ def test_newly_confirmed_swing_cannot_be_swept_retroactively_same_bar():
+     d = frame([
+         (9, 10, 8, 9), (9, 11, 8, 9), (9, 15, 8, 9),
+-        (9, 11, 8, 9), (9, 16, 8, 9),  # confirmation bar also wicks above
+-        (9, 16, 8, 9),                 # only this later bar may sweep it
++        (9, 11, 8, 9), (9, 10, 8, 9),  # confirmation bar completes pivot
++        (9, 16, 8, 9),                 # only this later bar may sweep it
+     ])
+ 
+ 
+ 

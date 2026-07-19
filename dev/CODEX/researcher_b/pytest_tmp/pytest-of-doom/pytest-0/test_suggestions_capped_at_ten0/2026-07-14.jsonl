@@ -1,0 +1,4 @@
+{"symbol": "A", "final": 20.0, "members": [["sweep", "SWEEP", 0.8], ["fvg", "CE_HOLD", 0.5]], "ts": "2026-07-14T10:00:00+05:30", "kind": "verdict"}
+{"symbol": "A", "ts": "2026-07-14T10:05:00+05:30", "kind": "trade_open"}
+{"symbol": "A", "pnl": "150", "ts": "2026-07-14T10:35:00+05:30", "kind": "trade_close"}
+{"symbol": "B", "final": 20.0, "members": [["fvg", "CE_HOLD", 0.5]], "ts": "2026-07-14T10:20:00+05:30", "kind": "verdict"}

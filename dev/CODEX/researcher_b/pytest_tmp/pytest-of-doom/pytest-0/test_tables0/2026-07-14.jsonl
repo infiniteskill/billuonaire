@@ -1,0 +1,7 @@
+{"symbol": "AAA", "template": "TRAP_REVERSAL", "final": 6.0, "ts": "2026-07-19T10:51:08.055549+00:00", "kind": "verdict"}
+{"symbol": "AAA", "gate": "risk_budget", "reason": "x", "ts": "2026-07-19T10:51:08.055635+00:00", "kind": "skip"}
+{"symbol": "AAA", "gate": "risk_budget", "reason": "x", "ts": "2026-07-19T10:51:08.055692+00:00", "kind": "skip"}
+{"symbol": "AAA", "gate": "fsm_arm", "reason": "x", "ts": "2026-07-19T10:51:08.055743+00:00", "kind": "skip"}
+{"symbol": "AAA", "direction": "LONG", "qty": 10, "price": "100", "stop": "95", "ts": "2026-07-19T10:51:08.055792+00:00", "kind": "trade_open"}
+{"symbol": "AAA", "qty": 5, "price": "105", "ts": "2026-07-19T10:51:08.055844+00:00", "kind": "trade_partial"}
+{"symbol": "AAA", "reason": "EXIT_TARGET", "pnl": "70", "r": 1.4, "exit_price": "110", "ts": "2026-07-19T10:51:08.055892+00:00", "kind": "trade_close"}

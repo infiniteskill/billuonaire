@@ -1,0 +1,2 @@
+{"symbol": "A", "at": "2026-07-14T11:05:00+05:30", "direction": "LONG", "qty": 10, "price": "100.00", "stop": "95", "zone": ["99", "101"], "targets": ["107"], "costs": "20.029700000", "plan": {}, "ts": "2026-07-14T11:05:00+05:30", "kind": "trade_open"}
+{"symbol": "A", "at": "2026-07-14T11:05:00+05:30", "reason": "EXIT_EOD", "why": "feed_end", "pnl": "-40.809260150", "r": -0.816, "exit_price": "99.95", "costs": "20.279560150", "ts": "2026-07-14T11:05:00+05:30", "kind": "trade_close"}

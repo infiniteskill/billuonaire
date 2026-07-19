@@ -1,0 +1,595 @@
+2026-07-19 16:21:09,043 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 09:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,110 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 09:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,135 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 09:30:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,161 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 09:35:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,187 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 09:40:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,213 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 09:45:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,239 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 09:50:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,265 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 09:55:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,292 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 10:00:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,318 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 10:05:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,344 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 10:10:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,370 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 10:15:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,396 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 10:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,423 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 10:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,449 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 10:30:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,475 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 10:35:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,502 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 10:40:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,528 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 10:45:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,554 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 10:50:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,580 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 10:55:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,606 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 11:00:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,633 DEBUG trader.engine.entry entry: wrong-side signal sl dropped (Direction.SHORT sl=100.80 entry=100.80)
+2026-07-19 16:21:09,634 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 11:05:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,660 DEBUG trader.engine.entry entry: wrong-side signal sl dropped (Direction.SHORT sl=100.80 entry=100.85)
+2026-07-19 16:21:09,660 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 11:10:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,687 DEBUG trader.engine.entry entry: wrong-side signal sl dropped (Direction.SHORT sl=100.90 entry=101.05)
+2026-07-19 16:21:09,688 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 11:15:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,713 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 11:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,739 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 11:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,765 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 11:30:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,791 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 11:35:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,817 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 11:40:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,844 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 11:45:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,869 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 11:50:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,895 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 11:55:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,921 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 12:00:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,947 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 12:05:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:09,973 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 12:10:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,000 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 12:15:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,026 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 12:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,052 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 12:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,079 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 12:30:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,106 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 12:35:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,134 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 12:40:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,161 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 12:45:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,188 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 12:50:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,216 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 12:55:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,242 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 13:00:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,269 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 13:05:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,295 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 13:10:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,322 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 13:15:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,396 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 13:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,422 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 13:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,449 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 13:30:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,476 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 13:35:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,503 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 13:40:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,530 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 13:45:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,557 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 13:50:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,585 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 13:55:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,612 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 14:00:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,639 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 14:05:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,667 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 14:10:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,693 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 14:15:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,721 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 14:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,747 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 14:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,774 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 14:30:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,800 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 14:35:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,827 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 14:40:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,854 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 14:45:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,880 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 14:50:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,907 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 14:55:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,934 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 15:00:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,960 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 15:05:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:10,987 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 15:10:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:11,014 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 15:15:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:11,041 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 15:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test
+2026-07-19 16:21:11,067 ERROR trader.detectors detector 'liquidity' failed on ACME at 2026-07-19 15:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/test_cli.py", line 181, in boom
+    raise RuntimeError("kaboom-for-log-test")
+RuntimeError: kaboom-for-log-test

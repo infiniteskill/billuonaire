@@ -1,0 +1,9 @@
+cell,n,mean_net_r,median_net_r,win_pct,profit_factor,mean_gross_r,mfe_mae_ratio,ambiguous_pct,max_drawdown_r,bootstrap_ci_lo,bootstrap_ci_hi,sessions,symbols,optimistic_mean_net_r,direction_flip_mfe_mae_ratio
+ALL,0,,,,,,,,,,,0,0,,
+DEV_JOINT,0,,,,,,,,,,,0,0,,
+TIME_HOLDOUT_ALL_SYMBOLS,0,,,,,,,,,,,0,0,,
+SYMBOL_HOLDOUT_ALL_TIME,0,,,,,,,,,,,0,0,,
+JOINT_HOLDOUT,0,,,,,,,,,,,0,0,,
+TDEV_SDEV0,0,,,,,,,,,,,0,0,,
+TDEV_SDEV1,0,,,,,,,,,,,0,0,,
+THOLD_SDEV,0,,,,,,,,,,,0,0,,

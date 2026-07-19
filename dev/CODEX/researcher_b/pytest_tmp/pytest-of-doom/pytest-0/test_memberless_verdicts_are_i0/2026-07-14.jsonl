@@ -1,0 +1,3 @@
+{"symbol": "A", "final": 20.0, "ts": "2026-07-14T10:00:00+05:30", "kind": "verdict"}
+{"symbol": "A", "ts": "2026-07-14T10:05:00+05:30", "kind": "trade_open"}
+{"symbol": "A", "pnl": "150", "ts": "2026-07-14T10:35:00+05:30", "kind": "trade_close"}

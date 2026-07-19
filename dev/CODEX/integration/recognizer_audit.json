@@ -1,0 +1,175 @@
+{
+  "head_scope": "current app recognizer classes plus machine-readable signal capture",
+  "tests": [
+    {
+      "id": "fvg_ifvg_reachable_in_pipeline_order",
+      "passed_expected_invariant": false,
+      "observed": {
+        "after_engine": "RECLAIMED",
+        "after_fvg_detector": "DEAD",
+        "next_transitions": [],
+        "next_events": []
+      },
+      "expected": "RECLAIMED should be allowed to complete the two-close INVERTED transition",
+      "consequence": "The FVG detector marks the level DEAD on the first beyond-edge close, so the LevelEngine cannot complete INVERTED and normal pipeline execution cannot emit IFVG."
+    },
+    {
+      "id": "choch_requires_related_same_tf_sweep",
+      "passed_expected_invariant": false,
+      "observed": true,
+      "expected": false,
+      "consequence": "Any recent SWEPT transition, including an unrelated M15 round number, upgrades an M5 CHOCH. Direction, swing ID, level kind and timeframe ancestry are not checked."
+    },
+    {
+      "id": "swing_records_confirmation_availability",
+      "passed_expected_invariant": false,
+      "observed": {
+        "born": "2026-07-01T09:30:00+05:30",
+        "runtime_confirmation": "2026-07-01T09:50:00+05:30",
+        "lag_minutes": 20,
+        "has_available_at": false
+      },
+      "expected": "Store both pivot/origin time and causal confirmation time",
+      "consequence": "The pivot is causally created only after three right bars close, but Level stores only the old pivot timestamp. Parent-child lineage and restart reconstruction cannot tell when the swing became usable."
+    },
+    {
+      "id": "orderblock_requires_displacement_bos_and_parent_swing",
+      "passed_expected_invariant": false,
+      "observed": {
+        "created": 1,
+        "zones": [
+          [
+            "98.8",
+            "100.2"
+          ]
+        ],
+        "input_swing_levels": 0
+      },
+      "expected": "No OB without a displaced structure break tied to a known swing",
+      "consequence": "The baseline OB rule needs only opposite candle color plus net displacement. It can create an OB with no swing, BOS, liquidity event or parent identifier."
+    },
+    {
+      "id": "fvg_signal_is_first_unmitigated_visit_only",
+      "passed_expected_invariant": false,
+      "observed": {
+        "first_day_emissions": 1,
+        "next_day_emissions": 1
+      },
+      "expected": {
+        "first_day_emissions": 1,
+        "next_day_emissions": 0
+      },
+      "consequence": "Session reset deliberately allows the same carried FVG to fire again, conflicting with a strict fresh/unvisited-POI strategy."
+    },
+    {
+      "id": "confluence_does_not_bridge_distant_pois",
+      "passed_expected_invariant": false,
+      "observed": {
+        "cluster_count": 1,
+        "bounds": [
+          [
+            "0",
+            "3.4"
+          ]
+        ]
+      },
+      "expected": "The first and last non-overlapping locations remain separate",
+      "consequence": "Single-link chaining lets intermediate evidence manufacture one wide confluence zone."
+    },
+    {
+      "id": "entry_zone_must_descend_from_scored_parent",
+      "passed_expected_invariant": false,
+      "observed": [
+        "104",
+        "105"
+      ],
+      "expected": [
+        "100",
+        "110"
+      ],
+      "consequence": "Any narrower overlapping level, even an unrelated M15 round number, can replace the scored zone. Detector, direction, timeframe and parent ID are ignored."
+    },
+    {
+      "id": "cross_day_swing_liquidity_continuum",
+      "passed_expected_invariant": false,
+      "observed": {
+        "carried": false,
+        "kind": "SWING_H",
+        "tf": "15m"
+      },
+      "expected": "Confirmed important swing liquidity remains available until swept/invalidated",
+      "consequence": "Session pruning carries OB/FVG and selected liquidity kinds but deletes every SWING_H/SWING_L. The production tree cannot revisit prior-session swing liquidity."
+    },
+    {
+      "id": "propulsion_child_requires_live_parent_ob",
+      "passed_expected_invariant": false,
+      "observed": {
+        "events_after_parent_dead": [
+          "PROPULSION"
+        ],
+        "event_meta": [
+          {
+            "event": "PROPULSION",
+            "sl": "100.5",
+            "sl_floor": "0.15"
+          }
+        ]
+      },
+      "expected": "No propulsion signal after its parent OB is DEAD/MITIGATED",
+      "consequence": "Propulsion state loses parent level_id/state, so a child can fire after the parent thesis is invalid."
+    },
+    {
+      "id": "bpr_requires_common_delivery_lineage",
+      "passed_expected_invariant": false,
+      "observed": {
+        "events": 1,
+        "meta": [
+          {
+            "event": "BPR",
+            "sl": "102",
+            "sl_floor": "0.15"
+          }
+        ]
+      },
+      "expected": "Opposing gaps must identify compatible parents/leg before directional BPR",
+      "consequence": "Any live bull/bear FVG overlap can fire; newer birth time chooses direction. No shared swing, displacement leg, timeframe or parent thesis is required."
+    },
+    {
+      "id": "alternative_detectors_own_their_levels",
+      "passed_expected_invariant": false,
+      "observed": {
+        "fvg_claimed_fvg_cb": true,
+        "orderblock_claimed_ob_lux": true
+      },
+      "expected": "Each implementation emits and mutates only its own zones",
+      "consequence": "Shared LevelKind values have no producer field. Generic FVG/OB can claim the alternative detector's zone, corrupting attribution and apparent confluence."
+    }
+  ],
+  "capture_density": {
+    "rows": 300153,
+    "detector_event_counts": {
+      "bpr:BPR": 12970,
+      "compression_fade:COMPRESSION_FADE": 113445,
+      "fvg_cb:FVG_CE_HOLD": 17050,
+      "fvg_cb:FVG_RETEST": 19959,
+      "inducement:INDUCEMENT_GRAB": 9177,
+      "mitigation:MITIGATION": 43095,
+      "ob_lux:OB_RETEST": 79028,
+      "turtle_soup:TURTLE_SOUP": 5429
+    },
+    "signals_per_symbol_session": {
+      "mean": 38.15827612509535,
+      "median": 37.0,
+      "p95": 57.0,
+      "max": 107
+    },
+    "same_symbol_bar_direction_duplicate_rows": 63525,
+    "same_symbol_bar_direction_duplicate_fraction": 0.21164206254810047,
+    "provenance_warning": "This capture is a raw-detector research artifact, not current production trades."
+  },
+  "summary": {
+    "invariants_passed": 0,
+    "invariants_failed": 11,
+    "unit_suite_note": "The repository's 782 tests pass; these are cross-component SMC-lineage invariants absent from that suite."
+  }
+}

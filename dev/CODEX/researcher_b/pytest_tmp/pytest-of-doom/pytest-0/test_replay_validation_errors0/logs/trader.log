@@ -1,0 +1,592 @@
+2026-07-19 16:21:15,078 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 09:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,093 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 09:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,107 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 09:30:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,121 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 09:35:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,134 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 09:40:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,148 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 09:45:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,162 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 09:50:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,175 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 09:55:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,190 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 10:00:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,204 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 10:05:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,218 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 10:10:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,232 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 10:15:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,246 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 10:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,260 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 10:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,274 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 10:30:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,289 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 10:35:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,303 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 10:40:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,317 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 10:45:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,331 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 10:50:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,345 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 10:55:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,360 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 11:00:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,374 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 11:05:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,388 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 11:10:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,402 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 11:15:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,416 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 11:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,430 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 11:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,444 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 11:30:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,459 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 11:35:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,473 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 11:40:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,487 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 11:45:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,501 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 11:50:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,515 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 11:55:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,528 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 12:00:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,542 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 12:05:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,556 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 12:10:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,569 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 12:15:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,584 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 12:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,598 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 12:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,612 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 12:30:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,626 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 12:35:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,640 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 12:40:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,654 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 12:45:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,671 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 12:50:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,687 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 12:55:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,703 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 13:00:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,719 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 13:05:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,733 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 13:10:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,748 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 13:15:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,763 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 13:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,778 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 13:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,792 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 13:30:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,807 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 13:35:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,822 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 13:40:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,836 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 13:45:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,851 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 13:50:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,866 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 13:55:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,881 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 14:00:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,896 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 14:05:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,910 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 14:10:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,925 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 14:15:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:15,940 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 14:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,002 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 14:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,017 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 14:30:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,033 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 14:35:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,048 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 14:40:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,063 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 14:45:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,078 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 14:50:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,093 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 14:55:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,108 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 15:00:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,123 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 15:05:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,137 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 15:10:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,152 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 15:15:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,166 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 15:20:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom
+2026-07-19 16:21:16,181 ERROR trader.detectors detector 'boom' failed on MOCK at 2026-06-24 15:25:00+05:30; skipping it this tick
+Traceback (most recent call last):
+  File "/home/doom/Public/PROJECT/2026/trader/app/trader/detectors/base.py", line 121, in run_all
+    evidence.extend(detector.detect(ctx))
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/doom/Public/PROJECT/2026/trader/app/tests/detectors/test_registry.py", line 52, in detect
+    raise RuntimeError("kaboom")
+RuntimeError: kaboom

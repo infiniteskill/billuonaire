@@ -1,0 +1,14 @@
+{
+  "selected": {
+    "name": "P0_PRIMARY",
+    "root": "important_or_PD_PW",
+    "parent": "FVG_then_OB",
+    "parent_delay": 3,
+    "child": "FVG_then_OB",
+    "child_delay": 1,
+    "stop": "child",
+    "min_target_r": 1.25
+  },
+  "reason": "No policy met the preregistered development feasibility gate; froze P0_PRIMARY.",
+  "holdout_inspected_for_selection": false
+}

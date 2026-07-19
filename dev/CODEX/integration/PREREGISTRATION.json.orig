@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "locked_before_outcome_run": true,
+  "objective": "Test whether a causal hierarchical HTF-location to LTF-trigger funnel produces positive net intraday expectancy, not whether isolated ICT labels predict some favorable excursion.",
+  "data": {
+    "htf_h1": "runs/artifacts-data/l4_h1.parquet",
+    "daily_context": "runs/artifacts-data/dailymax.parquet",
+    "execution_m5": "data/long5m/*.csv",
+    "refinement_m1": "data/wide/*.csv",
+    "exclude_symbols": [
+      "NIFTY"
+    ],
+    "minimum_complete_m5_sessions": 50
+  },
+  "chronological_splits": {
+    "development": [
+      "2026-04-27",
+      "2026-06-05"
+    ],
+    "validation": [
+      "2026-06-08",
+      "2026-06-25"
+    ],
+    "final_test": [
+      "2026-06-29",
+      "2026-07-17"
+    ]
+  },
+  "symbol_holdout": {
+    "rule": "crc32(symbol) % 4 == 0",
+    "use": "Never use holdout symbols to choose a tree or parameter. Report them separately in validation and final test."
+  },
+  "causality": {
+    "pivot_confirmation": "A 2-left/2-right pivot is usable only after the second right bar closes.",
+    "parent_zone": "A zone is usable only after its formation/displacement bar closes.",
+    "first_revisit": "A fresh parent zone gets at most one entry campaign; same-bar formation/touch is forbidden.",
+    "ltf_entry": "A child FVG/OB limit may fill only on a later bar.",
+    "ambiguous_bar": "If stop and target are both inside one OHLC bar, score stop first.",
+    "intraday": "Cancel unfilled orders and close open trades by the last available bar of the session."
+  },
+  "fixed_feature_rules": {
+    "h1_atr_period": 14,
+    "swing_left_right": 2,
+    "important_swing_min_departure_atr": 0.75,
+    "parent_fvg_min_atr": 0.10,
+    "parent_ob_displacement_atr": 1.00,
+    "parent_ob_bos_lookback": 5,
+    "parent_near_swing_atr": 0.50,
+    "parent_min_age_h1_bars": 1,
+    "parent_max_age_h1_bars": 120,
+    "m5_atr_period": 14,
+    "m5_local_swing_left_right": 2,
+    "m5_mss_window_bars": 8,
+    "m5_displacement_body_atr": 0.50,
+    "child_fvg_min_atr": 0.05,
+    "entry_ttl_m5_bars": 8,
+    "stop_buffer_m5_atr": 0.05,
+    "entry_start": "09:45",
+    "entry_cutoff": "14:30",
+    "max_trades_per_day": 3,
+    "max_trades_per_symbol_day": 1
+  },
+  "predeclared_trees": [
+    {
+      "id": "S",
+      "name": "HTF liquidity sweep and reclaim",
+      "parent_requirement": "Price sweeps a confirmed important H1 swing and closes back through it.",
+      "ltf_requirement": "M5 local sweep, directional MSS with displacement, then later child-zone retest."
+    },
+    {
+      "id": "P",
+      "name": "Fresh HTF POI revisit",
+      "parent_requirement": "First delayed revisit of a live H1 FVG or displacement-plus-BOS order block located near an important H1 swing.",
+      "ltf_requirement": "M5 local sweep, directional MSS with displacement, then later child-zone retest."
+    },
+    {
+      "id": "SP",
+      "name": "HTF sweep inside fresh POI",
+      "parent_requirement": "Both S and P agree in direction and overlap in price.",
+      "ltf_requirement": "M5 local sweep, directional MSS with displacement, then later child-zone retest."
+    }
+  ],
+  "predeclared_entry_variants": [
+    "first child FVG midpoint after MSS",
+    "last opposing M5 candle midpoint before MSS displacement"
+  ],
+  "predeclared_targets_r": [
+    2.0,
+    3.0
+  ],
+  "controls": [
+    "LTF trigger without HTF parent",
+    "HTF parent first revisit without LTF trigger",
+    "same timestamps with direction inverted",
+    "same-day/time-bucket matched random direction baseline"
+  ],
+  "portfolio_and_costs": {
+    "capital_inr": 100000,
+    "risk_fraction_per_trade": 0.005,
+    "max_open_risk_fraction": 0.015,
+    "max_gross_notional_multiple": 5.0,
+    "brokerage_cap_per_order_inr": 20,
+    "intraday_stt_sell_fraction": 0.00025,
+    "nse_transaction_plus_ipft_fraction": 0.0000307,
+    "sebi_fraction_each_side": 0.000001,
+    "stamp_buy_fraction": 0.00003,
+    "gst_fraction_on_brokerage_and_exchange_sebi": 0.18,
+    "adverse_slippage_ticks_each_market_order": 1,
+    "limit_entry_slippage_ticks": 0
+  },
+  "primary_metric": "mean net R per filled trade on final_test, selected at most once using development then validation",
+  "required_evidence": {
+    "minimum_final_filled_trades": 30,
+    "minimum_final_active_days": 8,
+    "positive_final_net_r": true,
+    "positive_symbol_holdout_net_r": true,
+    "positive_day_block_bootstrap_ci_lower": true,
+    "must_survive": [
+      "two ticks extra adverse slippage",
+      "one-bar delayed entry",
+      "20 percent wider stop without farther target",
+      "drop best symbol",
+      "drop best day"
+    ]
+  },
+  "selection_limit": {
+    "candidate_families": 3,
+    "entry_variants": 2,
+    "target_variants": 2,
+    "total_primary_candidates": 12,
+    "policy": "Select only on development mean net R subject to at least 30 fills and positive development day-block CI. Confirm once on validation; final test remains untouched."
+  }
+}

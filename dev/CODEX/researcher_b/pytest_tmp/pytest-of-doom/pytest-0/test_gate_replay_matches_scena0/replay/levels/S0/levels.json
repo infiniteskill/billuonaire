@@ -1,0 +1,320 @@
+[
+  {
+    "id": "S0-ROUND-50-100.00",
+    "symbol": "S0",
+    "kind": "ROUND",
+    "zone": [
+      "99.95",
+      "100.05"
+    ],
+    "born": "2026-07-14T09:20:00+05:30",
+    "tf": null,
+    "state": "RECLAIMED",
+    "touches": 0,
+    "state_history": [
+      [
+        "2026-07-14T09:30:00+05:30",
+        "SWEPT"
+      ],
+      [
+        "2026-07-14T09:35:00+05:30",
+        "RECLAIMED"
+      ]
+    ]
+  },
+  {
+    "id": "S0-ROUND-100-100.00",
+    "symbol": "S0",
+    "kind": "ROUND",
+    "zone": [
+      "99.95",
+      "100.05"
+    ],
+    "born": "2026-07-14T09:20:00+05:30",
+    "tf": null,
+    "state": "RECLAIMED",
+    "touches": 0,
+    "state_history": [
+      [
+        "2026-07-14T09:30:00+05:30",
+        "SWEPT"
+      ],
+      [
+        "2026-07-14T09:35:00+05:30",
+        "RECLAIMED"
+      ]
+    ]
+  },
+  {
+    "id": "S0-OB_BULL-5m-2026-07-14T10:05:00+05:30",
+    "symbol": "S0",
+    "kind": "OB_BULL",
+    "zone": [
+      "100.00",
+      "100.15"
+    ],
+    "born": "2026-07-14T10:05:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 1,
+    "state_history": [
+      [
+        "2026-07-14T12:25:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "S0-OB_BULL-5m-2026-07-14T12:20:00+05:30",
+    "symbol": "S0",
+    "kind": "OB_BULL",
+    "zone": [
+      "100.25",
+      "100.55"
+    ],
+    "born": "2026-07-14T12:20:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 1,
+    "state_history": [
+      [
+        "2026-07-14T12:45:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "S0-FVG_BULL-5m-2026-07-14T12:30:00+05:30",
+    "symbol": "S0",
+    "kind": "FVG_BULL",
+    "zone": [
+      "100.45",
+      "100.55"
+    ],
+    "born": "2026-07-14T12:30:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 1,
+    "state_history": [
+      [
+        "2026-07-14T12:45:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "S0-OB_BULL-5m-2026-07-14T12:40:00+05:30",
+    "symbol": "S0",
+    "kind": "OB_BULL",
+    "zone": [
+      "100.45",
+      "100.65"
+    ],
+    "born": "2026-07-14T12:40:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S0-FVG_BULL-5m-2026-07-14T13:00:00+05:30",
+    "symbol": "S0",
+    "kind": "FVG_BULL",
+    "zone": [
+      "100.90",
+      "101.05"
+    ],
+    "born": "2026-07-14T13:00:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S0-EQL-2026-07-14T12:25:00+05:30-100.10",
+    "symbol": "S0",
+    "kind": "EQL",
+    "zone": [
+      "100.05",
+      "100.15"
+    ],
+    "born": "2026-07-14T12:25:00+05:30",
+    "tf": null,
+    "state": "ACTIVE",
+    "touches": 2,
+    "state_history": []
+  },
+  {
+    "id": "S0-FVG_BULL-5m-2026-07-14T13:05:00+05:30",
+    "symbol": "S0",
+    "kind": "FVG_BULL",
+    "zone": [
+      "101.15",
+      "101.30"
+    ],
+    "born": "2026-07-14T13:05:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S0-FVG_BULL-5m-2026-07-14T13:10:00+05:30",
+    "symbol": "S0",
+    "kind": "FVG_BULL",
+    "zone": [
+      "101.45",
+      "101.60"
+    ],
+    "born": "2026-07-14T13:10:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S0-FVG_BULL-5m-2026-07-14T13:15:00+05:30",
+    "symbol": "S0",
+    "kind": "FVG_BULL",
+    "zone": [
+      "101.65",
+      "101.80"
+    ],
+    "born": "2026-07-14T13:15:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S0-FVG_BULL-5m-2026-07-14T13:20:00+05:30",
+    "symbol": "S0",
+    "kind": "FVG_BULL",
+    "zone": [
+      "101.95",
+      "102.05"
+    ],
+    "born": "2026-07-14T13:20:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S0-FVG_BULL-5m-2026-07-14T13:30:00+05:30",
+    "symbol": "S0",
+    "kind": "FVG_BULL",
+    "zone": [
+      "102.45",
+      "102.55"
+    ],
+    "born": "2026-07-14T13:30:00+05:30",
+    "tf": "M5",
+    "state": "TESTED",
+    "touches": 2,
+    "state_history": [
+      [
+        "2026-07-14T13:45:00+05:30",
+        "TESTED"
+      ]
+    ]
+  },
+  {
+    "id": "S0-OB_BULL-5m-2026-07-14T13:45:00+05:30",
+    "symbol": "S0",
+    "kind": "OB_BULL",
+    "zone": [
+      "102.50",
+      "102.85"
+    ],
+    "born": "2026-07-14T13:45:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S0-FVG_BULL-5m-2026-07-14T14:00:00+05:30",
+    "symbol": "S0",
+    "kind": "FVG_BULL",
+    "zone": [
+      "103.20",
+      "103.35"
+    ],
+    "born": "2026-07-14T14:00:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S0-FVG_BULL-5m-2026-07-14T14:15:00+05:30",
+    "symbol": "S0",
+    "kind": "FVG_BULL",
+    "zone": [
+      "103.90",
+      "104.05"
+    ],
+    "born": "2026-07-14T14:15:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S0-OB_BULL-5m-2026-07-14T14:35:00+05:30",
+    "symbol": "S0",
+    "kind": "OB_BULL",
+    "zone": [
+      "104.25",
+      "104.55"
+    ],
+    "born": "2026-07-14T14:35:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S0-FVG_BULL-5m-2026-07-14T14:50:00+05:30",
+    "symbol": "S0",
+    "kind": "FVG_BULL",
+    "zone": [
+      "104.85",
+      "105.00"
+    ],
+    "born": "2026-07-14T14:50:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S0-FVG_BULL-5m-2026-07-14T14:55:00+05:30",
+    "symbol": "S0",
+    "kind": "FVG_BULL",
+    "zone": [
+      "105.15",
+      "105.30"
+    ],
+    "born": "2026-07-14T14:55:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  },
+  {
+    "id": "S0-FVG_BULL-5m-2026-07-14T15:05:00+05:30",
+    "symbol": "S0",
+    "kind": "FVG_BULL",
+    "zone": [
+      "105.60",
+      "105.75"
+    ],
+    "born": "2026-07-14T15:05:00+05:30",
+    "tf": "M5",
+    "state": "ACTIVE",
+    "touches": 0,
+    "state_history": []
+  }
+]

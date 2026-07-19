@@ -1,0 +1,13 @@
+policy,n,mean_net_r,median_net_r,win_pct,profit_factor,mean_gross_r,mfe_mae_ratio,ambiguous_pct,max_drawdown_r,n_TDEV0,net_TDEV0,n_TDEV1,net_TDEV1,n_SDEV0,net_SDEV0,n_SDEV1,net_SDEV1,qualifies
+P0_PRIMARY,0,,,,,,,,,0,,0,,0,,0,,False
+P1_FVG_ONLY,0,,,,,,,,,0,,0,,0,,0,,False
+P2_OB_ONLY,0,,,,,,,,,0,,0,,0,,0,,False
+P3_DELAY_1,0,,,,,,,,,0,,0,,0,,0,,False
+P4_DELAY_6,0,,,,,,,,,0,,0,,0,,0,,False
+P5_CHILD_FVG,0,,,,,,,,,0,,0,,0,,0,,False
+P6_CHILD_OB,0,,,,,,,,,0,,0,,0,,0,,False
+P7_SWEEP_STOP,0,,,,,,,,,0,,0,,0,,0,,False
+P8_TARGET_R_1,0,,,,,,,,,0,,0,,0,,0,,False
+P9_TARGET_R_1_5,0,,,,,,,,,0,,0,,0,,0,,False
+P10_ALL_H1_SWINGS,0,,,,,,,,,0,,0,,0,,0,,False
+P11_CHILD_DELAY_3,0,,,,,,,,,0,,0,,0,,0,,False

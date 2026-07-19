@@ -1,0 +1,88 @@
+{
+  "study_id": "researcher_a_strict_smc_lineage_v1",
+  "frozen_on": "2026-07-19",
+  "objective": "Test an ordered, same-event SMC lineage rather than loose confluence: important H1/external liquidity -> first sweep and reclaim -> H1 displacement structure break -> fresh H1 FVG or OB -> delayed first parent revisit -> M5 MSS/displacement -> nested child FVG or OB -> child-CE limit entry -> structural stop -> nearest opposing unswept liquidity target.",
+  "write_boundary": "dev/CODEX/researcher_a only",
+  "input_boundary": [
+    "data/long5m/*.csv read-only",
+    "app/ read-only",
+    "runs/ read-only",
+    "dev/research/ read-only"
+  ],
+  "universe": {
+    "source": "all data/long5m CSVs",
+    "exclude": ["NIFTY"],
+    "required_columns": ["ts", "open", "high", "low", "close", "volume"],
+    "bar_minutes": 5,
+    "session": "09:15-15:30 Asia/Kolkata",
+    "invalid_ohlc_rows": "drop and count"
+  },
+  "causal_recognizers": {
+    "h1_aggregation": "session anchored: buckets 09:15,10:15,11:15,12:15,13:15,14:15; final bucket includes all bars through 15:25 and becomes available only after its last included M5 bar closes",
+    "atr": "causal SMA14 true range, continuous across sessions",
+    "h1_swing": "strict 2-left/2-right fractal, available only at close of the second right H1 bar; ties disqualify",
+    "important_h1_swing": "excursion away from pivot through confirmation >= 0.75 H1 ATR at confirmation",
+    "external_liquidity": "confirmed important H1 swing, prior-session high/low, or prior-completed-ISO-week high/low",
+    "sweep": "first post-availability wick at least one tick beyond the exact level",
+    "reclaim": "directional close back across exact level on sweep bar or within 3 later M5 bars",
+    "h1_structure_break": "within 8 closed H1 bars of reclaim, directional close at least 0.05 H1 ATR through latest causally confirmed opposite H1 swing; body >=0.60 H1 ATR and close-location >=0.65",
+    "parent_fvg": "directional H1 three-candle gap ending on the structure-break bar, gap >=0.10 H1 ATR",
+    "parent_ob": "last opposite-color H1 candle from reclaim bucket through the bar before the structure break; full candle range; confirmed only by that same break",
+    "parent_freshness": "first post-confirmation overlap only; any earlier overlap before the minimum delay rejects the parent; close beyond far edge invalidates; maximum search 90 M5 bars",
+    "m5_swing": "strict 2-left/2-right fractal, available only after second right M5 bar",
+    "m5_mss": "within 6 M5 bars after parent revisit, directional close >=0.05 M5 ATR through latest confirmed internal swing formed after parent confirmation; body >=0.80 M5 ATR and close-location >=0.70",
+    "child_fvg": "directional three-candle M5 gap ending on MSS bar, gap >=0.10 M5 ATR and midpoint nested inside parent",
+    "child_ob": "last opposite-color M5 candle from parent revisit through pre-MSS bar; full range and midpoint nested inside parent",
+    "entry": "resting limit at child midpoint/CE from next bar, six-bar TTL, requires later bar range to cross the exact limit",
+    "target": "nearest opposing causally available unswept external-liquidity level at entry",
+    "stop_child": "child far edge plus 0.10 M5 ATR adverse buffer; minimum distance 0.25 M5 ATR; reject distance >4.0 M5 ATR",
+    "stop_sweep": "root sweep extreme plus 0.10 M5 ATR adverse buffer; same min/max distance gates"
+  },
+  "hard_execution_assumptions": {
+    "entry_fill": "exact resting limit; no favorable price improvement",
+    "same_bar_order": "stop before target whenever both are reachable; on the fill bar any reachable stop is charged first",
+    "gap_through_stop": "fill at adverse bar open when open is beyond stop",
+    "target_gap": "fill at target, never grant favorable open improvement",
+    "time_stop": "last valid bar close of entry session; no overnight position",
+    "primary_round_trip_cost_bps": 6,
+    "cost_sensitivity_bps": [0, 3, 6, 10, 15],
+    "no_entry_after": "14:45",
+    "one_trade_per_symbol_session": "earliest filled strict lineage only"
+  },
+  "splits": {
+    "time": "first 60% of globally sorted sessions development; last 40% untouched chronological holdout",
+    "symbol": "crc32(symbol) mod 3 in {0,1} development; mod 3 == 2 untouched symbol holdout",
+    "joint_holdout": "late-time AND held-out-symbol; never used for policy selection"
+  },
+  "candidate_policies_dev_only": [
+    {"name": "P0_PRIMARY", "root": "important_or_PD_PW", "parent": "FVG_then_OB", "parent_delay": 3, "child": "FVG_then_OB", "child_delay": 1, "stop": "child", "min_target_r": 1.25},
+    {"name": "P1_FVG_ONLY", "root": "important_or_PD_PW", "parent": "FVG", "parent_delay": 3, "child": "FVG_then_OB", "child_delay": 1, "stop": "child", "min_target_r": 1.25},
+    {"name": "P2_OB_ONLY", "root": "important_or_PD_PW", "parent": "OB", "parent_delay": 3, "child": "FVG_then_OB", "child_delay": 1, "stop": "child", "min_target_r": 1.25},
+    {"name": "P3_DELAY_1", "root": "important_or_PD_PW", "parent": "FVG_then_OB", "parent_delay": 1, "child": "FVG_then_OB", "child_delay": 1, "stop": "child", "min_target_r": 1.25},
+    {"name": "P4_DELAY_6", "root": "important_or_PD_PW", "parent": "FVG_then_OB", "parent_delay": 6, "child": "FVG_then_OB", "child_delay": 1, "stop": "child", "min_target_r": 1.25},
+    {"name": "P5_CHILD_FVG", "root": "important_or_PD_PW", "parent": "FVG_then_OB", "parent_delay": 3, "child": "FVG", "child_delay": 1, "stop": "child", "min_target_r": 1.25},
+    {"name": "P6_CHILD_OB", "root": "important_or_PD_PW", "parent": "FVG_then_OB", "parent_delay": 3, "child": "OB", "child_delay": 1, "stop": "child", "min_target_r": 1.25},
+    {"name": "P7_SWEEP_STOP", "root": "important_or_PD_PW", "parent": "FVG_then_OB", "parent_delay": 3, "child": "FVG_then_OB", "child_delay": 1, "stop": "sweep", "min_target_r": 1.25},
+    {"name": "P8_TARGET_R_1", "root": "important_or_PD_PW", "parent": "FVG_then_OB", "parent_delay": 3, "child": "FVG_then_OB", "child_delay": 1, "stop": "child", "min_target_r": 1.0},
+    {"name": "P9_TARGET_R_1_5", "root": "important_or_PD_PW", "parent": "FVG_then_OB", "parent_delay": 3, "child": "FVG_then_OB", "child_delay": 1, "stop": "child", "min_target_r": 1.5},
+    {"name": "P10_ALL_H1_SWINGS", "root": "all_H1_or_PD_PW", "parent": "FVG_then_OB", "parent_delay": 3, "child": "FVG_then_OB", "child_delay": 1, "stop": "child", "min_target_r": 1.25},
+    {"name": "P11_CHILD_DELAY_3", "root": "important_or_PD_PW", "parent": "FVG_then_OB", "parent_delay": 3, "child": "FVG_then_OB", "child_delay": 3, "stop": "child", "min_target_r": 1.25}
+  ],
+  "selection_rule": "Using only development-time and development-symbol observations, select the highest mean net_R at 6 bps among policies with at least 80 development trades and positive mean net_R separately in both temporal-development halves and both development symbol folds. If none qualifies, freeze P0_PRIMARY and declare that no dev-feasible strategy exists; do not rescue it by inspecting holdout.",
+  "primary_success_bar": {
+    "joint_holdout_min_trades": 40,
+    "joint_holdout_mean_net_r": "> 0",
+    "joint_holdout_session_block_bootstrap_95pct_lower": "> 0",
+    "late_time_all_symbols_mean_net_r": "> 0",
+    "heldout_symbols_all_time_mean_net_r": "> 0",
+    "mfe_mae_ratio_each_major_holdout": ">= 1.15"
+  },
+  "failure_rule": "Any missing minimum sample is INCONCLUSIVE, not profitable. Any non-positive untouched holdout or lower confidence bound fails the profitable-strategy claim.",
+  "negative_controls": [
+    "direction-flipped MFE/MAE on identical post-entry paths",
+    "remove important-root gate",
+    "remove parent-delay gate",
+    "parent type and child type ablations",
+    "optimistic target-first bound reported separately but never used as primary"
+  ]
+}

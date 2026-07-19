@@ -1,0 +1,62 @@
+[
+  {
+    "id": "NIFTY-ROUND-50-100.00",
+    "symbol": "NIFTY",
+    "kind": "ROUND",
+    "zone": [
+      "99.95",
+      "100.05"
+    ],
+    "born": "2026-07-19T09:20:00+05:30",
+    "tf": null,
+    "state": "RECLAIMED",
+    "touches": 0,
+    "state_history": [
+      [
+        "2026-07-19T09:30:00+05:30",
+        "SWEPT"
+      ],
+      [
+        "2026-07-19T09:35:00+05:30",
+        "RECLAIMED"
+      ]
+    ]
+  },
+  {
+    "id": "NIFTY-ROUND-100-100.00",
+    "symbol": "NIFTY",
+    "kind": "ROUND",
+    "zone": [
+      "99.95",
+      "100.05"
+    ],
+    "born": "2026-07-19T09:20:00+05:30",
+    "tf": null,
+    "state": "RECLAIMED",
+    "touches": 0,
+    "state_history": [
+      [
+        "2026-07-19T09:30:00+05:30",
+        "SWEPT"
+      ],
+      [
+        "2026-07-19T09:35:00+05:30",
+        "RECLAIMED"
+      ]
+    ]
+  },
+  {
+    "id": "NIFTY-EQL-2026-07-19T12:25:00+05:30-100.10",
+    "symbol": "NIFTY",
+    "kind": "EQL",
+    "zone": [
+      "100.05",
+      "100.15"
+    ],
+    "born": "2026-07-19T12:25:00+05:30",
+    "tf": null,
+    "state": "ACTIVE",
+    "touches": 2,
+    "state_history": []
+  }
+]
