@@ -1,0 +1,1835 @@
+--- MSG 1 [2026-07-15 16:51] ---
+i m planning an trade enbntry exit planer auto trail auto anylzer austo risk taker system that take kite api key and list of stock or out of list of stock anylyusez whioch fits for intraday today , amount allowd as inoput quuantity as inpurt mmenas self profit making engine , properly so initial we will do dry run for test and backtesting for month  then anylyse result and keep improveiojng  proper cli bassed pythion code  now i havve proper smar money concept based an optiondwecay retai8ler trap pproce movement bos choch  how market nmoviews one direction trapps then reverese or mmimics and so many things r there and these deep lknlowdge u havve to research as we havve to make system that confluence everyhting and decides when to take trade of that stok what time what price at chich order block aa vvvery flexible system automatic which takes data real time from api and anylzes that stock and previous data is cached and todays data is live jhednce old levels n things already built now current price conclusion direction time trapping all deep work needed hence folllowing concept n many more to be planned Order Block – Identify and leverage institutional order zones.
+
+Breaker Block – Recognize market reversal points for precision entries.
+
+Fair Value Gap – Spot and exploit market inefficiencies for better trade execution.
+
+Inverse & Implied Fair Value Gaps – Advanced techniques to refine your market analysis.
+
+Balanced Price Range (BPR) – Understand equilibrium in price delivery.
+
+Rejection & Vacuum Blocks – Identify high-probability zones for reversals or continuations.
+
+Mitigation Block – Learn how the market retraces to key liquidity points.
+
+💧 3. ICT Liquidity Zones
+Master liquidity concepts that drive market movements:
+
+Institutional Liquidity Zones – Locate areas where smart money operates.
+
+Buy & Sell Side Liquidity – Pinpoint liquidity traps for better trade entries.
+
+High & Low Resistance Liquidity – Identify key support and resistance levels.
+
+Internal and External Range Liquidity – Differentiate between internal and external market flows.
+
+Liquidity Pools & Voids – Discover hidden liquidity pockets and their impact.
+
+Liquidity Sweep & Liquidity Run – Learn how to trade market manipulation effectively.
+
+📐 4. ICT Market Profiles
+Gain insights into market behavior through detailed profiling techniques:
+
+Weekly & Intraday Profiles – Analyze market structures across different timeframes.
+
+Daily Bias – Develop a daily directional bias for consistent trades.
+
+Advanced Market Structure – Deep dive into complex market dynamics.
+
+Market Maker Buy & Sell Model – Understand how market makers trap retail traders.
+
+Judas Swing – Identify and trade the false breakout moves.
+
+IRL to ERL Price Move & HRLR to LRLR – Decode advanced price movement patterns
+
+📚 5. ICT Essentials
+This section covers the fundamental building blocks of ICT trading:
+
+AMD Pattern – Explore the Accumulation, Manipulation, and Distribution phases.
+
+Market Structure Shift – Learn how to identify shifts in market direction.
+
+CISD – Understand Confirmation, Inducement, Structure, and Delivery in price action.
+
+Turtle Soup – A liquidity sweep strategy designed to capture stop hunts.
+
+⏳ 6. ICT Time & Price Theory
+Master the interplay between time and price for precision trading:
+
+Asian Range – Leverage overnight ranges for intraday opportunities.
+
+ICT Macros – Strategic times for the ICT setups to form.
+
+Silver Bullet Strategy – A specialized ICT setup for high-accuracy entries.
+
+Kill Zones Times – Trade during the most volatile and profitable times. now there r files in /home/doom/Public/PROJECT/2026/trader/dev/ *md  in idea folder and design folder as idea/ is more impritant so understand ur thouught process n deep think its dry run system no money involved hence   but that dioenst mean code should not work it must be very deep work n well planned system hance brainsotrm afgter readijng everyhting then output nothing , just ask questions that r essesntials
+
+--- MSG 2 [2026-07-15 16:57] ---
+[Request interrupted by user for tool use]
+
+--- MSG 3 [2026-07-15 16:58] ---
+as dillemma failed to solve as it was browser based it has limited data n accuuracy was shit hence we r only picking problems from those mmds not the solutions as dilemma failed n was shitload hence tyrader will be new ssystemm
+
+--- MSG 4 [2026-07-15 17:01] ---
+so list problemms n list what knowlege we havve like all smart money concept lisyt n research needed after that other mmmmany things that those document coverred avbouut options like makret mmakers trap retailer then dont movve options for 3 mmojnth n shit check what exxists n what we missed brainsoterm can we make the system what r suuccess percent
+
+--- MSG 5 [2026-07-15 17:03] ---
+dont we have wyckoffs acxcumulatin districbution ─────────────────────────────────────────────┼───────────────────────────┤
+  │ Prediction │ Markov states, Monte Carlo paths, Bayesian   │ Designed, one Hurst impl  │
+  │            │ trap detector, Hurst                         │ mathematically wrong      │
+  ├────────────┼─────────────────────── as rhiass markove n monte carlo r shit
+
+--- MSG 6 [2026-07-15 17:10] ---
+so we will usae all concnept of ssmart money +wychoff + see like namarket opens thwen moves mmake create cuurvature but in half day reverese like trap trades [Image #2] [Image #3] [Image #4] see all bos order blick breaker blok consequtive enchroachment inverssion fair value gap  choch reversal are happing in each time framme hence confluence with whyckoff n  also our option theory its like we need to think supppse price is at 100 the i boutgt option of ccall art 110 strke so market will controll it suuch a way that i never get abovve stirke n i love tradfe as design is such that even if i buy future then fdor 3 month price will be gainst me if expiry is 3 month   for rrcsmmplr dr [Image #5] at any point i buy fuutur the price is such thta it doent come back at that point before 3 month so mostly if i m in trade n its against me i cantr even exit so this kind off shit needes to think and u know we r planmnnign  intra day trades hence think deep proper brainsotrm it
+[IMAGE]
+[IMAGE]
+[IMAGE]
+[IMAGE]
+
+--- MSG 7 [2026-07-15 17:10] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-15 22-35-53.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-15 22-35-47.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-15 22-35-41.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-15 22-39-40.png]
+
+--- MSG 8 [2026-07-15 17:15] ---
+so we dontt have visuals all conclusion will be from data  , hence whyckoff detections or box everythingios visual as for reytailer but we must know what smart banks plan n take our mmoney by hitting our stop loss by pushing prices down or against us as they cvan see our orders of sl  hence think brain it and think of a trading system that minimises risk and tackeles everyhting pproper patenence system that wateches desices then  takes trade in stork not llosses or looses leasdt very flexcxible customisable takes input of quuanity n stok fromm given list it shows  make by json shown n givve its number like watch 1 4 7  stiocks and it will find trades in them then exixcute trail and exuit close before market hours and all dep think on it we r on personal perojecte ]
+
+--- MSG 9 [2026-07-15 17:20] ---
+see also innstead of month run we can test on simlutenously 30stocoks  so get proper result will have same effect , well currently i dont have api so u need to buuild everyhing blindly then when we see code is robust we tighen it s=ad add api to test things  so system must be very mmodular n generic and any featire can be disconnected or detached must not affect break systemmm like  we can remmovve effect off breaker block or order blick so as still wokrs with others  as everyhting makes aa confluence at thee wened to decide time n entry n price n styurcutre n all but must not break if absent what u say hence ur desing code will be in app and in dev/plan wirte deep plan first
+
+--- MSG 10 [2026-07-15 17:30] ---
+refine we dont want to miss any thinmng  not even . Every move is trap and has countermove.
+2. Every countermove is trap and has countermove and so on.
+3. These moves and countermoves co-exist in each timefram.
+4. Hence can be used for reversal trades with BOS and OB.
+5. Most of the liquidity is in morning 1 HR.
+6. Hence operator takes down all liquidity by stop loss hunting.
+7. OrderBlocks are designed in morning hour while hunting.
+8. These OrderBlocks can be used to trade near 11 or after.
+9. Morning trades are more prone to lose because of stop loss hunting.
+10. Panic entry , early entry , wrong timing causes most of the trade failures.
+11. Market moves according to index as option sold and decayed purposly.
+12. Gaps, Breakout , Big moves , results , news are preplanned.
+14. Number of volatile days are more than trending days.
+15. Options are sold in trending days and decayed in volatile days.
+16. Volatile days also take back profits earned in trending days.
+17. Waiting for perfect timing is better than losing.
+18. Gap Down is created to trap early sellers , gap up is created to trap early buyers.
+19. Keep stop loss small, it can be achieved by wating and refining.
+20. Pushing prices to down in morning and inducing retail trailers is trap for up move.
+21. Pushing proces to up in morning and inducing retail trailers is trap for down move.
+22. Prices , support ,resistance trends , patterns all can be faked as price is designed.
+23. Prices do not move up or down due to seller or buyer , they are designed.
+24. Prices are psychological design hence setups do not sustain everytime but sometime.
+25. Precise execution of trade is solution as it results in small stop loss.
+26. Market is designed to lose hence very few can outsmart it.
+27. After 11 AM. There are good orderblock trades seek for small stop loss.
+28. Valid Orderblocks are not broken.
+29. Decide whether it is RANGING or TRENDING
+30.10 successful trades are enough.
+31. Look for clean chart
+
+--- MSG 11 [2026-07-15 17:30] ---
+[Request interrupted by user]
+
+--- MSG 12 [2026-07-15 17:30] ---
+so u have everyhting as last msg was rough idea
+
+--- MSG 13 [2026-07-15 17:32] ---
+so brainstorm and create a confluence  system that uuses everyhing to gain accurate decision and trade entry ecit and trail and risk minimisation stock finding self doing everyhting multitime frame fittion power of three  compression candles r also importanant hecne think deep and deep write solution how u will solve the problem each
+
+--- MSG 14 [2026-07-15 17:37] ---
+after plan written start implementing with fable agents   KEEP IMPROVBVINF G AND COMIITTING  SELF IMPROOVIN G SYSTEM IT MUST BE DURING TESTING POPHASE HENCE 5THINK AND START IMPLEMENTING COMMIT EACH THING
+
+--- MSG 15 [2026-07-16 02:35] ---
+CONTINUE
+
+--- MSG 16 [2026-07-16 12:53] ---
+continuuue and its very strict instruuction to u to write refactored code n produce refactored code nopt somme lenghty shit as everything has shortest possible way hence pure customisable system  that knows where is what so modificvation stuurctiing is easy\\
+
+--- MSG 17 [2026-07-16 14:39] ---
+DO IT
+
+--- MSG 18 [2026-07-16 17:20] ---
+continue , why we r not parallel on disjoint tasks
+
+--- MSG 19 [2026-07-16 18:37] ---
+ccommmmit puwsh
+
+--- MSG 20 [2026-07-16 19:39] ---
+staus perccent how mmucxh worrk left
+
+--- MSG 21 [2026-07-16 19:40] ---
+donjt stop continuuuue nw
+
+--- MSG 22 [2026-07-16 20:24] ---
+do in small parts
+
+--- MSG 23 [2026-07-16 20:29] ---
+[Request interrupted by user]
+
+--- MSG 24 [2026-07-16 20:29] ---
+/compact
+
+--- MSG 25 [2026-07-16 20:34] ---
+continuue
+
+--- MSG 26 [2026-07-16 20:40] ---
+retry
+
+--- MSG 27 [2026-07-16 20:43] ---
+Continue from where you left off.
+
+--- MSG 28 [2026-07-16 20:48] ---
+[Request interrupted by user]
+
+--- MSG 29 [2026-07-16 20:48] ---
+continue
+
+--- MSG 30 [2026-07-16 21:01] ---
+[Request interrupted by user]
+
+--- MSG 31 [2026-07-16 21:01] ---
+continuuue
+
+--- MSG 32 [2026-07-16 21:23] ---
+continuuue
+
+--- MSG 33 [2026-07-16 22:27] ---
+[Request interrupted by user for tool use]
+
+--- MSG 34 [2026-07-16 22:27] ---
+STATUUS
+
+--- MSG 35 [2026-07-16 22:27] ---
+USE MUULTIAGENT
+
+--- MSG 36 [2026-07-17 04:38] ---
+CHECKI WHAT WE MMISED
+
+--- MSG 37 [2026-07-17 07:13] ---
+PUUSH
+
+--- MSG 38 [2026-07-17 09:38] ---
+can u get any real data frommm any api for freree of uultiple tiemframes of one month of reliance then we ruun backtest like ifgf we have 2 3 mmmmonth opf data then we  jsust try to mimmmmmic nnext trade as candles plot on replay of data n check if entry possib;e or proper think on it
+
+--- MSG 39 [2026-07-17 09:45] ---
+do things on 20 stocks relaince , infosys , hdfc bank kotakbank asian paint means nifty 50 stocks liquid ones 4 mmin candle or 2 min candle prevous data n evberyhting deep work find conclusions then we discusss
+
+--- MSG 40 [2026-07-17 11:23] ---
+r we  stuuck?
+
+--- MSG 41 [2026-07-17 11:32] ---
+statuuuus
+
+--- MSG 42 [2026-07-17 11:38] ---
+eta?
+
+--- MSG 43 [2026-07-17 11:43] ---
+i think tools ui have desinged dfor those whyckoffs n many diffrent things of smart money shits r not acuurate they need recheck rethink n fine tuuning deep study each n fix n wire  planning and enhancement and caccuuracy shit needed
+
+--- MSG 44 [2026-07-17 12:33] ---
+pinescripts.txt in dev folder can u check it against our code and brainsotrm
+
+--- MSG 45 [2026-07-17 12:40] ---
+we keep as idea and brerainstorm everyuhting deep work on things on validation as we dont want to makew shit
+
+--- MSG 46 [2026-07-17 12:48] ---
+work on opus  buut whats conclusion of systemm whats suuccess rate whjere we r failed on taste proper table which feature has how mmucxh suuuccess or hit rate
+
+--- MSG 47 [2026-07-17 12:53] ---
+valdation of orderblocks that from pinescript code i gave and ouuur code comparision as pine code i seee working
+
+--- MSG 48 [2026-07-17 13:14] ---
+first we doio everythibg ghhead to headf
+
+--- MSG 49 [2026-07-17 13:24] ---
+check in muuuultiple tim,mmeframmmmmes
+
+--- MSG 50 [2026-07-17 13:32] ---
+so this figures we r not relyinh for one days entry we r working on data contunium based enrtires and decisions right ?
+
+--- MSG 51 [2026-07-17 13:33] ---
+lets check what more we need head to head on mmmake list then i research and goive uuu best code for head to head
+
+--- MSG 52 [2026-07-17 13:46] ---
+i do not want vvwap volummmmne profile these r shit as traders retailes views chart n becomme liquuidity thats why we havvve to tarde against them buut as smart moneys along , also mmmutitimeframmmmmanalyiss and trends to be considered as also when canle colises at near oipeing price and makes wicks thats compression candle in fuuture blasting mmmmovves r coioming hence think dep OUUR GOAL IS TO USE TOOLS THAT R NOT USED BY NORMAL PEOPLE OR PRICE DERIVES SHITS , WE RELY ON WHAT ACTRUALLY HHAPPENING BREAKER BLOXK ORDER BLOCK N LLOT OF SHIT NOW HERE WE HAVVE HEAD TO HEAD CODE WE NEED TO BRAINSTORM AND THINK WHICH IS BEST WITH ALL TGGESTES AND MULTI TIMMMEFRAMME ANALYSYS AS TO MINIMISE SL WE NEED 2 MINITE TIOMEFRAMME BUT TO GET DIRECTION WE NEED HR OR DAY OR ANYTHING SO ALSO WEEKLY RANGE BREAK N RETUUURN OR MMONTKLLY BREAK N RETUURN SHITS LOT OF THERE BUT WE NEED SOMMMETHING THAT IS SNIPER
+
+--- MSG 53 [2026-07-17 13:46] ---
+[Request interrupted by user]
+
+--- MSG 54 [2026-07-17 13:56] ---
+SO WE R FAILING AT BREAK OF STURCUUUTRE FPR NOW?
+
+--- MSG 55 [2026-07-17 14:08] ---
+NOW BRAINSTORMMM AND  PLAN UPGRADE THE SYSTEMM MMEANS ERROR REMMOVAL  AFTER AGENTS R FINISHED OUR PUURPOSE IS TO MAKE BEST SYUSTEMMM THAT AUUTO DOES EVERYHTING WE JUST SEE N EARN \
+
+--- MSG 56 [2026-07-17 14:20] ---
+[Image #6] [Image #7] [Image #8] [Image #9] [Image #10] [Image #11] SEE THEWSE TRADES R DECIVE TRAP AND HHUTN GO AGAINS T RETAILER THINK ON IT TOO AS U NEED TO RELY ON UR VISIOUS THOUUUGHST ALSO
+[IMAGE]
+[IMAGE]
+[IMAGE]
+[IMAGE]
+[IMAGE]
+[IMAGE]
+
+--- MSG 57 [2026-07-17 14:20] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-17 19-49-34.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-17 19-49-21.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-17 19-49-12.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-17 19-47-41.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-17 19-46-42.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-17 19-37-05.png]
+
+--- MSG 58 [2026-07-17 14:22] ---
+AS ALGOR RITHMMS WOPROK ON SEEK DESTROY SL  AS WE KNOW WHERE SLS R THEN IT BREAKS THEM THERREE
+
+--- MSG 59 [2026-07-17 14:25] ---
+[Image #12] BREAKER BLOCK SEE
+[IMAGE]
+
+--- MSG 60 [2026-07-17 14:25] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-17 19-55-39.png]
+
+--- MSG 61 [2026-07-17 14:28] ---
+SO WE RELY ON OUUT SYSTES BREAKER ORCDER CHOCH FVG AND MANY MORE THAT WE MADE N PLANNING WE IMM PLEMMENT BEST ONE FRO ALINES AND HENCE SE I HAVE TRADED 1:10RR SOEMTIMMMEMS 1:30 TOO I HAVE THAT KIND OF ACCURACY SO U HAVE TO THINK DEEP BRAINSOTR AND WE START IPLEENTING THJE CODE WHICHB IS BEST IN LUX AND OTHER BUT FIRST WE DO DRY RUN ON DATA TO CHECK WHICH TO IPLEMMENT FOR THAT ALL TXT TO BE CONSIDERED
+
+--- MSG 62 [2026-07-17 14:36] ---
+ORE BRAINSOTRMM AS THINGS UUU R ASSKING TO REMOVBE CAN BE GROUUND BREAKING OR PRO LEVEL IF UUUSE PERFECTLKY  AS POWER OF 3 WITH CCCOPREESION CANDLE IS TOO GOOD BUT FIRST WE NEED TO CCCCHECK IN 1D TF , AND OUUR ENTIRES R ON ONFLUDENCC OF THINGS N DECCCCIGSION ENGINE NOT SOME SINGLE RESULT ITS COBINATION OF EACH ASPECT THEN THINGS R DECIDE D WHAT UU SAY
+
+--- MSG 63 [2026-07-17 14:42] ---
+SO SYETEMM HAS LIST OF STOCCCKS FINDS TRADE WHERE IRT SEE RTHINGS HAPPENING AND DECCCIDES ENTRY TIME PRICE RISK TRAILING AND EVERUHTING SO WE HAVE SOMME STOCKS THEN WE R SUCH THAT ASKED MEANS IN MAY BE STRATINHG QUANTIY AND HOW MANMY TRADES TODAY AND RE ENTRY ON SAME SOTCK ALLOWED NOT ALL KINF OD PARAMMMMENETR AND THEN IOT DOES EVERYTHING N BRINGD MONEY TO HOMME HENCE THINK DEPLU
+
+--- MSG 64 [2026-07-17 14:44] ---
+NOW MMAKE THE FLOW HOW OIT WILL DO HOW IT WILLL DECIDE HOW FIND WHAT WILL DO HOW TO DO THEN FINALLISE STOCKS WHICH TO TRADE THEN TAKE WHICH HAS POETYTENTIAL N CHANCES OF MAX PROFIT BE VERY INTELLIGENT  PROPER THINK N PLAN
+
+--- MSG 65 [2026-07-17 14:52] ---
+SEE WE NEED TO CHECK EVERYTHING ISAT WHAT ASPECTS R U CHING IN DATA  OB FVVG AND
+
+--- MSG 66 [2026-07-17 14:56] ---
+DO IMPROVE WHATS NOT TESTEDN THINGS N MISIED AND BUILD EVERYTHING PROPERLYY THINK AND ENHANCE  CHECK CHECKLIST TXT FOILE IN THERE INMM H2H FOLDER READ IT WE NEED PROPER
+
+--- MSG 67 [2026-07-17 15:07] ---
+TELL ME SUUCCESS RATE EXPCETED AND PERCENTR T OF WINN N HIT RATE OUT OF 100 TRADE HOW MANY WE WIN
+
+--- MSG 68 [2026-07-17 15:35] ---
+CONTINUE DISCONNECTED
+
+--- MSG 69 [2026-07-17 16:21] ---
+PUSH
+
+--- MSG 70 [2026-07-17 16:28] ---
+BUILD WHATES LEFT TO IMPLEMENT  , THEN WE HAGVVE TO MAKE LIST OF EACH TOOL THEN WE NEED TO IMPROVBE AND VVALIDATE ITS WORKING AND ACCURACY THEN CHECK WITH 50 STOCKS DATA AGAINST TO CHECK ACCUURACY AND HIT RATE THEN PLAN IMPROVEMENT AND CONFLUDENCD AA DEEP PLAN NEEDED WORK ON IT
+
+--- MSG 71 [2026-07-17 17:14] ---
+WE RUN CODE AUDIT VALIDATIONS AND FULL REMAINIGN PLANS DEEPLY
+
+--- MSG 72 [2026-07-17 19:26] ---
+what remains
+
+--- MSG 73 [2026-07-17 19:27] ---
+so we take max possible from freree yahoo finance or anywhere
+
+--- MSG 74 [2026-07-17 19:32] ---
+status
+
+--- MSG 75 [2026-07-17 19:40] ---
+brainstorm use more data thinkk more deep use combinations of our tools
+
+--- MSG 76 [2026-07-17 19:44] ---
+do  a
+
+--- MSG 77 [2026-07-17 20:09] ---
+continue
+
+--- MSG 78 [2026-07-18 04:06] ---
+what is succcessrate  of this tool?
+
+--- MSG 79 [2026-07-18 04:11] ---
+i made the trading system self sustaing finding to deciding the trade it works in continuuuum we trade intraday only but consider continuous data of prevuos days so order blocks fvvgs and other fearture rn properly used ur task is to check each one of the code tool code and check against data and enhance it check wht false in code is what did u fuck up why  confluunce faild what wioll solve it use c omboinations of toolls permutation to get best output check whoich tools together perform bestb but first u need to fix sll tools aalso check h2h folders code and check aaginst our code andd do the fixes keepp checking with data each tool and tfixing so we get perfection check everyhtig is wiredd and if anything fails tool msut bee able to hanle deep work on it
+
+--- MSG 80 [2026-07-18 04:36] ---
+ur task is to fix the code n tools test and make tools sniper shot then in combination which tools perform best and so on then proper result in table from data use data as long duration avalable
+
+--- MSG 81 [2026-07-18 05:20] ---
+status
+
+--- MSG 82 [2026-07-18 05:26] ---
+did u try toolss pair such that first tool that gives direction then another that again filter to some extenxt then suuch that things become tighter same like lauyers of neural network and at the end we get decision so same for cgheosingf stock and same for trade decision then trade timing decision as understand perfect timing and waiting is very important , so this system is able find best decision matrix from trades  , i think we need most liquid stock to check and then deep audit code and data as we kbnow whyen u read data u can see trade but is tool able to detect that trade if yes then is it efficient if no then why tool failed if ui can see trade n opportunity then finituing generaalising and deep working is needed brainsotrm tit tilkl, the agent n resuults r completed
+
+--- MSG 83 [2026-07-18 05:36] ---
+see the banks trade on retaiers money and they take retailrs money by moving markets aand hunting their stopp loses hence think deeply and work on it as they know here the most stop losses r waiing as they have real time sl dta so they juusty hunt them out they dont lose they juts cut throats of retailer we ned to brainsotrm this too
+
+--- MSG 84 [2026-07-18 06:23] ---
+status
+
+--- MSG 85 [2026-07-18 06:25] ---
+can u veroiifyy these r they true or juust some idiot tld me veryfy these ""he project failed economically, not as a software build. Its trading hypotheses do not survive realistic execution, and several current implementation defects can still
+  corrupt research or hide operational failures.
+
+  ### Why the strategy failed
+
+   Root cause                                   Evidence                                                        Conclusion
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Signals lack selectivity                     Seven tools cover 72.5% of large moves, but random signals      The engine produces many signals without identifying
+                                                cover 81.1%; only 18.8% of fires occur near a run start.        exceptional entry bars.
+                                                runs/long60/RECALL.md:30
+  ───────────────────────────────────────────  ──────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────
+   Timing edge does not become payoff edge      Detectors sometimes predict favorable-before-adverse            “Direction was briefly right” is insufficient for profitable
+                                                movement, but MFE and MAE remain nearly symmetric. dev/         risk/reward.
+                                                plan/26-AUDIT-AND-VALIDATION-FINDINGS.md:114
+  ───────────────────────────────────────────  ──────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────
+   No realistic configuration works             0 of 112 solo configurations were positive; no stacked          Parameter tuning cannot rescue the current signal family.
+                                                configuration or sequence was holdout-stable. runs/long60/
+                                                RESULTS.md:178
+  ───────────────────────────────────────────  ──────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────
+   Stops realize normal volatility as losses    Tight stops averaged −1.07R; removing the stop improved         Stop hunting is costly, but it is not hiding a profitable
+                                                results to −0.187R but remained negative. runs/long60/          underlying strategy.
+                                                HUNT.md:132
+  ───────────────────────────────────────────  ──────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────
+   Costs compound the problem                   Friction ranges from roughly 0.06R to 0.35R per trade; even     Retail NSE costs widen an already-negative expectancy.
+                                                gross results remain negative. runs/long60/HUNT.md:138
+  ───────────────────────────────────────────  ──────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────
+   Confluence selects congestion                The layered cascade deteriorates from −0.433R to −0.547R        Carried zones, clusters, direction, and release-time filters
+                                                while reducing trade count. runs/long60/RECALL.md:65            are not independent positive information.
+  ───────────────────────────────────────────  ──────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────
+   Tiny-stop research was unrealistic           The RR harness assumed fills at the stop; real fills            Earlier positive RR results were simulation artifacts.
+                                                occurred 2–3R beyond a 0.15 ATR stop, producing −1.32R/
+                                                trade. dev/plan/26-AUDIT-AND-VALIDATION-FINDINGS.md:107
+
+  ### Current code and tooling bugs
+
+   Severity             Current defect                                                              Impact
+  ━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Critical             study --only is accepted at app/trader/cli.py:447, but the call at app/     CLI studies still enable every detector, reintroducing shared-level
+                        trader/cli.py:482 never passes it to enable_only.                           contamination. The claimed fix is incomplete and untested through the
+                                                                                                    CLI.
+  ───────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   High                 Feed exhaustion only persists state; it does not force-close positions      A truncated feed can leave an open position unreported and omit final-
+                        or flush the final M5 bucket. app/trader/engine/pipeline.py:203             bar signals.
+  ───────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   High                 The summary includes only closed positions. app/trader/engine/              Incomplete/open trades disappear from performance results, potentially
+                        pipeline.py:443 Reporting also silently ignores unmatched trade_open        making a run look better.
+                        records. app/trader/replay/metrics.py:95
+  ───────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   High, conditional    The shared risk ledger resets before each pipeline handles its previous-    A delayed force-close can be charged to the new day after open-risk
+                        day open position. app/trader/engine/pipeline.py:435                        state was erased.
+  ───────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   High                 Continuum detectors keep important state only in memory. For example,       Restarting watch loses live detector structures even though candles and
+                        BPR gaps live only in _gaps. app/trader/detectors/bpr.py:46                 levels persist. Results differ between uninterrupted and restarted runs.
+  ───────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   High                 The cost gate estimates a two-leg round trip. app/trader/engine/            Entry viability underestimates flat brokerage for multi-order exits.
+                        entry.py:170 The manager can create one or two partial exits plus a
+                        final exit. app/trader/execution/manager.py:87
+  ───────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   Medium               trader init still copies the old baseline config. app/trader/cli.py:45      The out-of-box command runs the obsolete strategy, not config.v2.json.
+                        That config enables structure, breaker, stacking, and other components
+                        already measured as harmful. app/config/config.json:48
+  ───────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   Medium               observe_until is validated but never used; the gate derives start time      Two configuration values can disagree silently.
+                        from observe_min. app/trader/config.py:30, app/trader/engine/gates.py:87
+  ───────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   Medium               trader init expects a sibling config/, but packaging includes only          A normal non-editable wheel installation may not contain the template
+                        trader*. app/pyproject.toml:18                                              and can fail during initialization.
+
+  Bottom line: fixing these bugs would improve research integrity and operational safety, but it would not turn the tested strategy profitable. The latest experiments show a
+  genuine economic null: the signals are frequent, weakly selective, symmetric in excursion, and unable to pay realistic execution costs.
+
+  No files were changed or generated, and I did not run tests because they would create caches, temporary journals, or other artifacts. The pre-existing untracked data/,
+  dev/h2h/, and runs/ directories remain untouched.
+
+"""
+
+--- MSG 86 [2026-07-18 07:57] ---
+status?
+
+--- MSG 87 [2026-07-18 08:05] ---
+why its tyaking this much time dont we have concurrency as real time system will fuck uup trade thin with this much time
+
+--- MSG 88 [2026-07-18 08:41] ---
+status
+
+--- MSG 89 [2026-07-18 08:54] ---
+well we has some plans  n discussion n leftr implementations check whaty  r left also , see if real time trade decision must be fast so we need to check how much time taken to select staock scan and decide the trade as if we miss time the trade missed and entry mised makes risky  entry or more losing trade
+
+--- MSG 90 [2026-07-18 09:01] ---
+what r u doing of historical data r we saving them or we fetching them on real time  this modules frramework must be veryu deepp verfied and n o errro must be in it
+
+--- MSG 91 [2026-07-18 09:38] ---
+whats hit rate win rate out of 1000 trades or trade finding efficiency
+
+--- MSG 92 [2026-07-18 09:43] ---
+what we say on 20 trades in month average rr we acived n anticipated  say two stocks 40 trades cvcaptial 10k 5k each lest run dry and check how much we earn
+
+--- MSG 93 [2026-07-18 09:50] ---
+lets try with 1 lakh
+
+--- MSG 94 [2026-07-18 09:51] ---
+but  how we r lsoing if we r winning the trasade dont understand it
+
+--- MSG 95 [2026-07-18 09:55] ---
+thats why we have stock picker order block n all wyckoff tools to ensure win rate  if its worse than coin flip then what use is system u built thats idiotic , as after this confluence we r 50 percetn then u r shittt bro  , also see if for 50 percetn winning trade we get 1:3rr then tell me on 1 lakh 40 trades
+
+--- MSG 96 [2026-07-18 09:59] ---
+well see we enter trade and we put sl now we trail our sl now most of the sls that wuill be huit say 50 percent failed trade  meas 20 win 20 losee ouuuuut of 20 losen we got trailed hit oin 10 so that saved ouuur loss  we only paid charges on them maybe breakevern trade so tell me now
+
+--- MSG 97 [2026-07-18 10:05] ---
+BVVVUT SEE THIS MEANS WE R FINDING TRADE BLINDLUY WE R NOT TRAING NEAR ORDER BLOCK NEAR FVG CHOCH NOT DECIDEINMG THENINGS RIGHT AS IF WE FIND GOOD TRADE THEN  ITS CHANCE THAT WE HAVVVE HIFGHER WIN RATE AS EXECUTIOBN IS DIFFRENT THUING BUT FINDING BEST SUUTABLE TRADE IS IMPROTANT RIGHT AS WE ENETERR IN CHOCH RETEST OB RETEST AND MANYT RETEST ENETRRES PROPER SL SHIT SO WE R FAILING SOMEWHERE
+
+--- MSG 98 [2026-07-18 10:07] ---
+MEANWHILE CHEC K IF THESE CLAIMS R BNOT FALSE POSITIVBE """"## Code-only inspection result
+
+  The strongest failure cause is state and time leakage across runs: file-watch mode reloads persisted end-state, then replays the CSV from the beginning. Stateful detectors also rebuild
+  historical signals as though they were current. This makes restart/repeated-run results unreliable.
+
+   #      Severity    Code defect                                                                Likely effect                                                               Evidence
+  ━━━━━  ━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━
+   1      Critical    File watch loads persisted state, but FileFeed rereads every CSV row       A second run processes old data using future/end-state levels, producing    app/trader/
+                      from the beginning—no watermark or deduplication.                          duplicates and temporal leakage.                                            cli.py:213, app/
+                                                                                                                                                                             trader/feed/
+                                                                                                                                                                             file.py:50
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   2      Critical    Portfolio risk is checked when an order is armed, not when the resting     Several pending orders can later fill after daily lock or beyond trade,     app/trader/
+                      order actually fills.                                                      heat, symbol, or correlation limits.                                        engine/
+                                                                                                                                                                             pipeline.py:268,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             engine/
+                                                                                                                                                                             pipeline.py:300,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             engine/
+                                                                                                                                                                             gates.py:168
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   3      Critical    Fresh detector instances rescan cached history. Inducement stamps          Restarts can generate stale “live” signals and resurrect old zones.         app/trader/
+                      historical discoveries with the current time; OB-Lux rebuilds zones                                                                                    detectors/
+                      without replaying their historical mitigation lifecycle.                                                                                               signal/
+                                                                                                                                                                             inducement.py:14
+                                                                                                                                                                             1, app/trader/
+                                                                                                                                                                             detectors/
+                                                                                                                                                                             signal/
+                                                                                                                                                                             inducement.py:14
+                                                                                                                                                                             8, app/trader/
+                                                                                                                                                                             detectors/
+                                                                                                                                                                             signal/
+                                                                                                                                                                             ob_lux.py:96
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   4      Critical    Baseline and alternative OB/FVG detectors mutate the same level            Enabling detector combinations changes or kills another detector’s          app/trader/
+                      collection without detector ownership checks.                              levels and misattributes evidence.                                          detectors/
+                                                                                                                                                                             baseline/
+                                                                                                                                                                             orderblock.py:82
+                                                                                                                                                                             , app/trader/
+                                                                                                                                                                             detectors/
+                                                                                                                                                                             signal/
+                                                                                                                                                                             ob_lux.py:182,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             detectors/
+                                                                                                                                                                             baseline/
+                                                                                                                                                                             fvg.py:56
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   5      High        Study mode force-enables every registered detector by default instead      Research results are configuration-inaccurate and trigger the shared-       app/trader/
+                      of evaluating the configured system.                                       level contamination above.                                                  tools/
+                                                                                                                                                                             study.py:126,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             detectors/
+                                                                                                                                                                             base.py:112
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   6      High        Calibration associates a trade opening with the latest verdict for that    A delayed fill credits or penalizes unrelated detectors, corrupting         app/trader/
+                      symbol, not the verdict that armed its pending order.                      learned weights.                                                            learn/
+                                                                                                                                                                             calibrate.py:68,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             engine/
+                                                                                                                                                                             pipeline.py:300
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   7      High        Paper execution applies adverse spread after selecting the limit price.    Backtest fills violate limit-order guarantees and distort profitability.    app/trader/
+                      A buy can fill above its limit and a sell below its limit.                                                                                             execution/
+                                                                                                                                                                             paper.py:56,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             execution/
+                                                                                                                                                                             paper.py:75
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   8      High        Missing wall-clock buckets call M5 processing repeatedly even when         Data gaps can expire plans or trigger stalled exits using the same stale    app/trader/
+                      there is no new closed M5 candle. Only detector stages are duplicate-      candle.                                                                     engine/
+                      protected.                                                                                                                                             pipeline.py:109,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             engine/
+                                                                                                                                                                             pipeline.py:231,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             execution/
+                                                                                                                                                                             manager.py:85
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   9      High        Detector exceptions are caught and suppressed; execution continues         Broken or misconfigured detectors disappear without failing the run,        app/trader/
+                      successfully. Unknown dependencies are also silently skipped.              presenting a false-success/no-trade result.                                 detectors/
+                                                                                                                                                                             base.py:70, app/
+                                                                                                                                                                             trader/
+                                                                                                                                                                             detectors/
+                                                                                                                                                                             base.py:107
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   10     High        Watch constructs FileFeed with its default market specification while      Non-default markets can use inconsistent tick sizes, quantization, and      app/trader/
+                      the engine and broker use configured market settings.                      sessions.                                                                   cli.py:213, app/
+                                                                                                                                                                             trader/feed/
+                                                                                                                                                                             file.py:17
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   11     High        Index context has no timestamp or freshness field; stocks keep             Missing index candles silently turn into stale market context for every     app/trader/
+                      receiving the last index view when current index data is absent.           symbol.                                                                     engine/
+                                                                                                                                                                             context.py:30,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             engine/
+                                                                                                                                                                             pipeline.py:438
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   12     High        A zero/missing-weight detector adds no score but still counts toward       A “free” detector can make a trade pass confluence without contributing     app/trader/
+                      the distinct-detector minimum.                                             confidence.                                                                 engine/
+                                                                                                                                                                             confluence.py:97
+                                                                                                                                                                             , app/trader/
+                                                                                                                                                                             engine/
+                                                                                                                                                                             confluence.py:11
+                                                                                                                                                                             4
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   13     Medium      Reward validation uses targets[0], while position management evaluates     The cost gate can approve a trade using reward that the manager does not    app/trader/
+                      later target indices and a separate source-target mapping.                 execute as modeled.                                                         engine/
+                                                                                                                                                                             entry.py:172,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             execution/
+                                                                                                                                                                             manager.py:89,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             execution/
+                                                                                                                                                                             manager.py:96
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   14     Medium      Several “incremental” detectors request and copy the complete candle       Runtime becomes approximately quadratic; long or multi-symbol datasets      app/trader/
+                      history on every tick.                                                     can become extremely slow or exhaust memory.                                store/
+                                                                                                                                                                             candles.py:73,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             detectors/
+                                                                                                                                                                             signal/
+                                                                                                                                                                             inducement.py:14
+                                                                                                                                                                             3, app/trader/
+                                                                                                                                                                             detectors/
+                                                                                                                                                                             signal/
+                                                                                                                                                                             ob_lux.py:98
+  ─────  ──────────  ─────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────  ──────────────────
+   15     Medium      Detector parameter dictionaries lack type/range validation. Values such    Combined with swallowed exceptions, configuration mistakes silently         app/trader/
+                      as zero round-step or undersized windows can throw inside detectors.       disable analysis.                                                           config.py:77,
+                                                                                                                                                                             app/trader/
+                                                                                                                                                                             detectors/
+                                                                                                                                                                             liquidity.py:106
+                                                                                                                                                                             , app/trader/
+                                                                                                                                                                             detectors/
+                                                                                                                                                                             timestats/
+                                                                                                                                                                             wyckoff.py:123
+
+  Most likely symptom mapping:
+
+  - Wrong after restart/repeated watch: #1 and #3
+  - Risk limits exceeded: #2
+  - Unreliable study/calibration results: #4–#7 and #12
+  - Successful run but missing/no trades: #9 and #15
+  - Severe slowdown on larger datasets: #14
+
+  No files were changed or generated. No tests were executed, and these conclusions do not rely on Markdown, reports, o""""
+
+--- MSG 99 [2026-07-18 10:18] ---
+LIST WHAT TOOLS WE HAVE AND TELL WHICH WORRK BEST COMBINED?
+
+--- MSG 100 [2026-07-18 10:21] ---
+WE WIOLL DISCUSS POARING AS WE SEE AT BIG TIMEFRAME WE HAVVE SWING THEN AT SWING WE HAVE OB OR FVG THEN IN FVG WE HAVE SMALL TIME FRAM CHOCH OR FVVG OR OB AND SO PROPER NESTED THING THEN WE ASALSO HAVE SMALL TIME FRAM DIRECTION AND BIG TIMEFRAME DIRTECTION  THEN COMBINE THESE WITH PROPER HIGH TO LOW PRICORY N REFINE CONFLUENCE CAN BE PRODUCED THINK BRAINSOTRM IT BRO WE R CLOSE
+
+--- MSG 101 [2026-07-18 10:23] ---
+ITS NOT ABOUT DAULY SWING ITS ABOUT ANY LIQUIDIOTY SWINGS  WHERE SLS R
+
+--- MSG 102 [2026-07-18 10:52] ---
+what dop u mean by daily swing time data dont understand , what timeframew r we picking trades ?
+
+--- MSG 103 [2026-07-18 10:52] ---
+also i makde audit from agent aand he said this so vveryify these finsindngs and issues and telkl me where he is right and wrong  ## Verdict
+
+  The current strategy is not production-ready. If “failed” means it produced no or very few trades, the primary cause is the shipped configuration—not necessarily missing market
+  opportunities.
+
+  The source code cannot provide a defensible win-rate or “accuracy percentage” without an out-of-sample replay. The scores below are static production-readiness ratings, not expected
+  returns.
+
+   Area                      Audit score    Verdict
+  ━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Stock selection                  2/10    Not point-in-time or performance-validated
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Signal implementation            5/10    Event parity exists, but not trading-system parity
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Day-template logic               2/10    Important branches unreachable
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Confluence                       3/10    Mostly a single-signal score, despite the name
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Entry and sizing                 3/10    Default quantity/configuration suppresses trades
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Risk controls                    5/10    Several good guards, but planned risk can be exceeded
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Execution and costs              3/10    Simplified and partly obsolete for current NSE
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Statistical validation           2/10    No proper out-of-sample or data-snooping control
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Overall live readiness           2/10    Do not use real capital yet
+
+  ## Actual decision tree
+
+  Configured universe
+  ├─ stocks.json is empty by default → no selectable stocks
+  ├─ Manual stocks / replay --all → scanner bypassed
+  └─ watch --auto K
+     ├─ Any D1 candle exists?
+     │  ├─ No → ignore symbol
+     │  └─ Yes → calculate fit score using entire cache
+     ├─ Liquidity = neutral 0.5 because order notional is not supplied
+     ├─ Context = always neutral 0.5
+     └─ Rank top K regardless of absolute score or data freshness
+
+  Every closed M5 bar
+  ├─ Update levels
+  ├─ Run enabled detectors
+  ├─ Classify day template
+  │  ├─ Both opening-range edges swept → DOUBLE_TRAP
+  │  ├─ Neither swept → RANGE_PIN
+  │  ├─ Exactly one swept → UNCLASSIFIED
+  │  ├─ TREND → unreachable with structure disabled
+  │  └─ TRAP_REVERSAL → unreachable with structure disabled
+  ├─ Cluster evidence zones
+  ├─ Score winning direction
+  │  ├─ Compression Fade weight ≈ 42.3%
+  │  ├─ BPR weight ≈ 42.3%
+  │  ├─ Other detectors combined ≈ 15.5%
+  │  └─ Only one directional detector required
+  ├─ Apply D1/M15/time/template/index multipliers
+  └─ Final score ≥ 6?
+     ├─ No → observe only
+     └─ Yes → gates → arm entry
+
+  Entry
+  ├─ Choose tightest live level overlapping scored cluster
+  ├─ Place entry at its midpoint
+  ├─ Build signal or generic stop
+  ├─ Require target at least 1.5R away
+  ├─ Calculate quantity
+  │  ├─ RANGE_PIN × default max_qty 1 × 0.5 → int(0.5) = 0 → reject
+  │  ├─ Configured Thursday expiry × 0.5 → 0 → reject
+  │  └─ Otherwise max quantity remains 1
+  ├─ Cost/reward gate
+  │  └─ One-share plans usually rejected as costs_dominate
+  ├─ Wait for zone contact plus confirmation
+  │  └─ With structure and volume disabled, only a ≥60% rejection wick works
+  └─ Rest midpoint limit until a later M1 trades through it
+
+  Position
+  ├─ 1R close → partial and breakeven
+  ├─ Signal target → remaining position exits at 1.5R or 2R close
+  ├─ Stop → only an M5 close beyond stop exits
+  ├─ Wick beyond stop → position remains open
+  └─ EOD/counter-zone/stall exits
+
+  ## Why the shipped defaults suppress trading
+
+   Severity    Finding                                                                                  Consequence
+  ━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Critical    CLI defaults to max_qty=1 app/trader/cli.py:179, while RANGE_PIN and expiry sizing       int(1 × 0.5) = 0, producing qty_zero.
+               are multiplied and truncated with int() app/trader/engine/pipeline.py:408.
+  ──────────  ───────────────────────────────────────────────────────────────────────────────────────  ───────────────────────────────────────────────────────────────────────────────────────
+   Critical    The cost gate assumes up to two signal exits, hence at least three ₹20 brokerage         Most normal intraday one-share setups become costs_dominate. For one share the
+               orders app/trader/execution/paper.py:41. With the 15% limit app/trader/templates/        manager would not even execute the 33% partial, so this estimate is excessively
+               config.json:24, one share needs more than ₹400 reward before percentage charges.         conservative.
+  ──────────  ───────────────────────────────────────────────────────────────────────────────────────  ───────────────────────────────────────────────────────────────────────────────────────
+   Critical    Integration fixtures explicitly raise the cost ratio to 1000 because realistic costs     Passing scenario tests do not demonstrate that shipped economics can trade.
+               prevent toy trades app/tests/harness.py:57.
+  ──────────  ───────────────────────────────────────────────────────────────────────────────────────  ───────────────────────────────────────────────────────────────────────────────────────
+   Critical    structure is disabled app/trader/templates/config.json:67, while TREND requires BOS      Only DOUBLE_TRAP, RANGE_PIN and UNCLASSIFIED are reachable.
+               and TRAP_REVERSAL requires CHOCH app/trader/engine/template.py:106.
+  ──────────  ───────────────────────────────────────────────────────────────────────────────────────  ───────────────────────────────────────────────────────────────────────────────────────
+   High        Entries open at 11:00, but the template remains provisional until 11:30 app/trader/      Decisions can use an incomplete day classification.
+               engine/template.py:72.
+
+  ## Stock-selection problems
+
+  The automatic chooser is not a validated stock-selection model:
+
+  - Thirty-five percent of its weighting is constant in normal CLI use. Liquidity returns neutral when qty_notional is absent, and context is always neutral app/trader/engine/scanner.py:70.
+    The CLI does not supply that notional app/trader/cli.py:135.
+
+  - It has no as-of date. It deliberately requests all cached candles using a date ten years in the future app/trader/engine/scanner.py:22. It therefore cannot be used safely in a historical
+    walk-forward selector.
+
+  - Data eligibility means only “at least one D1 candle,” with no freshness, minimum history, intraday coverage or current quote checks.
+  - “ATR” is actually a mean of daily high-low ranges, excluding close-to-open true range app/trader/engine/scanner.py:41.
+  - The setup component rewards the frequency of five-day high or low breaks app/trader/engine/scanner.py:78. It is directionless and not linked to Compression Fade or BPR profitability.
+  - There is no score threshold: the top K are selected even when every candidate is poor app/trader/cli.py:120.
+  - Replay bypasses automatic selection entirely app/trader/cli.py:327. Consequently, there is no integrated evidence that the selector improves results.
+  - The shipped stock universe is empty app/trader/templates/stocks.json:1.
+
+  Missing eligibility factors include point-in-time index membership, adjusted corporate-action identity, sector concentration, price bands, spread/depth, participation rate, current
+  turnover and short-sale constraints.
+
+  ## “Confluence” is effectively single-signal permission
+
+  The two main signals receive approximately 84.5% of normalized weight app/trader/templates/config.json:47. Only one directional detector is required app/trader/templates/config.json:83.
+
+  A standalone BPR has fixed strength 0.8 app/trader/detectors/bpr.py:87. During the 11:00–13:00 time prior, a solo BPR can score roughly 19.5 on a matched RANGE_PIN setup—well above the
+  threshold of 6. Therefore the system does not require independent price, volume, structure and market confirmation.
+
+  Additional scoring defects:
+
+  - swings receives normalized weight but never emits Evidence app/trader/detectors/swings.py:42.
+  - Time is counted twice: as neutral spatial Evidence and again as a global multiplier app/trader/detectors/timestats.py:99, app/trader/engine/confluence.py:66.
+  - Single-link clustering allows one broad zone to bridge otherwise separate price areas app/trader/engine/confluence.py:80.
+  - Neutral evidence always benefits whichever directional side barely wins; it does not remain direction-neutral.
+  - The strongest same-detector observation replaces all others, including an opposing observation app/trader/engine/confluence.py:91.
+  - Heuristic multipliers—D1 veto, M15 veto, time, template, obviousness and index—are multiplied as though independent. Several derive from the same price/level history, so this double-
+    counts correlated information.
+
+  - Index context is disabled and index_symbol is null, leaving no broad-market confirmation.
+
+  ## Entry and exit accuracy
+
+  The detector research and the traded system are materially different:
+
+   Detector research event                                                                        Production behavior
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Compression Fade defines entry as break-candle close app/trader/detectors/                     Production substitutes the midpoint of the tightest overlapping level app/trader/engine/
+   compression_fade.py:65.                                                                        entry.py:122.
+  ─────────────────────────────────────────────────────────────────────────────────────────────  ─────────────────────────────────────────────────────────────────────────────────────────────
+   BPR fires on the first close inside the overlap app/trader/detectors/bpr.py:87.                Production adds zone contact plus a 60% wick confirmation, then waits for a later limit
+                                                                                                  touch app/trader/engine/entry.py:266.
+  ─────────────────────────────────────────────────────────────────────────────────────────────  ─────────────────────────────────────────────────────────────────────────────────────────────
+   Compression comments claim a 3R experiment.                                                    Shipped exit is 2R; BPR is 1.5R app/trader/templates/config.json:89.
+  ─────────────────────────────────────────────────────────────────────────────────────────────  ─────────────────────────────────────────────────────────────────────────────────────────────
+   Research uses barrier touches from signal close.                                               Signal profit exits require an M5 closing R value and execute on the following M1 app/
+                                                                                                  trader/execution/manager.py:96.
+
+  Other concerns:
+
+  - The tightest overlapping level can be unrelated to the signal that generated the cluster.
+  - Signal stops bypass max_stop_atr; generic stops can be re-snapped after the maximum-risk check without another validation app/trader/engine/entry.py:137.
+  - The cost gate evaluates targets[0], while mapped signal exits use a separate fixed R. For BPR, the gate can evaluate a more distant target than the actual 1.5R exit.
+  - A wick through the stop never exits; only the M5 close matters app/trader/execution/manager.py:68. Real loss can therefore exceed the quantity-sizing denominator.
+  - Fill-time risk checking exists, but the pipeline omits symbol and now when calling it app/trader/engine/pipeline.py:339. That skips the documented per-symbol and post-trade cooldown
+    rechecks app/trader/engine/gates.py:196.
+
+  Positive findings: closed-candle timing is causal, resting limits fill at their limit rather than worse, net P&L includes costs, stops cannot be widened by trailing code, and same-day
+  force-close handling is present.
+
+  ## Market-rule and execution-model inaccuracies
+
+  The current market configuration is obsolete for July 2026:
+
+  - Tick size is fixed at ₹0.05 app/trader/models/market.py:26. NSE now uses price-tiered tick sizes ranging from ₹0.01 to ₹5, reviewed monthly, under the official NSE tick-size circular
+    (https://nsearchives.nseindia.com/content/circulars/CMTR67133.pdf). Fetching also quantizes historical input onto the incorrect fixed grid app/trader/tools/fetch.py:51.
+
+  - Expiry is configured as Thursday. NSE derivative contracts expiring from September 2025 onward use Tuesday under the official expiry circular
+    (https://nsearchives.nseindia.com/content/circulars/FAOP68589.pdf). The code therefore applies the zero-producing expiry throttle on the wrong day.
+
+  - The cost model combines most non-STT levies into exchange_pct=0.00297% app/trader/execution/paper.py:27. Current cash-market transaction and IPFT charges changed to ₹307/crore per side
+    from March 2026 NSE circular (https://nsearchives.nseindia.com/content/circulars/FA73061.pdf), while GST, SEBI fees and buyer-side stamp duty have distinct bases NSE levies
+    (https://www.nseindia.com/static/invest/first-time-investor-sebi-turnover-fees-stt-other-levies).
+
+  - Fixed five-basis-point spread-plus-slippage cannot represent differences by stock, time, direction or order size. NSE itself defines impact cost using side, transaction size and the live
+    order book NSE impact-cost methodology (https://www.nseindia.com/static/products-services/indices-impact-cost).
+
+  ## Research and validation verdict
+
+  The active detector tests establish event-definition parity, not profitability. Compression Fade and BPR compare inlined reference algorithms on only RELIANCE and INFY app/tests/detectors/
+  test_compression_fade.py:224, app/tests/detectors/test_bpr.py:319. The referenced rr.py and ict_pieces.py research programs and their result artifacts are absent from the current source
+  tree.
+
+  The study tool also does not model the traded strategy:
+
+  - Entry is signal close, with symmetric ±1 ATR barriers over 24 M5 bars app/trader/tools/study.py:55.
+  - Its baseline samples 20 bars with replacement from the same day and 30-minute bucket app/trader/tools/study.py:81, producing highly dependent comparisons.
+  - There is no chronological train/validation/test split, walk-forward universe selection, confidence interval, bootstrap, parameter-stability test or multiple-testing correction.
+  - Replay reports useful net expectancy and drawdown, but merely warns below ten days rather than calculating uncertainty app/trader/replay/metrics.py:132.
+
+  This matters because primary research on technical rules emphasizes testing the entire tried rule universe for data-snooping effects (Sullivan, Timmermann and White
+  (https://www.fmg.ac.uk/publications/discussion-papers/data-snooping-technical-trading-rule-performance-and-bootstrap)) and correcting Sharpe-like results for selection bias and multiple
+  trials (Bailey and López de Prado (https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551)).
+
+  ## Priority order
+
+  1. Establish whether the intended shipped behavior is “trade with normal size” or merely a one-share smoke test. Current defaults make real signal evaluation nearly impossible.
+  2. Make the enabled detector set consistent with the template and entry-confirmation trees.
+  3. Validate the exact production entry, delayed limit fill, close-confirmed stop and mapped exits—not raw detector events.
+  4. Use current NSE tick, expiry and levy rules plus stock/time/size-sensitive impact.
+  5. Evaluate with a point-in-time universe and chronological walk-forward splits.
+  6. Report net expectancy uncertainty, fill rate, turnover, drawdown and results by detector/template/symbol/regime; then apply data-snooping correction.
+  7. Require results to survive higher costs, delayed fills and moderate parameter perturbations before any live trial.
+
+  No files were changed or generated, no replay or tests were executed, and Markdown, prior reports and run outputs were excluded from the inspection.
+ ## Verdict
+
+  The current strategy is not production-ready. If “failed” means it produced no or very few trades, the primary cause is the shipped configuration—not necessarily missing market
+  opportunities.
+
+  The source code cannot provide a defensible win-rate or “accuracy percentage” without an out-of-sample replay. The scores below are static production-readiness ratings, not expected
+  returns.
+
+   Area                      Audit score    Verdict
+  ━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Stock selection                  2/10    Not point-in-time or performance-validated
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Signal implementation            5/10    Event parity exists, but not trading-system parity
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Day-template logic               2/10    Important branches unreachable
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Confluence                       3/10    Mostly a single-signal score, despite the name
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Entry and sizing                 3/10    Default quantity/configuration suppresses trades
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Risk controls                    5/10    Several good guards, but planned risk can be exceeded
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Execution and costs              3/10    Simplified and partly obsolete for current NSE
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Statistical validation           2/10    No proper out-of-sample or data-snooping control
+  ────────────────────────  ─────────────  ───────────────────────────────────────────────────────
+   Overall live readiness           2/10    Do not use real capital yet
+
+  ## Actual decision tree
+
+  Configured universe
+  ├─ stocks.json is empty by default → no selectable stocks
+  ├─ Manual stocks / replay --all → scanner bypassed
+  └─ watch --auto K
+     ├─ Any D1 candle exists?
+     │  ├─ No → ignore symbol
+     │  └─ Yes → calculate fit score using entire cache
+     ├─ Liquidity = neutral 0.5 because order notional is not supplied
+     ├─ Context = always neutral 0.5
+     └─ Rank top K regardless of absolute score or data freshness
+
+  Every closed M5 bar
+  ├─ Update levels
+  ├─ Run enabled detectors
+  ├─ Classify day template
+  │  ├─ Both opening-range edges swept → DOUBLE_TRAP
+  │  ├─ Neither swept → RANGE_PIN
+  │  ├─ Exactly one swept → UNCLASSIFIED
+  │  ├─ TREND → unreachable with structure disabled
+  │  └─ TRAP_REVERSAL → unreachable with structure disabled
+  ├─ Cluster evidence zones
+  ├─ Score winning direction
+  │  ├─ Compression Fade weight ≈ 42.3%
+  │  ├─ BPR weight ≈ 42.3%
+  │  ├─ Other detectors combined ≈ 15.5%
+  │  └─ Only one directional detector required
+  ├─ Apply D1/M15/time/template/index multipliers
+  └─ Final score ≥ 6?
+     ├─ No → observe only
+     └─ Yes → gates → arm entry
+
+  Entry
+  ├─ Choose tightest live level overlapping scored cluster
+  ├─ Place entry at its midpoint
+  ├─ Build signal or generic stop
+  ├─ Require target at least 1.5R away
+  ├─ Calculate quantity
+  │  ├─ RANGE_PIN × default max_qty 1 × 0.5 → int(0.5) = 0 → reject
+  │  ├─ Configured Thursday expiry × 0.5 → 0 → reject
+  │  └─ Otherwise max quantity remains 1
+  ├─ Cost/reward gate
+  │  └─ One-share plans usually rejected as costs_dominate
+  ├─ Wait for zone contact plus confirmation
+  │  └─ With structure and volume disabled, only a ≥60% rejection wick works
+  └─ Rest midpoint limit until a later M1 trades through it
+
+  Position
+  ├─ 1R close → partial and breakeven
+  ├─ Signal target → remaining position exits at 1.5R or 2R close
+  ├─ Stop → only an M5 close beyond stop exits
+  ├─ Wick beyond stop → position remains open
+  └─ EOD/counter-zone/stall exits
+
+  ## Why the shipped defaults suppress trading
+
+   Severity    Finding                                                                                  Consequence
+  ━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Critical    CLI defaults to max_qty=1 app/trader/cli.py:179, while RANGE_PIN and expiry sizing       int(1 × 0.5) = 0, producing qty_zero.
+               are multiplied and truncated with int() app/trader/engine/pipeline.py:408.
+  ──────────  ───────────────────────────────────────────────────────────────────────────────────────  ───────────────────────────────────────────────────────────────────────────────────────
+   Critical    The cost gate assumes up to two signal exits, hence at least three ₹20 brokerage         Most normal intraday one-share setups become costs_dominate. For one share the
+               orders app/trader/execution/paper.py:41. With the 15% limit app/trader/templates/        manager would not even execute the 33% partial, so this estimate is excessively
+               config.json:24, one share needs more than ₹400 reward before percentage charges.         conservative.
+  ──────────  ───────────────────────────────────────────────────────────────────────────────────────  ───────────────────────────────────────────────────────────────────────────────────────
+   Critical    Integration fixtures explicitly raise the cost ratio to 1000 because realistic costs     Passing scenario tests do not demonstrate that shipped economics can trade.
+               prevent toy trades app/tests/harness.py:57.
+  ──────────  ───────────────────────────────────────────────────────────────────────────────────────  ───────────────────────────────────────────────────────────────────────────────────────
+   Critical    structure is disabled app/trader/templates/config.json:67, while TREND requires BOS      Only DOUBLE_TRAP, RANGE_PIN and UNCLASSIFIED are reachable.
+               and TRAP_REVERSAL requires CHOCH app/trader/engine/template.py:106.
+  ──────────  ───────────────────────────────────────────────────────────────────────────────────────  ───────────────────────────────────────────────────────────────────────────────────────
+   High        Entries open at 11:00, but the template remains provisional until 11:30 app/trader/      Decisions can use an incomplete day classification.
+               engine/template.py:72.
+
+  ## Stock-selection problems
+
+  The automatic chooser is not a validated stock-selection model:
+
+  - Thirty-five percent of its weighting is constant in normal CLI use. Liquidity returns neutral when qty_notional is absent, and context is always neutral app/trader/engine/scanner.py:70.
+    The CLI does not supply that notional app/trader/cli.py:135.
+
+  - It has no as-of date. It deliberately requests all cached candles using a date ten years in the future app/trader/engine/scanner.py:22. It therefore cannot be used safely in a historical
+    walk-forward selector.
+
+  - Data eligibility means only “at least one D1 candle,” with no freshness, minimum history, intraday coverage or current quote checks.
+  - “ATR” is actually a mean of daily high-low ranges, excluding close-to-open true range app/trader/engine/scanner.py:41.
+  - The setup component rewards the frequency of five-day high or low breaks app/trader/engine/scanner.py:78. It is directionless and not linked to Compression Fade or BPR profitability.
+  - There is no score threshold: the top K are selected even when every candidate is poor app/trader/cli.py:120.
+  - Replay bypasses automatic selection entirely app/trader/cli.py:327. Consequently, there is no integrated evidence that the selector improves results.
+  - The shipped stock universe is empty app/trader/templates/stocks.json:1.
+
+  Missing eligibility factors include point-in-time index membership, adjusted corporate-action identity, sector concentration, price bands, spread/depth, participation rate, current
+  turnover and short-sale constraints.
+
+  ## “Confluence” is effectively single-signal permission
+
+  The two main signals receive approximately 84.5% of normalized weight app/trader/templates/config.json:47. Only one directional detector is required app/trader/templates/config.json:83.
+
+  A standalone BPR has fixed strength 0.8 app/trader/detectors/bpr.py:87. During the 11:00–13:00 time prior, a solo BPR can score roughly 19.5 on a matched RANGE_PIN setup—well above the
+  threshold of 6. Therefore the system does not require independent price, volume, structure and market confirmation.
+
+  Additional scoring defects:
+
+  - swings receives normalized weight but never emits Evidence app/trader/detectors/swings.py:42.
+  - Time is counted twice: as neutral spatial Evidence and again as a global multiplier app/trader/detectors/timestats.py:99, app/trader/engine/confluence.py:66.
+  - Single-link clustering allows one broad zone to bridge otherwise separate price areas app/trader/engine/confluence.py:80.
+  - Neutral evidence always benefits whichever directional side barely wins; it does not remain direction-neutral.
+  - The strongest same-detector observation replaces all others, including an opposing observation app/trader/engine/confluence.py:91.
+  - Heuristic multipliers—D1 veto, M15 veto, time, template, obviousness and index—are multiplied as though independent. Several derive from the same price/level history, so this double-
+    counts correlated information.
+
+  - Index context is disabled and index_symbol is null, leaving no broad-market confirmation.
+
+  ## Entry and exit accuracy
+
+  The detector research and the traded system are materially different:
+
+   Detector research event                                                                        Production behavior
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Compression Fade defines entry as break-candle close app/trader/detectors/                     Production substitutes the midpoint of the tightest overlapping level app/trader/engine/
+   compression_fade.py:65.                                                                        entry.py:122.
+  ─────────────────────────────────────────────────────────────────────────────────────────────  ─────────────────────────────────────────────────────────────────────────────────────────────
+   BPR fires on the first close inside the overlap app/trader/detectors/bpr.py:87.                Production adds zone contact plus a 60% wick confirmation, then waits for a later limit
+                                                                                                  touch app/trader/engine/entry.py:266.
+  ─────────────────────────────────────────────────────────────────────────────────────────────  ─────────────────────────────────────────────────────────────────────────────────────────────
+   Compression comments claim a 3R experiment.                                                    Shipped exit is 2R; BPR is 1.5R app/trader/templates/config.json:89.
+  ─────────────────────────────────────────────────────────────────────────────────────────────  ─────────────────────────────────────────────────────────────────────────────────────────────
+   Research uses barrier touches from signal close.                                               Signal profit exits require an M5 closing R value and execute on the following M1 app/
+                                                                                                  trader/execution/manager.py:96.
+
+  Other concerns:
+
+  - The tightest overlapping level can be unrelated to the signal that generated the cluster.
+  - Signal stops bypass max_stop_atr; generic stops can be re-snapped after the maximum-risk check without another validation app/trader/engine/entry.py:137.
+  - The cost gate evaluates targets[0], while mapped signal exits use a separate fixed R. For BPR, the gate can evaluate a more distant target than the actual 1.5R exit.
+  - A wick through the stop never exits; only the M5 close matters app/trader/execution/manager.py:68. Real loss can therefore exceed the quantity-sizing denominator.
+  - Fill-time risk checking exists, but the pipeline omits symbol and now when calling it app/trader/engine/pipeline.py:339. That skips the documented per-symbol and post-trade cooldown
+    rechecks app/trader/engine/gates.py:196.
+
+  Positive findings: closed-candle timing is causal, resting limits fill at their limit rather than worse, net P&L includes costs, stops cannot be widened by trailing code, and same-day
+  force-close handling is present.
+
+  ## Market-rule and execution-model inaccuracies
+
+  The current market configuration is obsolete for July 2026:
+
+  - Tick size is fixed at ₹0.05 app/trader/models/market.py:26. NSE now uses price-tiered tick sizes ranging from ₹0.01 to ₹5, reviewed monthly, under the official NSE tick-size circular
+    (https://nsearchives.nseindia.com/content/circulars/CMTR67133.pdf). Fetching also quantizes historical input onto the incorrect fixed grid app/trader/tools/fetch.py:51.
+
+  - Expiry is configured as Thursday. NSE derivative contracts expiring from September 2025 onward use Tuesday under the official expiry circular
+    (https://nsearchives.nseindia.com/content/circulars/FAOP68589.pdf). The code therefore applies the zero-producing expiry throttle on the wrong day.
+
+  - The cost model combines most non-STT levies into exchange_pct=0.00297% app/trader/execution/paper.py:27. Current cash-market transaction and IPFT charges changed to ₹307/crore per side
+    from March 2026 NSE circular (https://nsearchives.nseindia.com/content/circulars/FA73061.pdf), while GST, SEBI fees and buyer-side stamp duty have distinct bases NSE levies
+    (https://www.nseindia.com/static/invest/first-time-investor-sebi-turnover-fees-stt-other-levies).
+
+  - Fixed five-basis-point spread-plus-slippage cannot represent differences by stock, time, direction or order size. NSE itself defines impact cost using side, transaction size and the live
+    order book NSE impact-cost methodology (https://www.nseindia.com/static/products-services/indices-impact-cost).
+
+  ## Research and validation verdict
+
+  The active detector tests establish event-definition parity, not profitability. Compression Fade and BPR compare inlined reference algorithms on only RELIANCE and INFY app/tests/detectors/
+  test_compression_fade.py:224, app/tests/detectors/test_bpr.py:319. The referenced rr.py and ict_pieces.py research programs and their result artifacts are absent from the current source
+  tree.
+
+  The study tool also does not model the traded strategy:
+
+  - Entry is signal close, with symmetric ±1 ATR barriers over 24 M5 bars app/trader/tools/study.py:55.
+  - Its baseline samples 20 bars with replacement from the same day and 30-minute bucket app/trader/tools/study.py:81, producing highly dependent comparisons.
+  - There is no chronological train/validation/test split, walk-forward universe selection, confidence interval, bootstrap, parameter-stability test or multiple-testing correction.
+  - Replay reports useful net expectancy and drawdown, but merely warns below ten days rather than calculating uncertainty app/trader/replay/metrics.py:132.
+
+  This matters because primary research on technical rules emphasizes testing the entire tried rule universe for data-snooping effects (Sullivan, Timmermann and White
+  (https://www.fmg.ac.uk/publications/discussion-papers/data-snooping-technical-trading-rule-performance-and-bootstrap)) and correcting Sharpe-like results for selection bias and multiple
+  trials (Bailey and López de Prado (https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551)).
+
+  ## Priority order
+
+  1. Establish whether the intended shipped behavior is “trade with normal size” or merely a one-share smoke test. Current defaults make real signal evaluation nearly impossible.
+  2. Make the enabled detector set consistent with the template and entry-confirmation trees.
+  3. Validate the exact production entry, delayed limit fill, close-confirmed stop and mapped exits—not raw detector events.
+  4. Use current NSE tick, expiry and levy rules plus stock/time/size-sensitive impact.
+  5. Evaluate with a point-in-time universe and chronological walk-forward splits.
+  6. Report net expectancy uncertainty, fill rate, turnover, drawdown and results by detector/template/symbol/regime; then apply data-snooping correction.
+  7. Require results to survive higher costs, delayed fills and moderate parameter perturbations before any live trial.
+
+  No files were changed or generated, no replay or tests were executed, and Markdown, prior reports and run outputs were excluded from the inspection.
+::""
+
+--- MSG 104 [2026-07-18 11:02] ---
+[Image #4] noqw see this trade how easy it was in 15 we git direction orderblcok fvg and in small tf we did entry one long one short bothjh 1:5rr [Image #5] almost 2090 sl 2093 entry 2025 2030exit traing 3rs
+[IMAGE]
+[IMAGE]
+
+--- MSG 105 [2026-07-18 11:02] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 16-28-35.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 16-29-49.png]
+
+--- MSG 106 [2026-07-18 11:06] ---
+but u know this kind of ssetup recognitio and findge thats why we made tool right finding this trade is difficutl asd se in continum its vvalid but we break session then iots shit trade
+
+--- MSG 107 [2026-07-18 11:08] ---
+[Image #6] se this too  , its also good so data n all things r considerwed continuum sessions doent brak orderblock as they imprinted
+[IMAGE]
+
+--- MSG 108 [2026-07-18 11:08] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 16-37-29.png]
+
+--- MSG 109 [2026-07-18 11:11] ---
+ansd as many stocks rthere so out of 50 if we detect 3 trades in them then we r fuulfilled fior the day
+
+--- MSG 110 [2026-07-18 11:20] ---
+[Image #7] [Image #8] so the tools i have made n oprovide4d tell me r they able to find this kind of trades >???? [Image #9] see this trade [Image #10]
+[IMAGE]
+[IMAGE]
+[IMAGE]
+[IMAGE]
+
+--- MSG 111 [2026-07-18 11:20] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 16-44-35.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 16-44-30.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 16-48-56.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 16-50-46.png]
+
+--- MSG 112 [2026-07-18 11:22] ---
+[Image #11] see this trasde
+[IMAGE]
+
+--- MSG 113 [2026-07-18 11:22] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 16-52-23.png]
+
+--- MSG 114 [2026-07-18 11:26] ---
+see we r looking old data as evvery flock fvg n things exist in old data and new price might tewst theose means toch those blocks or areas or price or choch zone there we enter n trail the sl
+
+--- MSG 115 [2026-07-18 11:28] ---
+asb we r aware most of the sls n liquidites r ne4ar swings that r valid so trading inside swings or zone too zone extreme to extreme price is travling discount to premimum or so on we catch some mobement in between travvel n we r rich thats all right ?
+
+--- MSG 116 [2026-07-18 11:31] ---
+[Image #13] see this trade so we find and hit just easy as what u say?
+[IMAGE]
+
+--- MSG 117 [2026-07-18 11:31] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 17-01-06.png]
+
+--- MSG 118 [2026-07-18 11:33] ---
+do it and do all concurrently whats possible in multiple timefreame and bvbrasinsotrm first what we r douiing wjhere we r
+
+--- MSG 119 [2026-07-18 11:36] ---
+as u know smaller time frame give proper sl and clarity but biggerr gives direection confifdence
+
+--- MSG 120 [2026-07-18 11:36] ---
+and we will might exit trade in same day or next but system must be good as it must work as entry exit is decison of our but system must perform whast it does
+
+--- MSG 121 [2026-07-18 11:43] ---
+well well we think more as understand indian market gives 5x levverage on stock so with 50k i can buy [Image #14] see 115 so if stock movves 0.5 to 1 percent and we cap[ture 0.6 to 0.4 percent then we still get on 5x 2 to 3 peercent hence we need proper math on it
+[IMAGE]
+
+--- MSG 122 [2026-07-18 11:43] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 17-12-28.png]
+
+--- MSG 123 [2026-07-18 11:51] ---
+so whts fiuuux here?
+
+--- MSG 124 [2026-07-18 11:53] ---
+edge in the input explain
+
+--- MSG 125 [2026-07-18 11:56] ---
+so u r saying we r failiing to find entry point?
+
+--- MSG 126 [2026-07-18 11:58] ---
+check n improfve fibvvnders accuracy
+
+--- MSG 127 [2026-07-18 11:58] ---
+check n improve finders accuracy  find its bugds
+
+--- MSG 128 [2026-07-18 12:17] ---
+well u r not underestanding let me explain u [Image #15] so ur concernt is which pricwe to enter so thats why we refine charsts to smalerr tf onece we get big tf direction n orderblock ob n whwterver  then we enter from mid of it but inside that order vlock when time m15 to m5 then we se proper fvg or orderblock is present there witch refined sl right now orur entry price is yet to come we just put order when it conmes it excutres so when we decide wevertyhting entry oijnt n shit by refining then we enertr trail waut adn exit at 3r 2r or more [Image #16] see we dont havvve price there candles there but we havve fvg exist ibn pass and its mid pint is nety means rectangles height mid point is entry we discus more but u get the cointentx
+[IMAGE]
+[IMAGE]
+
+--- MSG 129 [2026-07-18 12:17] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 16-53-55.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 17-46-34.png]
+
+--- MSG 130 [2026-07-18 12:19] ---
+so what the  fuck is edge u r missing if we have wht neded for entry what needed foir exiut what needed foir stop los what needed foir trail then what the fuck edge is uu fuucking shit
+
+--- MSG 131 [2026-07-18 12:21] ---
+but if these tools r finding detecting deciding entring and are accurate then my question is why u need if trade is tilted my side or not so u mean buyy edge is theat wherther i win the trade or not right?
+
+--- MSG 132 [2026-07-18 12:24] ---
+but but see if u scanned and found it perfectl;ly then ui know ity ios a trade thats for sure  , then u veryfy ob fcg chockh everyhting and everiything exist coinsides so that means opportinity is vvalid now if its valid opportuniotyu then we take it by managing risjkk and taking trail n max rr to be profitable what u say ?
+
+--- MSG 133 [2026-07-18 12:27] ---
+can u explain in statements pioint by point why we cant earn
+
+--- MSG 134 [2026-07-18 12:30] ---
+mother fucker 2nd point is where why will price travvvel in oboth direction idiot thats why we took ob fvg and other things to detetct direction poof price   why r u so idiot did u se i gavve u all trades where direction didnt go against then why r u saying that deep check which trades u founfd they went against the direction check them deep on many charts i found manuallyu and they didnt ggo againmsnst means u cant fdind them think deep if we analyze good price will go in our direction and we prevvent us with stop loss too so why the fuck u r that idiot
+
+--- MSG 135 [2026-07-18 12:37] ---
+so what do we have now first we vvveryfy trade finder setup finmder properluy ruun it find they setups i shown u ion charts
+
+--- MSG 136 [2026-07-18 12:51] ---
+now think on these most accurate and safe and minimum sl entry how can u refine that what point which orderb;llock or fvg or breaker blocks mid u wanna consder on what timefrwme as it exist even in i minute too so we need sstem that markes that candle then see that cabndlwe in small time fram  then enter it refine entry set sl proper adjust sl refine risk slips risk aa pro levvvel approacghhj deep think we r closest
+
+--- MSG 137 [2026-07-18 13:04] ---
+[Image #17] see this 1:9rr trade 2201.99 and sl 2202.50 and target 2190
+[IMAGE]
+
+--- MSG 138 [2026-07-18 13:04] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 18-33-34.png]
+
+--- MSG 139 [2026-07-18 13:08] ---
+its 1 minute candle but [Image #18] see in diiffrent timeframe  so we need to find best then when we sure here can be trade then refine entry n sl n perfectness and then we enter thatsd it now think on multitimeframe fvg ob or entry finder as trade finded but entry price to be accurate and also we need proper tests on these as if u r finding perfectly setu[p then wht we r failing in trades right thats why we do very deep run and check thether we r really finding tarde or we r idiot ned to check as if trade is there then we not fail rigth hence audit
+[IMAGE]
+
+--- MSG 140 [2026-07-18 13:08] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 18-35-18.png]
+
+--- MSG 141 [2026-07-18 13:12] ---
+check whole data of hindunilvvr u have give mee trade date and price entry so i can how many u found in hwole data available 5m 15 whichver suits in table so i can eye check and tell that r u legit or not
+
+--- MSG 142 [2026-07-18 13:15] ---
+givvve 6 months of trades that r founded by system i chekc n verify them visuall , gigv table here how mmany u found
+
+--- MSG 143 [2026-07-18 13:17] ---
+give table of 5r
+
+--- MSG 144 [2026-07-18 13:22] ---
+well that means our setup detection is very weak as its detecting too much of failing trades
+
+--- MSG 145 [2026-07-18 13:23] ---
+[Request interrupted by user]
+
+--- MSG 146 [2026-07-18 13:24] ---
+well that means our setup detection is very weak as its detecting too much of failing trades, find why dead or failed trade did we had worng sl or direction went against us if against us then bad setup detection and if sl hit then why hit sometimes hits due to bad entryu n placement iof asl deep brainsotrm this
+
+--- MSG 147 [2026-07-18 13:31] ---
+so how diid we misinterpreted directions worng  check how why brainsoitrm the data itself and tool itself
+
+--- MSG 148 [2026-07-18 13:41] ---
+but when setup is detected one houyr the fvg or any ob is deteeeced we must go to same candle at smaller tomeframe w check that woiindow and find gsp ob and pperfect we refine to end to minimise risk so we get enetyr on smallest time frame whioch gives smallest stop loss  thats why we r very precise in enty we can fail but we can havvve minimum smallest losses ands also we cant fail. taht bad we have some fuck ups [Image #19] [Image #20]
+[IMAGE]
+[IMAGE]
+
+--- MSG 149 [2026-07-18 13:41] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 19-10-56.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 19-10-41.png]
+
+--- MSG 150 [2026-07-18 13:59] ---
+but we can detect n eleminate bad ob  unsure ob bad fvg we r intrested on non visited fvg ob bb who r not mitigated right we need to keep that in mind think dep
+
+--- MSG 151 [2026-07-18 14:02] ---
+so list out problems in table what r from search to exit each problem then we discuss and its severity , but first we need to audiit trade detection accuracy means finding swing then at there is fvvg or ifvg breaker block or order block or propulsion block so research on these items again deeply  if these r accurate then we can move ahead so we cvvan confirm from data and check if those pine scripts code is implemented here as that was better hence think deep
+
+--- MSG 152 [2026-07-18 14:08] ---
+implement propulsion block [Image #21]
+[IMAGE]
+
+--- MSG 153 [2026-07-18 14:08] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 19-38-23.png]
+
+--- MSG 154 [2026-07-18 14:12] ---
+see we need to understand also vvalid fvg or orderbloks or chochs first validd fvvg has gaps in wicks if we have 3 candles c1 c2 c3 then wicks of c1 c3 never corss each otheerr dep think n check wahts
+
+--- MSG 155 [2026-07-18 14:13] ---
+see bigger gaps meeans important mitigation
+
+--- MSG 156 [2026-07-18 14:14] ---
+but see gaps near extreme swngs are more valid rigth in big timeframe s then we reifen entry all charts i have u fvg were nere swinngs so u need to kep thaty in midn
+
+--- MSG 157 [2026-07-18 14:22] ---
+[Image #22] [Image #23] [Image #24] [Image #25] see this fvg cant u find them n make unvisited until pricdew didnt come to their range
+[IMAGE]
+[IMAGE]
+[IMAGE]
+[IMAGE]
+
+--- MSG 158 [2026-07-18 14:22] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 19-51-13.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 19-50-25.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 19-49-04.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 19-48-54.png]
+
+--- MSG 159 [2026-07-18 14:28] ---
+\brainsorm what else we can do to get profitable
+
+--- MSG 160 [2026-07-18 14:30] ---
+do u remember 70.2 fatctor [Image #28]
+[IMAGE]
+
+--- MSG 161 [2026-07-18 14:30] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-18 20-00-27.png]
+
+--- MSG 162 [2026-07-18 14:34] ---
+lests tighgten n brainsorm everyhting and test on existing datat  pick 5 stocks and run checkl hit rate of each tool track why it has isue failure and confluence pairing everyhting and find wht system is still aa faolure
+
+--- MSG 163 [2026-07-18 14:52] ---
+z`z`WELL WE NEVER PUT STOPS BASED ON 5MINUTE CANDLES WE EITHER GO 2M 1M REFINEMENTS  OR MAX 3MINUTE
+
+--- MSG 164 [2026-07-18 14:53] ---
+PUSH
+
+--- MSG 165 [2026-07-18 14:55] ---
+SO EBVEVERYHTING IS BEST WIRED AND COMMETED AND IN MAIN BRANCH RIGHT SEE U R DOING ONE THING WRONG IF I BROUGH LOW TIME FRAME STOP LOSS TO 2 RS THAT DOENT MEAN U EXCIT TREADE AT 6 RS RIGTH WE NEED TO UNDERSTAND THAT IF ON 2000 RS SHARE I M RISKING 2 RS ONLY AND GETTING 15 RS THEN ITS GOOD WE CANT BE HAVVING UR SHITLOADING OF 1:NRR EXIT SHIT THINK DEEPLY
+
+--- MSG 166 [2026-07-18 14:59] ---
+SO LETS RUN SOME TEST ON HINDUNILVR AND 2 MONTHS DATYA AND CHECK HOW MANY WE LOOSE WIN AND EARN , CAPITAL IS 1 LAKH TRRADE LIMIT IS NO
+
+--- MSG 167 [2026-07-18 15:04] ---
+SO WE R MSSING MOST PROBABLE NTRADE DETECTION THATS LIKELY TO SUCCEED ?  AND NUMBER OF FAILURE R TOO MUCH  AS I SEE WE NEED STRIONBG ELIMITNATION AS I SEE IN 4 MONTS MAX TIKME SETUP HAS APPEARD MAY BE 50 TIMES BUT U SHOW AROUNF 400 SETUPS THATS BAD THINGS
+
+--- MSG 168 [2026-07-18 15:11] ---
+NOW WE NEED TO CHECK DEEPLY SEE WE ELIMINATE ELIMINATE WRONG DIRECXTIONS TRADE , ONLY FAVORAVVVBLE TRADE AND THEN VERY BIG WINNER  , WE CHECK SL TRADES ASS THEY MIGHT BE FAVVOUURABLE BUT HIT BY MISTAKES TOO SO THEY COULD BE TWEAKED NOW  WHAT WE HAVE BIG WINNNER TRADE BEST ONES AND BASED ON THEM WE WILL CHECK THEIR ORDER BLCOCK FAIR VALUE GAPS AND EVVERYHITNG THAT TOOLS GIVE AND MAKE CONCLSUIEONS THEN WE TRY ON MORE STORCK AND AGAIN MAKE MORE CONCLUSIONS AND COLLECT LOT OF CONSLCUIOSN THEN WE APPLY RESEARCH ON  THOSE CONCLUSIONS ON HOW AND VALID OFVG OB SWINGS ORDER BLOCK PROPULSION BLOCK CHGOCH IFVG FVG OR ANYHTING WHICH R BEST THOSE BEST FVG WILL BE USED TO FINE TUNE OUR SYSTEM N CHECK TEST OTHER STOCKS N FAILED TRADES AND EVERYUHTING WE CHECK AND EVEOLVVE  IN OTHER STOCKS AND DRAW MORE CONCLUSION   WE DO THIS ION LOOP TO IMPROVVE SO WE LEARN WHATS BEST FVG MOST FAVORABLE CONCLUIOSN OF EACH TOOL OR HOW N WHAT COPNFLUENCE THEY SHOULD BE N THEN WE USE THAT ADAPT THINGS  BRAINSRTORM THIS N START DOING
+
+--- MSG 169 [2026-07-18 15:27] ---
+IS ANYTHING RUNNING OR WE DISCUSS MORE?
+
+--- MSG 170 [2026-07-18 15:30] ---
+│ Momentum factor + PEAD validation (free,                 │ offered, never dispatched — the only    │
+  │ literature-backed, the machine can run both tonight)     │ concrete positive-odds test still       │
+  │                                                       EXPLAIN
+
+--- MSG 171 [2026-07-18 15:35] ---
+SEE WE MISED ONE THING MORE IN MOMEMNTUM COMRESSION CANDLES 2 3 THEN FUKLLL BODY CANDLE USING POWER OF 3 MOMENTUMS BVROUGTH ALSO WEEKLY  MONTLY REANGE BREAK LIQUIDITY HUNT GIVE GOOD TRADE  ON REVVVVERAALS AND ALSO MANY THINGS LIKE WE CVAN ALSO FIND POSITIONAL TRADES ON LONG SIDE AND  ,M ALSO TRADE DETECTOR  AND REFINEMENT , THINK WHATS SHIT I M TALKING , THOUGH ALSAO TELL ME WHATS WIN RATE OF SUYSYTEM , AFTER THAT LOOP DIDNT WE IOIMPOROVISE SYSTE,MM DEEP CHECK WHY DID WE NOT IMPROVVISED AS DETECTION OF SETUP R NOT ACCURATE OR NOT KILLSHOT AS IN 100 STOCKS IN 100 DAYS WE CAN GET SETUP LIKE 90 TIMES MAX  THINK DEEP OSO OTHERS ARE FALSE POSITIVBVE'
+
+--- MSG 172 [2026-07-18 15:39] ---
+RUN WE XCCHEDCK
+
+--- MSG 173 [2026-07-18 15:53] ---
+[Request interrupted by user]
+
+--- MSG 174 [2026-07-18 15:53] ---
+CHECK
+1
+
+--- MSG 175 [2026-07-18 16:00] ---
+CAN U CHECK AND VALIDATE THIS """ IS IT FALSE POSITIVE OR REAL CHGECK DEEPLY  ## Verdict
+
+  The changed code fixed several earlier defects, but the project is still not an accuracy-validated stock-selection system.
+
+  The main failure is architectural: research, tests, and the live trading path do not evaluate the same strategy. The current system can also:
+
+  - Start with no usable stock universe or rank stocks from stale/partial data.
+  - Treat one strong detector as “confluence.”
+  - Reject most default one-share trades because of the cost calculation.
+  - Produce different decisions after a restart.
+  - Use stale NSE tick-size, cost, and expiry assumptions.
+  - Size risk from an intrabar stop while only enforcing that stop on an M5 close.
+
+  No defensible win-rate or accuracy percentage can be calculated from static code inspection or the existing research scripts.
+
+  ## Changed-code recheck
+
+   Area changed                  Current status                                                                  Verdict
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Structure detector enabled    structure is now enabled in the shipped app/trader/templates/config.json:47     Fixed; TREND and TRAP_REVERSAL are reachable again
+  ────────────────────────────  ──────────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────────
+   Quantity throttling           Fill-time throttling now preserves one share when at least one is allowed       Fixed
+  ────────────────────────────  ──────────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────────
+   Fill-time risk caps           Symbol and fill timestamp are now passed into the cap calculation in app/       Fixed
+                                 trader/engine/pipeline.py:340
+  ────────────────────────────  ──────────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────────
+   Exact limit touch             Exact equality can now fill                                                     Fixed
+  ────────────────────────────  ──────────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────────
+   Expiry weekday                Default changed from Thursday to Tuesday                                        Only partly fixed: code still treats every Tuesday as expiry for every stock
+  ────────────────────────────  ──────────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────────
+   Breaker/MSB                   Implemented and registered                                                      Dormant in shipped config; significant performance/restart problems remain
+  ────────────────────────────  ──────────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────────
+   Propulsion block              Implemented and registered                                                      Dormant; required order-block producers are disabled
+  ────────────────────────────  ──────────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────────
+   Drift continuation            Implemented                                                                     Explicitly unvalidated and dormant
+  ────────────────────────────  ──────────────────────────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────────
+   Research scripts              More studies now exist                                                          They still do not reproduce the production decision tree
+
+  ## Current production decision tree
+
+  Universe
+   ├─ Explicit/manual symbols → use directly
+   └─ Auto-selection
+        ├─ Cached D1 data exists → rank top K
+        └─ No cached data → take first K symbols
+
+  M1 feed
+   → fixed ₹0.05 price quantization
+   → candle aggregation
+   → closed M5 boundary
+   → update levels and enabled detectors
+   → retain live evidence
+
+  Evidence
+   → single-link spatial clustering
+   → strongest evidence per detector
+   → directional score + neutral-evidence boost
+   → D1/M15/template/time/index multipliers
+   → accept when score ≥ 6 and distinct detectors ≥ 1
+
+  Entry gates
+   → 11:00–14:45
+   → template must not be UNCLASSIFIED
+   → trend/chase/cooldown/risk checks
+   → choose tightest level overlapping the evidence cluster
+   → derive entry, stop, opposing-zone targets and quantity
+   → cost/reward gate
+   → arm setup
+
+  Trigger and fill
+   → zone touch plus wick rejection or CHOCH
+   → place resting limit
+   → later M1 candle touches limit
+   → rerun fill-time caps
+   → open position
+
+  Exit
+   → stop only when an M5 candle closes beyond it
+   → optional 1R partial
+   → Compression Fade exits at 2R
+   → BPR exits at 1.5R
+   → counter-signal/stall/EOD exits
+
+  ## Deep findings
+
+   Severity           Finding                                                      Why it can fail
+  ━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Critical           Existing research does not test the shipped strategy         app/trader/tools/study.py:55 enters at the signal M5 close and evaluates ±1 ATR over 24 bars. Production
+                                                                                   uses zone-derived limits, later M1 fills, risk gates, costs and source-specific exit managers. L60 studies
+                                                                                   use different capital, risk, detectors, fills and stop rules.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Critical           Restart changes decisions and loses trading state            Only limited level/watermark/time-stat state is restored. Detector histories, template lock/history,
+                                                                                   evidence, entry arms, positions and risk state are memory-only. Pre-watermark rows rebuild candles but do
+                                                                                   not rebuild the same detector/classifier path in app/trader/engine/pipeline.py:112. An uninterrupted run
+                                                                                   and a restarted run are not equivalent.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Critical           Default stock selection is operationally weak                The shipped app/trader/templates/stocks.json:1 is empty. Auto-selection is fitted before the current file
+                                                                                   feed is read, so a first run falls back to the first K symbols; later runs use prior cached data. Replay
+                                                                                   bypasses the selector entirely.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Critical           Scanner is not point-in-time safe                            app/trader/scanner.py:22 creates a far-future view of cached candles. That can classify the current
+                                                                                   partial D1 bucket as closed and would leak future data in historical stock-selection testing.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               35% of stock-ranking score is normally constant              CLI does not supply quantity/notional data, making the 20% liquidity component neutral. Context always
+                                                                                   returns neutral, fixing another 15%. The remaining setup score is a directionless count of recent highs or
+                                                                                   lows, not a current actionable setup.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               “Confluence” can be a single signal                          min_zone_detectors is 1. BPR and Compression Fade each own 30 of 72 configured weight points. A BPR with
+                                                                                   strength 0.8 contributes about 33.3 raw points against a threshold of 6, so it can arm alone. The current
+                                                                                   test explicitly permits an “elite solo” signal in tests/test_config.py:140.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Confluence merges and boosts evidence unsafely               Single-link clustering can bridge two distant zones through intermediate overlaps. Same-detector
+                                                                                   deduplication keeps only the strongest item without respecting direction or recency. Neutral evidence
+                                                                                   increases the winning direction, and time statistics are counted both as evidence and as a global
+                                                                                   multiplier.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Entry geometry can detach from the researched signal         app/trader/engine/entry.py:193 chooses the tightest active level merely overlapping the evidence cluster.
+                                                                                   An unrelated swing, round-number or liquidity level can replace the BPR/Compression Fade zone that
+                                                                                   generated the score.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Invalid signal stops can be silently mirrored                For detector-supplied stops, code takes abs(entry - raw_stop) and places the stop on the expected side. A
+                                                                                   raw stop on the wrong side is mirrored instead of rejected. Signal stops also bypass the generic maximum-
+                                                                                   stop-ATR check.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Stop enforcement contradicts position sizing and research    app/trader/engine/manager.py:68 exits only after an M5 close beyond the stop. Intrabar price can cross the
+                                                                                   stop, hit another target, and remain open. Realized loss can therefore exceed the loss used to calculate
+                                                                                   position size. Research simulations generally use intrabar wick stops.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Room-to-target check and actual exit disagree                Entry only proves approximately 1.5R of room. Compression Fade subsequently requires 2R. A CF trade can
+                                                                                   therefore pass the room gate even though its actual target lies beyond the validated liquidity space.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Default max_qty=1 conflicts with the cost gate               The gate estimates entry plus two exit orders—at least ₹60 brokerage. With one share, the 33% partial
+                                                                                   rounds to zero, so actual modeled brokerage is normally only two orders/₹40. At the 15% maximum cost/
+                                                                                   reward ratio, the gate nevertheless requires roughly ₹400 reward per share before percentage fees. This
+                                                                                   will reject most ordinary one-share setups.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Template classification accepts weakly related evidence      Between 11:00 and the 11:30 lock, provisional templates can already authorize trades. TRAP_REVERSAL needs
+                                                                                   a reclaimed OR edge but accepts any recent CHOCH, not necessarily one caused by that edge, in the matching
+                                                                                   direction, or after the sweep.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High if enabled    Breaker/MSB does cumulative full-history work                It retrieves the entire closed history on every update and then uses a cursor. That makes cumulative
+                                                                                   retrieval roughly quadratic. On restart its cursor resets, allowing old cached events to be replayed and
+                                                                                   timestamped as current evidence.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High if enabled    Propulsion dependency is not enforced                        Propulsion requires order-block levels, but the shipped order-block producers are disabled. Enabling
+                                                                                   Propulsion alone silently produces nothing. Confirmed blocks also do not retain the parent level’s live/
+                                                                                   dead state and do not expire.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Medium             Risk controls are proxies, not the names advertised          “Correlated exposure” only means same trade direction, not sector or measured correlation. Heat reserves
+                                                                                   the full configured risk budget rather than actual plan risk. Daily lock converts trade R using configured
+                                                                                   risk percentage even when quantity caps made actual capital risk much smaller.
+  ─────────────────  ───────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Medium             Configuration validation is insufficient                     Arbitrary weights, negative/unknown keys, overlapping enabled/disabled detector lists, invalid target-R
+                                                                                   values and malformed evidence strength/TTL values are not comprehensively rejected in app/trader/
+                                                                                   config.py:65. Detector exceptions are logged and skipped, letting the strategy continue with incomplete
+                                                                                   evidence.
+
+  ## Current NSE model is stale
+
+  The fixed ₹0.05 tick is no longer generally correct. NSE cash-market ticks now vary from ₹0.01 to ₹5 according to price bands and are reviewed monthly. The project quantizes all incoming
+  OHLC prices using one fixed tick, which can create impossible entries, stops and fills. See the official NSE tick-size circular
+  (https://nsearchives.nseindia.com/content/circulars/CMTR67133.pdf).
+
+  The configured transaction rate is also stale. From March 2026, NSE’s cash-market transaction charge is ₹306.99 per crore on each side, with IPFT in addition. The model omits or
+  incompletely models IPFT, SEBI fees, GST and buyer-side stamp duty. See the NSE transaction-charge circular (https://nsearchives.nseindia.com/content/circulars/FA73061.pdf) and official
+  levy schedule (https://www.nseindia.com/static/invest/first-time-investor-sebi-turnover-fees-stt-other-levies).
+
+  Expiry handling remains overbroad. Individual stock derivatives expire on the last Tuesday, shifted to the previous trading day for a holiday; the code simply tests whether every date is
+  Tuesday. See NSE contract specifications (https://www.nseindia.com/static/products-services/equity-derivatives-contract-specifications).
+
+  ## Accuracy assessment
+
+   Accuracy dimension               Assessment
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Closed-candle causality          Mostly sound inside the main candle pipeline
+  ───────────────────────────────  ───────────────────────────────────────────────────
+   Point-in-time stock selection    Fails
+  ───────────────────────────────  ───────────────────────────────────────────────────
+   Restart determinism              Fails
+  ───────────────────────────────  ───────────────────────────────────────────────────
+   Research/production parity       Fails
+  ───────────────────────────────  ───────────────────────────────────────────────────
+   Fill realism                     Weak: OHLC touch, full fill, no queue/volume/book
+  ───────────────────────────────  ───────────────────────────────────────────────────
+   Cost realism                     Stale and internally inconsistent at one share
+  ───────────────────────────────  ───────────────────────────────────────────────────
+   Out-of-sample validation         Not established
+  ───────────────────────────────  ───────────────────────────────────────────────────
+   Multiple-testing control         Missing
+  ───────────────────────────────  ───────────────────────────────────────────────────
+   Defensible strategy accuracy     Unknown
+
+  The L60 research searches thousands of detector/configuration/filter combinations and selects winners on the same data used to evaluate them. There is no untouched final test set, purged
+  walk-forward evaluation, dependence-aware confidence interval, or multiple-testing correction. This is exactly the setting where backtest selection bias becomes dominant; see Bailey et
+  al.’s Backtest Overfitting in Financial Markets (https://escholarship.org/uc/item/4hn4t174) and the Deflated Sharpe Ratio (https://www.davidhbailey.com/dhbpapers/deflated-sharpe.pdf).
+
+  ## Most likely failure by symptom
+
+   Observed symptom                    Most likely source-code cause
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   No trades                           Empty/default universe, first-run selector fallback, one-share cost gate
+  ──────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   Too many mediocre signals           BPR/Compression Fade dominance, threshold 6, minimum one detector
+  ──────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   Backtest good but live weak         Different entry/fill/stop/config/capital paths
+  ──────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   Results change after restart        Detector, template, evidence, position and risk state not restored
+  ──────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   Stops exceed intended risk          M5-close stealth stop
+  ──────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   New detectors produce nothing       Not enabled; Propulsion’s dependencies disabled
+  ──────────────────────────────────  ──────────────────────────────────────────────────────────────────────────
+   Different results by stock price    Fixed ₹0.05 tick and brokerage-heavy one-share economics
+""
+
+--- MSG 176 [2026-07-18 16:20] ---
+MAKE DOCUMENT FILE OF THIS SYSTEM HOW IT WORKSKS WHATS FLOWW WHATS IT ACHIVED HOW MUCH ITS RELIABLE
+
+--- MSG 177 [2026-07-18 16:24] ---
+NOW CCHECK 10 STOCKS WITH PROPER SETUP DETECTION BASED AND FIND TRADES MOST BEST TRADE N WE CHJECK THEM , TOP 30 TRADES TABLE AND CHECK THEIR HIT RATE PROFITABILITY
+
+--- MSG 178 [2026-07-18 16:27] ---
+SEE THOSE  21889 SIGNALS R 85 PERCENT FAULTY WE NEED TO FINETUNE SYSTEM IN NEXT SESSION AS THAT MANY SIGNALS R SHITPILE
+
+--- MSG 179 [2026-07-18 16:29] ---
+PUSH
+
+--- MSG 180 [2026-07-18 16:30] ---
+LEST FIND COST OF THIS PROJECT  IN DEVLOPMENTN
+
+--- MSG 181 [2026-07-18 16:35] ---
+SEE JUST TELL ME FROM THIS SESSION AAND OTHER PROJECTS MEMORY U KNOW DEEP THINK BRIANSTORM AS WE HAVVE MANY PROJECTS MEMORY INLCUDE THTA I M WORKING ON U R AWARE OF THAT N CAN ACCESS THEM , MY SKILLS MY BRAIN FIRST TELL ME WHAT KIND OF ENGINERR I AM , AM I GUD BAD AVERAGE OR GENIUS ALSO WHAT WOULD BE MY ANUAL PALCKAGE OF SLARYIF SOMEONE HIRES ME , AND PLAN AA RESUME FOR M ION HTML FILE MAKE BEST RPEPR DEEP WORKED RESUEM AS I ALSO CAN DO JAVA SPRING BOOT PROJECTS AND LOT SO FIRST ANSER MY QUESTION THEN GO FOR VERY BEST RESUME FOR ME THAT WILL ENSURE MY HIRING
+
+--- MSG 182 [2026-07-18 16:49] ---
+U MISSED MY ANSERS
+
+--- MSG 183 [2026-07-18 16:50] ---
+ALSO DUE TO CODING WITH AI I HAVE FORGOTTWEN MANY OPPS CONCEPT N LOT OF THINGS AS I NOW DO INSTTRUCTIVVE THINGS' SO I MIGHT FAIL INTERVVIEW
+
+--- MSG 184 [2026-07-19 08:15] ---
+here is audit think on it deply """ ## Fresh verdict
+
+  At current HEAD 15ccbe6, the newest fixes are genuine, but the project still cannot establish reliable strategy accuracy. The principal blockers remain:
+
+  1. Restarted execution is not equivalent to uninterrupted execution.
+  2. Stock selection is neither point-in-time safe nor included in strategy replay.
+  3. “Confluence” can still pass with one directional detector.
+  4. Research and meaningful E2E tests do not run the shipped BPR/Compression-Fade strategy.
+  5. Entry, target economics and pending-order validity can diverge from the signal that was scored.
+
+  No defensible current win-rate or expectancy can be stated from this code.
+
+  No project Markdown, data, journals, generated reports, Parquet/CSV results or run artifacts were inspected. No tests were run and git diff --stat remains empty.
+
+  ## What changed since the previous audit
+
+   Change                                                    Current verdict
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Wrong-side signal SL                                      Mechanically fixed at app/trader/engine/entry.py:139. It is discarded instead of mirrored. However, the trade then silently
+                                                             switches to a generic stop/default exit ladder, so signal-strategy parity is still not guaranteed.
+  ────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Room to mapped CF/BPR target                              Partly fixed at app/trader/engine/entry.py:249. Closer obstacles are still skipped, and cost/reward still uses the farther
+                                                             liquidity target rather than the actual mapped-R exit.
+  ────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Tuesday expiry                                            Partly fixed to the last configured weekday at app/trader/models/market.py:63. Holiday shifting, weekly-versus-monthly contracts
+                                                             and symbol-specific calendars remain unsupported.
+  ────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Propulsion dependency                                     Fixed for normally loaded configuration at app/trader/config.py:129. The study tool bypasses it by mutating validated settings
+                                                             afterward.
+  ────────────────────────────────────────────────────────  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Structure reachability, quantity floor, fill-time caps    Still fixed. Structure is enabled and fill-time checks receive symbol/timestamp.
+
+  ## Deep current findings
+
+   Severity           Finding                                                          Evidence and effect
+  ━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Critical           Same-day restart changes strategy decisions                      Detector instances, classifier lock, evidence, day state, FSM, positions and risk start empty at app/
+                                                                                       trader/engine/pipeline.py:85. Pre-watermark rows rebuild only candles at app/trader/engine/
+                                                                                       pipeline.py:112. BPR gaps, CF dedupe, structure history and template state are not reconstructed.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Critical           Crash recovery loses open exposure and risk controls             Positions and the shared risk ledger are explicitly memory-only at app/trader/engine/gates.py:27. A
+                                                                                       restart forgets open positions, trades/day, daily lock, heat, direction cap and cooldown.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Critical           Stock selection is not point-in-time safe                        The scanner pushes its view ten years into the future at app/trader/engine/scanner.py:22. That exposes
+                                                                                       all cached history and can treat an incomplete current D1 aggregate as closed.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Critical           Stock selection is absent from strategy replay                   Auto-ranking is used only by watch; replay accepts explicit numbers or all CSVs at app/trader/
+                                                                                       cli.py:327. Consequently, no replay measures whether ranking stocks improves or damages strategy
+                                                                                       returns.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Critical           Research does not simulate production trades                     Built-in study enters analytically at the evidence M5 close with symmetric ±1 ATR outcomes at app/
+                                                                                       trader/tools/study.py:55. Production uses confluence, gates, rejection, resting CE limits, later M1
+                                                                                       fills and source-specific management.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Critical           Meaningful E2E tests use the obsolete baseline                   app/tests/harness.py:36 loads config.baseline.json, disables the cost guard, forces Thursday expiry
+                                                                                       and omits current active/new detectors. Phase-4 E2E then uses max_qty=50 at app/tests/
+                                                                                       test_phase4_e2e.py:47.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Auto-selection creates a self-reinforcing cache universe         Only already-cached symbols are scored at app/trader/cli.py:135. If one symbol has data, unscored
+                                                                                       symbols are not used to fill the remaining K places. Ranking happens before the current feed is read.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               35% of stock-ranking weight is normally constant                 Liquidity becomes neutral without qty_notional at app/trader/engine/scanner.py:70, while context is
+                                                                                       always neutral at app/trader/engine/scanner.py:94. This contributes a fixed 17.5 score points.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Shipped stock universe is empty                                  app/trader/templates/stocks.json:1 contains no symbols. A newly initialized workspace cannot trade
+                                                                                       until populated manually.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               One detector still qualifies as “confluence”                     Threshold is 6 and minimum directional detectors is 1 in app/trader/templates/config.json:47. BPR
+                                                                                       alone contributes about 33.3 raw points. With normal neutral/time/template multipliers it can still
+                                                                                       finish above 6 with distinct == 1.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Timestats is counted twice                                       Its neutral Evidence boosts directional mass, while its strength is also used as the global time
+                                                                                       multiplier at app/trader/engine/confluence.py:69. It learns frequency of any level sweep, not trade
+                                                                                       losses.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Clustering can manufacture apparent agreement                    Spatial clustering is transitive at app/trader/engine/confluence.py:80. Same-detector deduplication
+                                                                                       ignores direction and recency at line 91, and zero-weight/zero-strength same-direction evidence can
+                                                                                       still count as a distinct detector.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Incomplete candles fail open                                     Candle aggregation accepts however many M1 members happen to exist at app/trader/store/candles.py:137.
+                                                                                       Once clock duration passes, that partial aggregate becomes a closed M5/M15/D1 candle.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Feed gaps repeatedly rescore the same M5 candle                  Every missed boundary is evaluated at app/trader/engine/pipeline.py:123. Detectors are guarded against
+                                                                                       rerunning, but confluence, entry and position management still execute at lines 271–287 using the same
+                                                                                       candle with advancing time and expiring TTLs.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Opening-range failure becomes a tradable RANGE_PIN               With missing OR levels and fewer than two BOS events, the classifier returns RANGE_PIN at app/trader/
+                                                                                       engine/template.py:106. The gate rejects only UNCLASSIFIED at app/trader/engine/gates.py:101.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Trades begin before the template locks                           Entry opens at 11:00, but template lock is 11:30 at [template.py:72](/home/doom/Public/PROJECT/2026/
+                                                                                       trAP_REVERS CHOCH evidence**
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Cost gate reward                                                 Reward liquidity T1181R level be when CF exits . Pending limits survive invalidated setups
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               max_stop_atr is not an actual maximum                            Signal stops bypass it entirely at app/trader/engine/entry.py:147. Generic stops are checked before
+                                                                                       minimum-stop widening and the second round snap, with no final recheck.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Configured stop risk is not maximum account loss                 Sizing excludes fees, and the stop is close-confirmed only at app/trader/execution/manager.py:68. A
+                                                                                       wick through the stop is deliberately ignored; exit occurs at a later M1 open after an M5 close.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Default one-share cost calculation counts nonexistent exits      ladder_exits() budgets two signal exits at app/trader/execution/manager.py:40, but a 33% partial
+                                                                                       rounds to zero for quantity 1–3 at line 104. Default CLI quantity is one, so at least ₹60 flat
+                                                                                       brokerage is screened although the modeled signal path generally emits only entry plus final exit.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Leverage cap is per position, not portfolio-wide                 Every trade receives capital × leverage notional at app/trader/engine/entry.py:175. Risk state tracks
+                                                                                       stop-risk and direction but no used margin/notional. Two positions can each consume the full leverage
+                                                                                       allowance.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Active BPR state is unbounded and restart-sensitive              Live gaps remain until killed, with bull×bear scanning at app/trader/detectors/bpr.py:69. Restart
+                                                                                       loses every older gap because only the latest three candles can create new ones.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High               Compression Fade has an OHLC direction bias                      If one outside bar breaks both sides of a coil, the high branch wins and emits SHORT because the low
+                                                                                       break is elif at app/trader/detectors/compression_fade.py:72. OHLC data cannot establish which edge
+                                                                                       broke first.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High if enabled    Breaker/MSB remains restart-unsafe and cumulatively expensive    It copies the complete closed history on every tick at app/trader/detectors/breaker_msb.py:176. A cold
+                                                                                       instance reprocesses old events, stamps them with current time and applies the latest ATR floor to all
+                                                                                       historical events.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   High if enabled    Propulsion loses its parent OB validity                          Confirmed blocks retain no parent Level ID/state at app/trader/detectors/propulsion_block.py:78. They
+                                                                                       can fire after the parent OB becomes dead and have no maximum age.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Medium             Final M5 bucket is never evaluated at feed exhaustion            M5 logic runs only when the next bucket arrives. finalize() at app/trader/engine/pipeline.py:220 does
+                                                                                       not close/evaluate the final M5 bucket.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Medium             Pending setup disappears silently at feed exhaustion             finalize() force-closes positions but does not journal or persist an armed FSM/resting entry order.
+                                                                                       Summary can report zero open positions while an unresolved entry intent is discarded.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Medium             Configuration validation remains incomplete                      Weights and target-R mappings are unconstrained dictionaries at app/trader/config.py:65. Duplicate/
+                                                                                       overlapping detector lists, negative target R and invalid cross-field timing/stop relationships can
+                                                                                       pass schema validation.
+  ─────────────────  ───────────────────────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Medium             The advertised shell data refresher is stale                     tools/accrue5m.sh:4 executes a UUID-specific temporary scratch file rather than the tracked Python
+                                                                                       implementation. A clean machine cannot run it.
+
+  ## Research accuracy assessment
+
+   Dimension                                Current result
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CF/BPR event-rule parity                 Partial pass on optional two-symbol fixtures
+  ───────────────────────────────────────  ──────────────────────────────────────────────
+   Current v2 end-to-end coverage           Fail
+  ───────────────────────────────────────  ──────────────────────────────────────────────
+   Stock-selection backtest                 Absent
+  ───────────────────────────────────────  ──────────────────────────────────────────────
+   Production/research entry parity         Fail
+  ───────────────────────────────────────  ──────────────────────────────────────────────
+   Production/research exit parity          Fail
+  ───────────────────────────────────────  ──────────────────────────────────────────────
+   Fee and quantity parity                  Fail
+  ───────────────────────────────────────  ──────────────────────────────────────────────
+   Restart equivalence                      Fail
+  ───────────────────────────────────────  ──────────────────────────────────────────────
+   Independent untouched test set           Absent
+  ───────────────────────────────────────  ──────────────────────────────────────────────
+   Multiple-testing correction              Absent
+  ───────────────────────────────────────  ──────────────────────────────────────────────
+   Confidence intervals                     Absent
+  ───────────────────────────────────────  ──────────────────────────────────────────────
+   Reproducibility from tracked checkout    Fail
+  ───────────────────────────────────────  ──────────────────────────────────────────────
+   Defensible current strategy accuracy     Unknown
+
+  The long60 simulator uses ₹10 lakh/1% risk, next-bar-open entries, ATR stops and wick-based targets in dev/research/step2_engine.py:20, unlike the shipped ₹1 lakh/0.5%, limit-entry, close-
+  stop strategy. Configuration selection uses the same temporal/symbol cells used for reporting in dev/research/l60_solo.py:153 and dev/research/l60_combo.py:211. Several scripts also import
+  UUID-specific /tmp scratch modules, so a clean checkout cannot reproduce the claimed research path.
+
+  ## Current decision tree
+
+  stocks.json
+   ├─ manual selection
+   └─ --auto
+        → cached D1 symbols only
+        → rank with 35% constant score
+        → select up to K from already-cached subset
+
+  M1 input
+   → fixed-grid quantization
+   → possibly incomplete M5 aggregation
+   → levels and enabled detectors
+   → evidence history, capped at 200
+   → provisional/locked template
+   → BPR/CF-heavy spatial confluence
+   → one top zone only
+   → threshold 6 and minimum one detector
+   → gates
+   → substitute any narrower overlapping level
+   → independently select SL-bearing evidence
+   → stop, target, quantity and cost checks
+   → arm
+   → rejection confirmation
+   → resting limit
+   → later M1 OHLC touch
+   → fill-time risk caps
+   → position
+
+  Position
+   → M5-close stop
+   → optional 1R partial
+   → mapped CF/BPR close target or default ladder
+   → next-M1 market exit
+   → EOD/feed-end force close
+
+  The most likely explanations remain:
+
+   Symptom                                       Current source cause
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   No trades                                     Empty universe, cache-only auto-selection, one-share cost overestimate
+  ────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────
+   Weak/too many setups                          Single BPR can pass “confluence”; time evidence is double-counted
+  ────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────
+   Live differs from research                    Different entry, stop, exit, costs, capital and portfolio constraints
+  ────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────
+   Results change after restart                  Detector/template/evidence/position/risk state is not restored
+  ────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────
+   Strange entry or stop                         Unrelated overlapping level replaces the signal zone
+  ────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────
+   Stale pending fills                           Resting limit is not revalidated against the setup
+  ────────────────────────────────────────────  ────────────────────────────────────────────────────────────────────────
+   Good reported accuracy but weak deployment    Selection bias plus obsolete E2E/research paths
+"""""
+
+--- MSG 185 [2026-07-19 08:40] ---
+SO PUSH AND CHGECK WHATS NECCESSARY WE NEED TO DO GIOVE ME LIST HOLD KITE WORK FOR NOW , AS WE HAVE TOOLS BUT NOT THE STRATEGY
+
+--- MSG 186 [2026-07-19 09:02] ---
+FIRST WE FIND SWINGS THAT R IMPORTANT [Image #31] [Image #32] THEN FIND ORDER BLOCKS NEAR SWINGS AS THEY R MOST IMPRTRATNT NOW [Image #33] [Image #34] SO WE SEE LIQUIDITY WHERE THE SLS R BREAKING LIKE BREKAOUT , THEN SWING TRHEN FVG OR ODER BLOCK THEN  WAIT PPRICE TO COME TO THAT ORDER BLOCK BUT NOT INSTANTLY AS SE FROM OBSERVATIONS EACH ORDER BLOCK IS VVISITEDF OR FFVG IS VISITED IN ANOTHER DAY OR AT LEAST ONE HR AFTER MEANS NIOT INSTANT IN 30 MIN OR LESS  ITS FOR BIG TIME FRAME AS SMALL TIME FRAME ORDER R MITIGATEDN UNDER 30 MIN TO 1 HR WE GET DIORECTION TOO  SO FISTT STEP IS FIND ALL LIQIUTIRY SL R U SEEING THOSE HORZONTAL LINS THESE R LIQUIDITY LEVVELS FIND ALL AND CHECK WHICH U MISSED OR ELIM IMINATE NON VVALID ONES AS THEY R NEAR SWING SO FIND SWING AND EXTREME SINGS R IMPROTAMT NOT SOME SMALL SSING  THAT HHAS GIVEN LITILE MOVE IS NOT IMPORTANT  SI ELIMNATION HERE THEN FCG  THEN OB CHOCKK OR OTHER THINGS SO KEEP THINGS VALIDATINGN AND ELIMINATIONG AND THIS WAY WE GET OUR TRADE SO SL THEN SWING THEN FVG OB IFVG CHOCH THHISE ALL BEST OONE S LEFT AFTER ELIMIATION THEN TRADE IS DECIDED SO NOW U HAVE TO CHECK EVERYWHRRE AND CHECK TOOLS ACCURACY MANYYALLY TOO AS WE SEE OUR FINDING R VVERY MUCH BUT GENUINE ONES FOR EACH CASE IS VERY LESS THATS WHY WE R FAILING AS OUR RECOGNISTION IS VERY WEAK N INVALID AS WE CANNT ELIMINATE VALID ONES PRECISLY ACCURATLY
+[IMAGE]
+[IMAGE]
+[IMAGE]
+[IMAGE]
+
+--- MSG 187 [2026-07-19 09:02] ---
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-19 14-19-19.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-19 14-19-13.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-19 14-27-17.png]
+[Image: source: /home/doom/Pictures/Screenshots/Screenshot from 2026-07-19 14-27-12.png]
+
+--- MSG 188 [2026-07-19 09:22] ---
+WHAT IS r N PP
+
+--- MSG 189 [2026-07-19 09:27] ---
+CHECK HINDUNILVRT GIVE TOTAL EXTEMES U FIND  COUNT , N ACOUT TOAATL FVG OB IFCVG BB N LIQUDITY SEWWEEP WE FOUUND GIV ME DATA  NO W SWINGS R HOHG TIME FRAMREE THINBG N OTHER THINGDS R FIRST FUND IUN HTF THEN REFINED IN I FIND HTF SWING N OB FVG THEN AGAIN CHECKN THAT IN LTF N 5HEB REFIBNE EVERYTHING FOR PRECISION
+
+--- MSG 190 [2026-07-19 09:38] ---
+SE SWINGS THAT HAVE MADE LONG RUN OR R AT EXTREMS R VALID IN HTF  , AND FOR TRADING WE USE THEM ALONG WITH SMALL TIME  FRAME SING IFVG FVG ACCORDING TO CONLCUIOSN  NOW DEEP DIG AND FIND MORE FACTS LIKE 1 IFVG  RETHING DEP RUN AGAIN AND CHECK WHAT CAN WE DO FOR IMPROVEMENTS  AS ONCE WE FIND TRADE WE R GUD AND STILL THESE TABLES NYUMBERS R TOO HIGH FOR VALID TRADE FINDING
+
+--- MSG 191 [2026-07-19 09:56] ---
+NOW WITH ALL THESE FINDING S AND STUDY FROM ALL DATA AND REFINMENSTS AND CLINGGING BRAINSDOTRM IT AS U WERE FAILING AT START AND NOW WE  R PASSING SOMEHOW THAT MEANS I M GENOIUS SO WE CAN IMPROVE MORE RIGHT THINK MORE DEPLY MORE PERFECTION ON SWINGS OF HTF THEN SAME SWING IN SMALL TF WILL HAVE FVG OR IFVG OR THINGS  OB PROPULSION BLOCK WE NEED TO CHECK EVERYUUHHTING THEN VALIDATE ENTRY ON RETEST OF ANY OF THESE DEEP BRAINSOTRM THE COMBINATION AND FINDING AS NANY MIGHT WORK ON ANY CSNEARIO RIGTH ITS NOT FIX THAT EVERYTIME WE GET OB WE MIGHT GET IFVGG OR BB OR PB
+
+--- MSG 192 [2026-07-19 09:58] ---
+BUT FROM 46 TO 52 IS IMPROVEMENT
+
+--- MSG 193 [2026-07-19 09:59] ---
+RUN TARDES ON HINDUNLVR AND CHECK SUCCESS RATE
+
+--- MSG 194 [2026-07-19 10:05] ---
+AREWNTR T WE USING LIQUIDRIT + SIWNG +FVG+ORDERBLOCK MITIGATION TOGETHER ?
+
+--- MSG 195 [2026-07-19 10:09] ---
+TYEN IF WE R SUCCESSFULLY ABLE TO RECOGNIZE TRADES THEY HOW MANY WE FAILED ? I=ANND IF WE FAIILED ON THAT MEANS WE MISRECOGNISED  OR MISCALCULATED ENTRY OR SL , THERE IS SOMETRHING THATS BADS AS IF 100 PERFECT RECOGNIZED TRADES R FAILING THEN FUCK U LIKE I GOT 100 OERFECT CHART I RECOGNISE THEY R BEST TRADE  SO HOW  CAN THEY FAIL BRO WE MUST HIT 90  PERCENT OF THEM IF RECOGNIZZED THAT GUD
+
+--- MSG 196 [2026-07-19 10:11] ---
+THAT MEANS WE STILL R BAD AT RECOGNIZING IF U RECOGNIZE UR DAD THEN HOW CAN U R SAID FAILED TO RECOIGNBNIZE DAD
+
+--- MSG 197 [2026-07-19 10:12] ---
+NO NO NO BRO WE STLLL MSSING SOMETHING N , PREPARE EACH MSG I SENT U IN MSG.HTML
+
+--- MSG 198 [2026-07-19 10:13] ---
+NO NO NO BRO WE STLLL MSSING SOMETHING N , PREPARE EACH MSG I SENT U IN MSG.TXT
+
