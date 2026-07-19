@@ -47,7 +47,10 @@ from trader.models.level import LevelKind
 _DEFAULTS = {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15,
              "far_dist_atr": 99.0}
 _EVENT = {"OB": "OB_RETEST", "BRK": "BRK_RETEST", "MIT": "MIT_RETEST"}
-_PIV = {1: LevelKind.SWING_L, -1: LevelKind.SWING_H}
+# extremes (zigzag) pivots are the taught anchor (lesson 1); fractal swings
+# are the fallback when the extremes detector is not enabled.
+_PIV = {1: (LevelKind.EXT_L, LevelKind.SWING_L),
+        -1: (LevelKind.EXT_H, LevelKind.SWING_H)}
 _ALL = 10 ** 9
 
 
@@ -137,11 +140,15 @@ class ObTaughtDetector(Detector):
         sweep test, both read from ctx.levels at birth."""
         atr = self._z.tape.atr
         edge = z.lo if z.dir == 1 else z.hi
-        pivs = [lv.zone[0] for lv in ctx.levels if lv.kind is _PIV[z.dir]]
+        ext_k, sw_k = _PIV[z.dir]                       # extremes first, swings fallback
+        pivs = [lv.zone[0] for lv in ctx.levels if lv.kind is ext_k] \
+            or [lv.zone[0] for lv in ctx.levels if lv.kind is sw_k]
         z.meta["pivot_dist_atr"] = (
             float(min(abs(edge - p) for p in pivs) / atr) if pivs and atr
             else float(self.params["far_dist_atr"]))
-        opp = [lv for lv in ctx.levels if lv.kind is _PIV[-z.dir]]
+        oext_k, osw_k = _PIV[-z.dir]
+        opp = [lv for lv in ctx.levels if lv.kind is oext_k] \
+            or [lv for lv in ctx.levels if lv.kind is osw_k]
         if opp:
             z.meta["pex"] = max(opp, key=lambda lv: lv.born).zone[0]
 
