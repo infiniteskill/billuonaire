@@ -11,16 +11,22 @@ class StrictModel(BaseModel):
 
 
 def check_detector_deps(enabled: list[str]) -> None:
-    """propulsion_block reads OB_BULL/OB_BEAR Levels written by orderblock/
-    ob_lux; without one enabled BEFORE it (run_all executes config order) it
-    silently produces nothing. Shared by Settings validation and tools that
-    mutate ``detectors.enabled`` post-validation (study --only)."""
-    if "propulsion_block" in enabled:
-        i = enabled.index("propulsion_block")
-        if not any(p in enabled[:i] for p in ("orderblock", "ob_lux")):
-            raise ValueError(
-                "propulsion_block requires orderblock or ob_lux enabled "
-                "before it in detectors.enabled")
+    """Propulsion detectors trade children of order blocks an OB detector
+    must produce: propulsion_block reads OB_BULL/OB_BEAR Levels written by
+    orderblock/ob_lux; propulsion2 children are only tradeable context
+    alongside a live ob_taught parent (ZONES P3: orphans are anti-signal).
+    Without a producer enabled BEFORE the consumer (run_all executes config
+    order) it silently produces nothing/noise. Shared by Settings validation
+    and tools that mutate ``detectors.enabled`` post-validation (study
+    --only)."""
+    for det, needs in (("propulsion_block", ("orderblock", "ob_lux")),
+                       ("propulsion2", ("ob_taught",))):
+        if det in enabled:
+            i = enabled.index(det)
+            if not any(p in enabled[:i] for p in needs):
+                raise ValueError(
+                    f"{det} requires {' or '.join(needs)} enabled "
+                    "before it in detectors.enabled")
 
 
 class RiskCfg(StrictModel):

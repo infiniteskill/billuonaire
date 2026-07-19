@@ -225,6 +225,22 @@ def test_propulsion_block_with_preceding_ob_producer_loads(tmp_path):
     assert s.detectors.enabled == ["orderblock", "propulsion_block"]
 
 
+def test_propulsion2_without_ob_taught_rejected(tmp_path):
+    # propulsion2 children are only tradeable context alongside a live
+    # ob_taught parent zone (ZONES P3: orphans are anti-signal).
+    bad = dict(BASE, detectors={"enabled": ["sweep", "propulsion2"],
+                                "disabled": [], "params": {}})
+    with pytest.raises(ValueError, match="propulsion2 requires ob_taught"):
+        load_settings(write(tmp_path, bad))
+
+
+def test_propulsion2_with_preceding_ob_taught_loads(tmp_path):
+    ok = dict(BASE, detectors={"enabled": ["ob_taught", "propulsion2"],
+                               "disabled": [], "params": {}})
+    s = load_settings(write(tmp_path, ok))
+    assert s.detectors.enabled == ["ob_taught", "propulsion2"]
+
+
 def test_ladder_config_defaults_and_range(tmp_path):
     # absent section = disabled = pre-ladder behavior exactly
     s = load_settings(write(tmp_path, BASE))
