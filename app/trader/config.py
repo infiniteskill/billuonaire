@@ -92,6 +92,10 @@ class LadderCfg(StrictModel):
     # pre-ladder behavior exactly; the shipped template opts in at 3.
     enabled: bool = False
     min_rung: int = Field(default=3, ge=0, le=3)
+    # Ladder v2 zone-graph composite gate (runs/taught/TUNE.md frozen:
+    # g = nst>=4 + parent_ok + depth_alive): skip signals graded below
+    # min_grade, journaled "grade_<g>". 0 (default) = journal-only, no gate.
+    min_grade: int = Field(default=0, ge=0, le=3)
 
 
 class ConfluenceCfg(StrictModel):

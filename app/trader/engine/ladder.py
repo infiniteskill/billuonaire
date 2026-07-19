@@ -26,7 +26,12 @@ of detector config, so the trackers here own their state. Incremental
 cursors over the full closed-candle continuum (ob_lux.py pattern): every
 per-bar decision depends only on bars <= it, so a restart that re-feeds the
 store rebuilds this state identically. Detachable: the pipeline constructs a
-Ladder only when settings.ladder.enabled; disabled = pre-ladder behavior."""
+Ladder only when settings.ladder.enabled; disabled = pre-ladder behavior.
+
+Ladder v2 rides the same config section: the zone-graph composite grade
+(grade.py, TUNE frozen formula) gates on settings.ladder.min_grade after the
+rung gate -- skips journal "grade_<g>", armed plans carry g + components +
+context tags; min_grade 0 (default) journals without gating."""
 
 from __future__ import annotations
 

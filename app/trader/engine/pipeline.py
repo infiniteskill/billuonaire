@@ -38,6 +38,7 @@ from trader.engine.confluence import ConfluenceEngine
 from trader.engine.context import DayState, IndexView, StockContext
 from trader.engine.entry import EntryFSM, EntryState
 from trader.engine.gates import GateChain, RiskState, fill_time_caps
+from trader.engine.grade import context_tags, zone_grade
 from trader.engine.ladder import Ladder, sessions_old as _sessions_old
 from trader.engine.levels import LevelEngine, LevelStore
 from trader.engine.template import TemplateClassifier
@@ -306,20 +307,27 @@ class SymbolPipeline:
                 and top.final >= self.s.confluence.threshold):
             verdict = self.gates.check(ctx, top.direction, top.zone, htf[0],
                                        self.risk)
-            rung = (self.ladder.grade(ctx, top.direction, top.zone)
-                    if verdict.allow and self.ladder is not None else None)
+            graded = verdict.allow and self.ladder is not None
+            rung = self.ladder.grade(ctx, top.direction, top.zone) if graded \
+                else None
+            zg = zone_grade(ctx, top.direction, top.zone) if graded else None
             if not verdict.allow:
                 self._skip(ctx.now, verdict.gate, verdict.reason)
             elif rung is not None and rung < self.s.ladder.min_rung:
                 self._skip(ctx.now, "ladder", f"ladder_rung_{rung}")
+            elif zg is not None and 0 < self.s.ladder.min_grade > zg.g:
+                self._skip(ctx.now, "ladder", f"grade_{zg.g}")
             else:
                 opps = [z for z in zones
                         if z.direction.value == -top.direction.value]
                 res = self.fsm.arm(top, ctx, self._eff_qty(), opps)
                 if not res.armed:
                     self._skip(ctx.now, "fsm_arm", res.reason)
-                elif rung is not None:
-                    res.plan.meta["ladder_rung"] = rung   # ride to trade_open
+                elif rung is not None:        # ride to trade_open: rung, the
+                    res.plan.meta.update(     # composite grade + components,
+                        ladder_rung=rung,     # journal-only context tags
+                        grade=zg.g, grade_parts=zg.parts(),
+                        **context_tags(ctx, top.direction))
         step = self.fsm.step(ctx, evidence)      # this-candle evidence
         if step.action == "disarm":
             self._skip(ctx.now, "fsm_disarm", step.reason)

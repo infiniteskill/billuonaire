@@ -230,11 +230,12 @@ def test_bear_zone_short_direction_mirrors():
 
 # ------------------------------------------------------- pipeline gate
 
-def cfg(min_rung=3, enabled=True):
+def cfg(min_rung=3, enabled=True, min_grade=0):
     from tests.harness import ALL_IMPLEMENTED, scenario_settings
     s = scenario_settings(ALL_IMPLEMENTED)
     return s.model_copy(
-        update={"ladder": LadderCfg(enabled=enabled, min_rung=min_rung)},
+        update={"ladder": LadderCfg(enabled=enabled, min_rung=min_rung,
+                                    min_grade=min_grade)},
         deep=True)
 
 
@@ -290,6 +291,7 @@ def test_disabled_is_passthrough(tmp_path, monkeypatch):
     armed = entry_flow(pipe, monkeypatch, None,                 # rung would be 0
                        arm_result=SimpleNamespace(armed=True, plan=plan))
     assert armed and "ladder_rung" not in plan.meta             # no gate, no stamp
+    assert "grade" not in plan.meta and "minor_ch_recent" not in plan.meta
     assert not [e for e in pipe.journal.read(DAY2) if e["kind"] == "skip"]
 
 
@@ -312,3 +314,45 @@ def test_min_rung0_emits_with_rung_stamp(tmp_path):
     assert orch.run()["trades"] == 1                # canonical judas trade back
     [opened] = [e for e in orch.journal.read(DAY1) if e["kind"] == "trade_open"]
     assert opened["plan"]["ladder_rung"] == 0
+    # min_grade 0 default: grade + components + tags journaled, never gated
+    parts = opened["plan"]["grade_parts"]
+    assert opened["plan"]["grade"] in range(4)
+    assert set(parts) == {"nst", "parent_ok", "depth_alive", "pivot_dist"}
+    assert {"minor_ch_recent", "po3_h1", "po3_d1"} <= opened["plan"].keys()
+
+
+# --------------------------------------------------- grade gate (ladder v2)
+
+def test_min_grade_gate_skips_with_grade_reason(tmp_path, monkeypatch):
+    pipe = make_pipe(tmp_path, cfg(min_rung=0, min_grade=3))
+    armed = entry_flow(pipe, monkeypatch, zone_lv())   # nst 1 -> g 2
+    assert not armed
+    [skip] = [e for e in pipe.journal.read(DAY2) if e["kind"] == "skip"]
+    assert skip["gate"] == "ladder" and skip["reason"] == "grade_2"
+
+
+def test_min_grade_passes_at_threshold_and_stamps(tmp_path, monkeypatch):
+    pipe = make_pipe(tmp_path, cfg(min_rung=0, min_grade=2))
+    plan = SimpleNamespace(meta={})
+    armed = entry_flow(pipe, monkeypatch, zone_lv(),
+                       arm_result=SimpleNamespace(armed=True, plan=plan))
+    assert armed and plan.meta["grade"] == 2
+    assert plan.meta["grade_parts"] == {"nst": 1, "parent_ok": True,
+                                        "depth_alive": True, "pivot_dist": None}
+    assert not [e for e in pipe.journal.read(DAY2) if e["kind"] == "skip"]
+
+
+def test_rung_gate_precedes_grade_gate(tmp_path, monkeypatch):
+    pipe = make_pipe(tmp_path, cfg(min_rung=3, min_grade=3))
+    entry_flow(pipe, monkeypatch, zone_lv())           # fails both: rung first
+    [skip] = [e for e in pipe.journal.read(DAY2) if e["kind"] == "skip"]
+    assert skip["reason"] == "ladder_rung_1"
+
+
+def test_disabled_run_journal_free_of_grading(tmp_path):
+    feed = ScenarioFeed([judas_reversal("ACME", DAY1, 100.0)])
+    orch = Orchestrator(cfg(enabled=False), feed, ["ACME"], capital=100000,
+                        max_qty=50, journal_dir=tmp_path)
+    assert orch.run()["trades"] == 1                   # pre-ladder behavior
+    raw = (tmp_path / f"{DAY1.isoformat()}.jsonl").read_text()
+    assert "grade" not in raw and "minor_ch_recent" not in raw
