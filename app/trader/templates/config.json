@@ -56,7 +56,10 @@
       "structure": 2,
       "wyckoff": 5,
       "compression_fade": 30,
-      "bpr": 30
+      "bpr": 30,
+      "ob_lux": 10,
+      "fvg_cb": 10,
+      "mitigation": 10
     }
   },
   "detectors": {
@@ -67,17 +70,17 @@
       "wyckoff",
       "timestats",
       "compression_fade",
-      "bpr"
+      "bpr",
+      "ob_lux",
+      "fvg_cb",
+      "mitigation"
     ],
     "disabled": [
       "orderblock",
       "fvg",
       "sweep",
       "breaker",
-      "ob_lux",
-      "fvg_cb",
       "inducement",
-      "mitigation",
       "turtle_soup",
       "volume",
       "compression",

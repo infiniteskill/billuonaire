@@ -1,5 +1,5 @@
 # THE SYSTEM — What It Is, How It Works, What It Achieved, How Reliable It Is
-*(2026-07-18 · HEAD 5548882 · 782 tests green · github.com/infiniteskill/billuonaire)*
+*(2026-07-19 · 828 tests green · github.com/infiniteskill/billuonaire)*
 
 ---
 
@@ -32,9 +32,14 @@ DETECT      each closed M5 bar → LevelEngine updates zone states
 SCORE       ConfluenceEngine: spatial clustering → weighted directional score
             → D1/M15/template/time multipliers → threshold
 
-GATE        time window (11:00–14:45) · template · trend/chase/cooldown
+GATE        time window (post-template-lock 11:30–14:45) · template · trend/chase/cooldown
             · risk caps (daily lock, heat, correlation, trades/day, per-stock)
-            · cost/reward gate (ladder-aware brokerage)
+            · cost/reward gate (real exit-count brokerage, mapped-R reward)
+            · LADDER (research-validated elimination, runs/long60/FACTS.md):
+              rung 1 zone born a PRIOR session + first touch · rung 2 nested in a
+              live H1 zone · rung 3 born ≤3 bars after an aligned liquidity sweep.
+              min_rung 3 ⇒ ~10 signals/day across 138 stocks (52.1% hit measured,
+              4-way holdout-stable — the recognition ceiling; NOT net-positive)
 
 ENTER       resting LIMIT at the zone CE (never chases) · structural stop
             (signal meta-sl honored, side-validated) · fill-time caps re-checked
