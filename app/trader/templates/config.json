@@ -85,7 +85,8 @@
       "volume",
       "compression",
       "index",
-      "cage"
+      "cage",
+      "extremes"
     ],
     "params": {
       "confluence": {
