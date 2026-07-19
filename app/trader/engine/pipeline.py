@@ -36,6 +36,7 @@ from trader.engine.confluence import ConfluenceEngine
 from trader.engine.context import DayState, IndexView, StockContext
 from trader.engine.entry import EntryFSM, EntryState
 from trader.engine.gates import GateChain, RiskState, fill_time_caps
+from trader.engine.ladder import Ladder, sessions_old as _sessions_old
 from trader.engine.levels import LevelEngine, LevelStore
 from trader.engine.template import TemplateClassifier
 from trader.execution.manager import Action, PositionManager
@@ -60,16 +61,6 @@ _ZONES = frozenset({LevelKind.OB_BULL, LevelKind.OB_BEAR,
                     LevelKind.FVG_BULL, LevelKind.FVG_BEAR})  # SMC continuum
 
 
-def _sessions_old(born, ref) -> int:
-    """Weekday sessions strictly after ``born`` up to ``ref`` (holiday-blind:
-    an NSE holiday counts as a session, so a stale zone prunes a touch early
-    -- conservative, and stateless across restarts)."""
-    if ref is None or ref <= born:
-        return 0
-    return sum((born + timedelta(days=i)).weekday() < 5
-               for i in range(1, (ref - born).days + 1))
-
-
 class SymbolPipeline:
     """All per-symbol state + the closed-M5 flow (see module docstring)."""
 
@@ -90,6 +81,7 @@ class SymbolPipeline:
         self.confluence = ConfluenceEngine(
             settings, settings.detectors.params.get("confluence"))
         self.gates, self.fsm = GateChain(settings), EntryFSM(settings, self.spec)
+        self.ladder = Ladder() if settings.ladder.enabled and not is_index else None
         self.wyckoff = WyckoffDetector(settings.detectors.params.get("wyckoff", {}))
         self.level_store = level_store        # optional: cross-run level persistence
         self.levels = level_store.load(symbol) if level_store else []
@@ -261,6 +253,8 @@ class SymbolPipeline:
             self.evidence_history.extend(evidence)   # after run_all: 1-tick lag ok
             del self.evidence_history[:-200]
             self.classifier.update(ctx)
+            if self.ladder is not None:
+                self.ladder.update(ctx)
         else:
             evidence = []
         if self.is_index:
@@ -292,14 +286,20 @@ class SymbolPipeline:
                 and top.final >= self.s.confluence.threshold):
             verdict = self.gates.check(ctx, top.direction, top.zone, htf[0],
                                        self.risk)
+            rung = (self.ladder.grade(ctx, top.direction, top.zone)
+                    if verdict.allow and self.ladder is not None else None)
             if not verdict.allow:
                 self._skip(ctx.now, verdict.gate, verdict.reason)
+            elif rung is not None and rung < self.s.ladder.min_rung:
+                self._skip(ctx.now, "ladder", f"ladder_rung_{rung}")
             else:
                 opps = [z for z in zones
                         if z.direction.value == -top.direction.value]
                 res = self.fsm.arm(top, ctx, self._eff_qty(), opps)
                 if not res.armed:
                     self._skip(ctx.now, "fsm_arm", res.reason)
+                elif rung is not None:
+                    res.plan.meta["ladder_rung"] = rung   # ride to trade_open
         step = self.fsm.step(ctx, evidence)      # this-candle evidence
         if step.action == "disarm":
             self._skip(ctx.now, "fsm_disarm", step.reason)

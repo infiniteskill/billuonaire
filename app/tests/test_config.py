@@ -168,3 +168,20 @@ def test_propulsion_block_with_preceding_ob_producer_loads(tmp_path):
                                "disabled": [], "params": {}})
     s = load_settings(write(tmp_path, ok))
     assert s.detectors.enabled == ["orderblock", "propulsion_block"]
+
+
+def test_ladder_config_defaults_and_range(tmp_path):
+    # absent section = disabled = pre-ladder behavior exactly
+    s = load_settings(write(tmp_path, BASE))
+    assert s.ladder.enabled is False and s.ladder.min_rung == 3
+    ok = dict(BASE, ladder={"enabled": True, "min_rung": 2})
+    assert load_settings(write(tmp_path, ok)).ladder.min_rung == 2
+    for bad_rung in (-1, 4):                         # min_rung validated 0..3
+        bad = dict(BASE, ladder={"enabled": True, "min_rung": bad_rung})
+        with pytest.raises(Exception):
+            load_settings(write(tmp_path, bad))
+
+
+def test_v2_config_ladder_enabled_min_rung_3():
+    s = load_settings(V2_CONFIG)
+    assert s.ladder.enabled is True and s.ladder.min_rung == 3

@@ -62,6 +62,15 @@ class EventsCfg(StrictModel):
     cooldown_candles: int = Field(default=6, gt=0)
 
 
+class LadderCfg(StrictModel):
+    # Elimination-ladder gate (research runs/long60/FACTS.md): emit only
+    # signals whose zone earns >= min_rung (1 prior-session first touch,
+    # 2 +H1 nested, 3 +sweep-aligned). Absent section = disabled =
+    # pre-ladder behavior exactly; the shipped template opts in at 3.
+    enabled: bool = False
+    min_rung: int = Field(default=3, ge=0, le=3)
+
+
 class ConfluenceCfg(StrictModel):
     threshold: float = Field(gt=0)
     weights: dict[str, float]
@@ -121,6 +130,7 @@ class Settings(StrictModel):
     exits: ExitsCfg = Field(default_factory=ExitsCfg)
     entry: EntryCfg = Field(default_factory=EntryCfg)
     events: EventsCfg = Field(default_factory=EventsCfg)
+    ladder: LadderCfg = Field(default_factory=LadderCfg)
     market: MarketCfg = Field(default_factory=MarketCfg)  # absent => NSE
 
     def market_spec(self) -> MarketSpec:
