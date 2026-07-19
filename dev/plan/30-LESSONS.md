@@ -140,6 +140,12 @@ LTF zone → far-liquidity target. Every prior lesson is one organ of this anima
   the first). Flip family complete: OB (never violated) / breaker (violated, swept) /
   mitigation (violated, unswept) / iFVG (violated gap) / overlap (intersection outranks).
 
+## Lesson 13 — REJECTION BLOCK (wick zone at extremes)
+- Top: zone = highest OPEN/CLOSE (body top) → wick HIGH. Bottom: lowest body edge → wick LOW.
+  The pure-wick territory where the push was rejected. Lives at SWEPT extremes; retest = entry.
+- UPGRADES lesson 1: the extreme's cluster band should be its wick-beyond-bodies range
+  (principled), replacing the 0.5×ATR guess in ext_zigzag.
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
