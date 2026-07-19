@@ -31,7 +31,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from trader.config import Settings
+from trader.config import Settings, check_detector_deps
 from trader.detectors.base import REGISTRY
 from trader.detectors.timestats import bucket_index
 from trader.engine.pipeline import Orchestrator
@@ -132,6 +132,8 @@ def run_study(settings: Settings, feed, symbols: list[str],
     else:
         s.detectors.enabled += [n for n in sorted(REGISTRY)
                                 if n not in s.detectors.enabled]
+    # mutating enabled bypasses Settings validation: re-check detector deps
+    check_detector_deps(s.detectors.enabled)
     work = out_dir / "work"                       # scratch journal, wiped
     shutil.rmtree(work, ignore_errors=True)
     orch = Orchestrator(s, feed, symbols, index_symbol=index, max_qty=1,

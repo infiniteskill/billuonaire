@@ -31,8 +31,9 @@ always live, never stale, and a block can never fire on its own confirm bar.
 CONTINUUM: the window is continuous multi-day history, never session-scoped.
 ``on_session_end`` prunes only the pending-tap dedupe memory by age (a tap
 older than propel_bars bars can never confirm -- provably safe); confirmed
-blocks persist across the boundary while their parent OB zones live, since
-those Levels themselves carry across sessions.
+blocks are keyed by (tap ts, sign) with NO linkage to their parent OB
+Levels -- they persist across the boundary untouched until a return-touch
+consumes them (``_blocks`` itself is never pruned).
 
 Emission hygiene (``_collapse``): two different confirmed blocks can contain
 the SAME touch close in one tick -- one physical price event fires once;
@@ -81,9 +82,9 @@ class PropulsionBlockDetector(Detector):
         self._blocks: dict[tuple[datetime, int], tuple] = {}   # (tap ts, sign) -> (lo, hi, strength)
 
     def on_session_end(self) -> None:
-        # Continuum: confirmed blocks are structure tied to parent OB zones
-        # that themselves carry across sessions, so _blocks is kept. Prune
-        # only pending taps by age: older than propel_bars bars can never
+        # Continuum: _blocks is kept as-is -- confirmed blocks carry no
+        # parent-OB linkage; only a return-touch consumes them. Prune only
+        # pending taps by age: older than propel_bars bars can never
         # confirm (window membership), so dropping them is provably safe.
         self._pending = dict(sorted(self._pending.items())[-int(self.params["propel_bars"]):])
 

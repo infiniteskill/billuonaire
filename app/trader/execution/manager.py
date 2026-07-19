@@ -41,9 +41,19 @@ LADDER_EXITS = 3               # worst case: 1R + T2/2R partials + final third
 SIGNAL_EXITS = 2               # signal-driven: 1R partial + take-profit rest
 
 
-def ladder_exits(settings: Settings, sl_source: str | None = None) -> int:
+def partial_qty(qty: int) -> int:
+    """The 33% share each partial rung emits; 0 for qty < 4 (no partials)."""
+    return qty * 33 // 100
+
+
+def ladder_exits(settings: Settings, sl_source: str | None = None,
+                 qty: int | None = None) -> int:
     """Worst-case exit-tranche count the ladder can emit for a plan (cost
-    gates size flat brokerage off this, one fee per order)."""
+    gates size flat brokerage off this, one fee per order). With ``qty``
+    given and its 33% partial rounding to zero, no partial rung can emit --
+    only the final exit does (audit 5: no phantom brokerage at tiny qty)."""
+    if qty is not None and not partial_qty(qty):
+        return 1
     return (SIGNAL_EXITS if sl_source in settings.exits.target_r_by_source
             else LADDER_EXITS)
 
@@ -101,7 +111,7 @@ class PositionManager:
         trail; T3 touch final third). Marks in ``partials`` gate each rung once."""
         tg, fav = pos.plan.targets, c.high if sign > 0 else c.low
         hit = lambda t: (fav - t) * sign >= 0                    # noqa: E731
-        out, q = [], pos.plan.qty * 33 // 100
+        out, q = [], partial_qty(pos.plan.qty)
         if r >= 1 and "1R" not in pos.partials:
             pos.partials.add("1R")
             if q:

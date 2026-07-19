@@ -14,7 +14,7 @@ import pytest
 
 from trader.config import ExitsCfg, Settings
 from trader.engine.context import DayState, StockContext
-from trader.execution.manager import Action, PositionManager
+from trader.execution.manager import Action, PositionManager, ladder_exits
 from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction
 from trader.models.level import Level, LevelKind
@@ -346,6 +346,19 @@ def test_non_mapped_source_keeps_default_ladder(mgr_sig):
     p = sig_pos("inducement", targets=("105", "112", "118"))
     acts = mgr_sig.on_candle(p, one_candle_ctx(109, 110.5, 108.8, 110.2))
     assert acts == [Action("PARTIAL", 33, "2R")]
+
+
+def test_ladder_exits_charges_only_emittable_tranches(mgr, mgr_sig):
+    # audit 5: at qty 1-3 the 33% partial is 0 shares -- no partial rung can
+    # emit, only the final exit, so the cost gate must budget 1 exit tranche
+    # (2 orders total), whatever the plan's ladder shape says.
+    assert ladder_exits(mgr.s) == 3
+    assert ladder_exits(mgr_sig.s, "compression_fade") == 2
+    for q in (1, 2, 3):
+        assert ladder_exits(mgr.s, None, q) == 1
+        assert ladder_exits(mgr_sig.s, "compression_fade", q) == 1
+    assert ladder_exits(mgr.s, None, 4) == 3          # 4*33//100 = 1: partials live
+    assert ladder_exits(mgr_sig.s, "compression_fade", 4) == 2
 
 
 def test_absent_exits_map_defaults_to_existing_behavior(mgr):

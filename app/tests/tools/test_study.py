@@ -4,6 +4,9 @@ judas-day integration smoke (sweep evidence must show positive LONG edge)."""
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
+import pytest
+
+import trader.detectors.propulsion_block  # noqa: F401  -- @register for --only
 from tests.harness import scenario_settings
 from trader.feed.mock import ScenarioFeed, judas_reversal
 from trader.models.candle import Candle, Timeframe
@@ -82,6 +85,16 @@ def test_summarize_terciles():
     r = sdf.iloc[0]
     assert r["n"] == 9 and abs(r["hit"] - 4 / 9) < 1e-9 and r["base"] == 0.5
     assert r["edge_by_strength"].count("/") == 2       # three tercile edges
+
+
+def test_enable_only_missing_ob_producer_rejected(tmp_path):
+    # audit 5: enable_only mutates detectors.enabled AFTER pydantic
+    # validation, bypassing the propulsion_block -> orderblock/ob_lux
+    # dependency check -- re-run it or the study silently measures nothing.
+    feed = ScenarioFeed([judas_reversal("MOCK", DAY, 100.0)])
+    with pytest.raises(ValueError, match="orderblock or ob_lux"):
+        run_study(scenario_settings(), feed, ["MOCK"], None, tmp_path,
+                  enable_only=["propulsion_block"])
 
 
 def test_smoke_judas_sweep_positive_long_edge(tmp_path):

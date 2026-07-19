@@ -154,6 +154,48 @@ def test_v2_config_registry_constructs():
     assert {d.name for d in registry.detectors} == set(s.detectors.enabled)
 
 
+# --- audit 5: cross-field validation ---
+
+def test_negative_weight_rejected(tmp_path):
+    bad = dict(BASE, confluence={"threshold": 65,
+                                 "weights": {"sweep": -1, "structure": 30}})
+    with pytest.raises(ValueError, match="weights"):
+        load_settings(write(tmp_path, bad))
+
+def test_nonpositive_target_r_rejected(tmp_path):
+    bad = dict(BASE, exits={"target_r_by_source": {"bpr": 0}})
+    with pytest.raises(ValueError, match="target_r_by_source"):
+        load_settings(write(tmp_path, bad))
+
+def test_min_stop_atr_above_max_stop_atr_rejected(tmp_path):
+    # min_stop_atr widening would ALWAYS overshoot the max_stop_atr budget
+    bad = dict(BASE, stops=dict(BASE["stops"], min_stop_atr=2.5))  # max 2.0
+    with pytest.raises(ValueError, match="min_stop_atr"):
+        load_settings(write(tmp_path, bad))
+
+def test_no_entry_after_at_or_past_squareoff_rejected(tmp_path):
+    for t in ("15:10", "15:20"):   # == and > squareoff both dead windows
+        bad = dict(BASE, time={"no_entry_after": t, "squareoff": "15:10"})
+        with pytest.raises(ValueError, match="no_entry_after"):
+            load_settings(write(tmp_path, bad))
+
+def test_detector_enabled_disabled_overlap_rejected(tmp_path):
+    bad = dict(BASE, detectors={"enabled": ["sweep", "structure"],
+                                "disabled": ["sweep"], "params": {}})
+    with pytest.raises(ValueError, match="enabled and disabled"):
+        load_settings(write(tmp_path, bad))
+
+def test_detector_duplicates_rejected(tmp_path):
+    bad = dict(BASE, detectors={"enabled": ["sweep", "sweep", "structure"],
+                                "disabled": [], "params": {}})
+    with pytest.raises(ValueError, match="duplicates"):
+        load_settings(write(tmp_path, bad))
+    bad = dict(BASE, detectors={"enabled": ["structure"],
+                                "disabled": ["sweep", "sweep"], "params": {}})
+    with pytest.raises(ValueError, match="duplicates"):
+        load_settings(write(tmp_path, bad))
+
+
 def test_propulsion_block_without_ob_producer_rejected(tmp_path):
     # propulsion_block reads OB_BULL/OB_BEAR Levels: no orderblock/ob_lux
     # anywhere before it => it would silently produce nothing, so load fails.
