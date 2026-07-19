@@ -5,3 +5,8 @@ __pycache__/
 .pytest_cache/
 .claude/
 runs/artifacts-data/
+runs/full20*/
+runs/val50*/
+runs/study/
+runs/rel1/
+pine_h1.out
