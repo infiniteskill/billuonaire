@@ -40,6 +40,10 @@
     "big_candle_atr": 3.0,
     "cooldown_candles": 6
   },
+  "ladder": {
+    "enabled": true,
+    "min_rung": 3
+  },
   "stops": {
     "atr_buffer": 0.25,
     "round_offset_ticks": 3,
