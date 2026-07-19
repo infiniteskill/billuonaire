@@ -118,6 +118,20 @@ LTF zone → far-liquidity target. Every prior lesson is one organ of this anima
 - The LTF zone's height IS the stop distance: tiny structural risk nested inside the HTF area
   (the 1:9 anatomy). HTF cluster = WHERE; LTF zone = the exact entry+SL pair.
 
+## Lesson 10 — TF LADDER (adaptive) + HOLD HORIZON
+- POSITIONAL: holds 2–3 weeks to 2–3 months. Weekly and monthly trade scales scanned in parallel.
+- Structure TF = whichever of 1D / 1H / 30m gives the CLEANEST swings + features for that stock
+  now (structure-clarity selection, not fixed pairs). Entry = smaller-TF OB/swings that respect /
+  sit under the big-TF zone (lesson 9 nesting).
+- MEASURED NOTE: this exact shape (D1 zones + ladder flags + weeks holds) = the one net-positive
+  Bonferroni survivor in DGRID (+0.09R net, 2.3 tr/qtr; cost 0.06R < gross 0.13R at daily scale).
+  Fragile/drift-flavored but the only cell where the taught grammar clears toll. Full assembled
+  positional backtest pending once lessons complete.
+
+## Lesson 11 — MANAGEMENT
+- Trail SL SLOWLY (lag it, never choke). 1:3 is good; KEEP TRAILING toward 1:5+ when it runs.
+  The trail does the exiting, not a greedy fixed target.
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
