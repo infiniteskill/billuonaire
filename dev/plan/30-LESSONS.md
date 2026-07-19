@@ -72,6 +72,30 @@ Ground rules the user set before lesson 1:
 - Code: liquidity.py EQH/EQL pools + ladder.py sweep events exist; re-anchor to zigzag extremes
   (percent-leg floor) instead of fractal furniture.
 
+## Lesson 6 — CHoCH / BOS (structure grammar)
+- BOS = break WITH the prevailing trend (continuation: new HH in uptrend, new LL in downtrend).
+- **CHoCH = the FIRST break AGAINST structure**: uptrend breaks its last Higher Low → bearish
+  CHoCH; downtrend breaks its last Lower High → bullish CHoCH. Character changes there.
+- MINOR vs MAJOR CH: minor = internal/LTF counter-swing breaks (early whisper);
+  major = the dominant swing level breaks (confirmed flip). Sequence: minor CH → major CH.
+- Zigzag relation: CHoCH is the STRUCTURAL confirm trigger — often earlier than the 4.7%
+  leg-distance confirm; both should coexist (distance confirm OR structure confirm, whichever
+  first — measure which).
+- Code: structure detector (CHoCH/BOS) + inducement (CHoCH+grab FSM) already exist; re-anchor
+  their swing inputs to zigzag extremes.
+
+## Lesson 7 — THE PERFECT ENTRY (the full composite, user's textbook img 57)
+Numbered exactly as the setup unfolds:
+1. Price taps an **HTF demand** zone (top-down context first).
+2. **Sweep of the liquidity pool** under the lows there (the stop-hunt fishhook).
+3. (Possibly a second sweep/low.) **Minor CH** breaks.
+4. **Major CH breaks** — displacement leg (structure flipped with force).
+5. The displacement leaves an **inefficiency (FVG) to fill** — price retraces into it.
+6. Entry at the **LTF demand** born inside/at that fill (HTF zone → LTF zone refinement).
+→ Ride to the **UNMITIGATED SUPPLY** (the far untouched zone / opposite pool) = target.
+SL beyond the swept low. This is the complete tree: context → sweep → CHoCH → FVG → nested
+LTF zone → far-liquidity target. Every prior lesson is one organ of this animal.
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
