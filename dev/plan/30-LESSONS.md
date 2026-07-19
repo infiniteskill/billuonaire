@@ -146,6 +146,12 @@ LTF zone → far-liquidity target. Every prior lesson is one organ of this anima
 - UPGRADES lesson 1: the extreme's cluster band should be its wick-beyond-bodies range
   (principled), replacing the 0.5×ATR guess in ext_zigzag.
 
+## Lesson 14 — PROPULSION BLOCK
+- The candle that TRADES INTO a parent OB and propels away = its range is the propulsion block,
+  sitting in front of the parent. Entry-grade: first defense, closer to price, inherits the
+  parent's authority (the tap PROVED the parent). Child dies with the parent (parent linkage
+  mandatory — old detector lost this; fix required).
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
