@@ -83,6 +83,22 @@ net ~0 after toll on free data; these tweaks target the RUNWAY/MAGNITUDE gap (wh
   tight stops did? This decides whether "1:9 via LTF refinement" is real or a paper mirage.
   If real -> this is the profit lever (tiny risk, big target on the decisional zone).
 
+## T6 — STACKED OBs + TRENDLINE + PYRAMIDING (HAVELLS T6 long, 5m)
+CONFIRMS:
+- Stacked/nested OBs (two demand zones overlapping) = the strong zone; entry in the OVERLAP.
+  Live proof of the deep-stack law (grade.py nst already does this). Keep.
+- Sequential BOS (BOS after BOS up) = continuation ladder; ties to minor->major sequencing (z=32).
+- Mid-entry 5x.
+NEW (not in toolset):
+- TRENDLINE tool: user connects higher-lows into a trendline; a 2nd entry sits at its RETEST.
+  We have NO trendline detector. Add: fit a trendline through consecutive same-side EXT pivots
+  (higher-lows / lower-highs); its retest = re-entry/trail reference. Grade component TBD.
+- PYRAMIDING / scaling-in: two entries on the same trend (OB entry + trendline-retest add). All
+  prior work was single-entry; management model has no adds. New management variant to spec+test:
+  add on continuation (BOS or trendline retest) with SL trailed under the new higher-low.
+TEST: does adding on trendline/BOS retest improve net R vs single-entry (measure add legs
+separately; adds can inflate winners but also add exposure -> honest per-leg accounting).
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
