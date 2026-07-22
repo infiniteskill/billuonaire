@@ -122,6 +122,22 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   TEST: does "OB born in premium(supply)/discount(demand) third of range" beat emit-all + does
   it concentrate the runners (a valid location may be the missing MAGNITUDE/runway proxy).
 
+## T9 — INTERNAL ORDER BLOCK (OB-within-OB refinement) (HAVELLS T9 short, 5m)
+- CONFIRMS T8: bearish OB = the UPWARD-move (positive) candles before the drop ("was upward move
+  before going to down"). ob_taught already gets this. Keep.
+- NEW: INTERNAL ORDER BLOCK — an OB nested INSIDE the outer OB (finer than FVG-inside-OB). The
+  outer OB is coarse; the internal OB is the refined sub-zone where ENTRY goes. Entry = mid of
+  the INTERNAL OB, not the whole outer OB.
+- CODE NOW: ob_taught finds one cluster per run; no OB-within-OB. CHANGE: within a birthed OB,
+  locate the internal OB = the last/finest opposite-candle sub-cluster nearest the departure
+  point (the bar where price leaves the zone); emit it as the refined entry sub-zone (parent =
+  the outer OB). This is the OB-native HTF->LTF refinement (matches lesson-9 nesting: coarse
+  zone -> finer zone inside for the precise entry+tight SL).
+- Ties to T5: the internal OB gives the tight structural stop (SL below internal OB) -> the 1:5+
+  RR. So internal-OB + structural-stop is the mechanism behind the big-RR winners. TEST with
+  the fill-through make-or-break (T5): does internal-OB entry + SL-below-internal-OB realize
+  paper RR after gap-through?
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
