@@ -138,6 +138,12 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   the fill-through make-or-break (T5): does internal-OB entry + SL-below-internal-OB realize
   paper RR after gap-through?
 
+## T10 — CLEAN CONFIRMATION of the assembled thesis (HAVELLS T10 short, 5m, ~78pt runner)
+- Liquidity sweep (~1370) -> decisional OB born AFTER sweep (~1362-67, VALID per T1) -> retest
+  ENTRY mid (~1363, ~5 days later = delayed-retest/longevity law) -> ran ~78pt to next liquidity
+  below BOS (clean runway = magnitude lever). No new rule; the PROOF example that
+  post-sweep-decisional-OB + mid-entry + far-target + clean-runway = the 1:5+ runner. Mid-entry 7x.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
