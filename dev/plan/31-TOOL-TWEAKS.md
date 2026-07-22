@@ -99,6 +99,15 @@ NEW (not in toolset):
 TEST: does adding on trendline/BOS retest improve net R vs single-entry (measure add legs
 separately; adds can inflate winners but also add exposure -> honest per-leg accounting).
 
+## T7 — TWO-SIDED RANGE + ZONE LONGEVITY (HAVELLS T7, 5m: short + long)
+- Fade BOTH edges: supply OB short at top (entry mid ~1270), demand OB long at bottom (entry
+  mid ~1248); the short's target = the long's entry zone. This is zone-based range fading, NOT
+  the falsified fib-50 premium/discount -> use the actual EXT-anchored zones at range extremes.
+- Zone longevity confirmed live: demand formed 02/11, traded 08/11 (6 sessions later) -> zones
+  carry across sessions, valid on later retest (matches measured later-revisit + touch-2 laws).
+- Mid-entry 6x. No new tool; strengthens deep-stack/longevity + adds "range = fade both zone
+  edges" as a regime the engine should recognize (both a supply and a demand alive & respected).
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
