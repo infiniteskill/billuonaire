@@ -278,6 +278,11 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   OB (the +43.4pp law, lesson 14); target = opposite far liquidity (full range traversal
   low-liq -> high-liq); compression->expansion; DABUR both sides. No new rule. ~26/50.
 
+## t27 — DABUR full cycle wider view (confirmation) (5m)
+- Supply 510-13 -> short -> 490 demand (wide floor) -> long -> 490->525 rally; 2nd higher demand
+  caught pullback (cascade). Bidirectional cycle (T13/T20) on DABUR, zoomed to full structure.
+  No new rule. ~28/50.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
