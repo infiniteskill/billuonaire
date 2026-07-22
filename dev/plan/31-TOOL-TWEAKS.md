@@ -260,6 +260,12 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   magnitude (§3), cascade/re-entry long-side (§2, mirror of T10), persistent-zone longevity.
   Synthesis proving predictive on the next trade. No new rule. ~22/50.
 
+## t22 + t23 — TITAN both sides (4th stock, confirmation) (5m)
+- t22 long: demand 4000-50 + internal OB -> ~2-3d consolidation -> +260pt rally (compression->
+  expansion). t23 short: liquidity-sl-taken ~3560 -> supply OB 3510-30 -> entry ~3515 -> BOS ->
+  −235pt. 4 stocks now (HAVELLS/VOLTAS/DLF/TITAN) both directions. Fits synthesis exactly. No
+  new rule. ~24/50.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
