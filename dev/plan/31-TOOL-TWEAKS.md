@@ -249,6 +249,11 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   low / liquidity pool. Target = far liquidity pool OR unfilled FVG. Add FVG-fill as a target
   candidate in the target/runway logic. ~20/50.
 
+## T20 — DLF full cycle (confirmation) (5m, short then long)
+- Supply OB 773-85 w/ internal OB -> short -> ~740 demand OB -> long -> rally to ~785+. Range
+  oscillation supply<->demand (short target = long entry). Internal OB (T9) + bidirectional
+  cycle (T13) + range (T7) all confirmed on DLF (3rd stock). No new rule. ~21/50.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
