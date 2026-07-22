@@ -272,6 +272,12 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   not just fast names. No new rule. ~25/50 (halfway). Corpus: mechanically complete, symmetric,
   5-stock general. Remaining high-value = LOSERS/scratches (break selection bias §5) or new tool.
 
+## t25 — DABUR long: ob+propulsion + liquidity-to-liquidity traversal (5m)
+- Swing-liquidity-sl ~419 swept -> BOS -> "ob+propulsion block" demand 421-23 -> ~1wk coil ->
+  +29pt/+7% rally to ~450 = the OPPOSITE swept liquidity. Confirms: propulsion LIVE combined w/
+  OB (the +43.4pp law, lesson 14); target = opposite far liquidity (full range traversal
+  low-liq -> high-liq); compression->expansion; DABUR both sides. No new rule. ~26/50.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
