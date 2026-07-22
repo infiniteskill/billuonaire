@@ -42,6 +42,20 @@ net ~0 after toll on free data; these tweaks target the RUNWAY/MAGNITUDE gap (wh
 - TEST: does "zone retest AND ote_pct in 60-75%" concentrate runners vs zone-retest alone (recall
   OTE-alone was <=+2pp; the question is OTE-as-confluence-on-sweep-valid-zone).
 
+## T2 UPDATE — MID-BLOCK ENTRY now CONFIRMED 2x (HAVELLS T2 long + T3 short)
+- "ENTRY IN MID OF BLOCK" taught in BOTH T2 and T3 -> this is the user's CONSISTENT entry rule,
+  not a one-off. Entry = CE (mid) of the OB/FVG; SL beyond the block (swing-extreme side).
+- Raises priority of the CE-entry re-test: our edge>=CE finding (TAUGHT_OB) tied SL to the zone;
+  user ALWAYS pairs mid-entry with SL-beyond-block. Must measure the user's exact construction
+  before trusting edge over CE. Treat mid-entry as the default to beat, not the challenger.
+
+## T1 UPDATE — BROKEN OB = INVALIDATED (HAVELLS T3, "very crucial")
+- Once price closes through an OB, its ORIGINAL role is DEAD — do not trade it as that OB.
+  (May flip to BREAKER if the L12 sweep test passes; else fully dead.) This is the same
+  anti-shitpile mechanism as sweep-sequenced validity (T1): the valid zone is always the FRESH
+  one; broken/run-past zones are removed. Engine currently emits them -> must suppress.
+- T3 target = prior structure liquidity (the swept low) -> confirms target = far liquidity pool.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
