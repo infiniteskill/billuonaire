@@ -108,6 +108,20 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
 - Mid-entry 6x. No new tool; strengthens deep-stack/longevity + adds "range = fade both zone
   edges" as a regime the engine should recognize (both a supply and a demand alive & respected).
 
+## T8 — OB CANDLE DEF (confirms code) + NEAR-SWING/PREMIUM-DISCOUNT VALIDITY (HAVELLS T8)
+- OB candle def CONFIRMED = ob_taught code: opposite-color candle(s) before the impulse
+  (positive candle in down-move = supply; negative candle in up-move = demand), multi-candle
+  cluster, TF-agnostic. `_cluster` finds first sign==-d candle in the run. Keep, no change.
+- NEW VALIDITY FILTER (user explicit): a valid OB/FVG must form NEAR the swing extreme =
+  "premium or discount" (supply OB near swing HIGH / in premium; demand OB near swing LOW / in
+  discount). Code NOW: ob_taught grades pivot_dist but maxd=any (emits ALL OBs, no location
+  filter). CHANGE: add a location validity filter — OB/FVG valid only if born in the
+  premium/discount extreme of its dealing range (or within N-ATR of an EXT pivot).
+- KEY: premium/discount was falsified ONLY as a CHoCH-follow-through GATE (STRUCT.md, inverted).
+  It is UNTESTED as an OB-LOCATION filter ("valid supply forms in premium"). Different claim.
+  TEST: does "OB born in premium(supply)/discount(demand) third of range" beat emit-all + does
+  it concentrate the runners (a valid location may be the missing MAGNITUDE/runway proxy).
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
