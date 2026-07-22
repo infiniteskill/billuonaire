@@ -241,6 +241,14 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   -> −80pt to ~1310. Same as T14/T10 on VOLTAS. VOLTAS now shows BOTH sides (T18 long + T19
   short) -> method is direction-symmetric AND stock-general. No new rule. 19/50.
 
+## T19b — DLF short (THIRD stock) + target=FVG refinement (5m)
+- DLF: swing liquidity ~785 swept -> supply OB 778-84 -> ENTRY mid ~782 (retest 04/11) -> −32pt
+  to ~750, target = an unfilled FVG (745-50) from the earlier rally. THIRD stock (HAVELLS+VOLTAS
+  +DLF) -> generalization definitive.
+- NEW small refinement: TARGET can be an unfilled FVG (imbalance to rebalance), not only a swing
+  low / liquidity pool. Target = far liquidity pool OR unfilled FVG. Add FVG-fill as a target
+  candidate in the target/runway logic. ~20/50.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
