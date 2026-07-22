@@ -56,6 +56,18 @@ net ~0 after toll on free data; these tweaks target the RUNWAY/MAGNITUDE gap (wh
   one; broken/run-past zones are removed. Engine currently emits them -> must suppress.
 - T3 target = prior structure liquidity (the swept low) -> confirms target = far liquidity pool.
 
+## T4 — MITIGATION ENTRY + MID-ENTRY now 3x IRONCLAD (HAVELLS T4 short)
+- Mitigation block (no-sweep-above case, L12) is a valid entry zone — mirror of T1's breaker.
+  ob_taught already EMITS MIT retests (_EVENT["MIT"]) -> code handles it; keep.
+- ENTRY IN MID confirmed a 3rd time (T2 long, T3 short, T4 short) -> DEFINITIVE. STANCE FLIP:
+  mid-block entry (CE) with SL beyond the block is now the PRIMARY entry config to test; the
+  measured edge>=CE (TAUGHT_OB) becomes the challenger (it used zone-tied SL, never SL-beyond-
+  block). Caveat: shown trades are user-picked WINNERS -> measure mid-entry on ALL setups
+  (win+loss), 4-way holdout, before claiming it beats edge.
+- Skeleton now seen 4x identical: [swing extreme] -> [flip-family or fresh block: breaker/
+  mitigation/OB with FVG inside] -> [retest, enter MID, SL beyond block] -> [target = prior
+  structure liquidity / far pool]. Both directions, both flip types. This is THE setup to build.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
