@@ -1,4 +1,10 @@
 # 31 — TOOL-TWEAK MAP (lesson → exact code/logic change → test)
+
+PLAN (user-set 2026-07-22): collect ~50 worked trade examples (dev/IMG/trades/) → refine
+tools/study from the full corpus → THEN build. NO build until 50 examples studied. Current: 12.
+Each trade: read back (prove understanding) → confirm/add rule → map to code change + test →
+commit + archive image. Standing order: keep committing continuously.
+
 Accumulator for the deep tool-tweak session. Each row: the taught finding, the specific
 detector/engine change it demands, and the measurement that must gate it. Source lessons in
 dev/plan/30-LESSONS.md; worked trades in dev/IMG/trades/ (HAVELLS T1 short 1:8, T2 long 1:6).
