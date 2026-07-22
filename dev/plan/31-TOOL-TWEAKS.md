@@ -68,6 +68,21 @@ net ~0 after toll on free data; these tweaks target the RUNWAY/MAGNITUDE gap (wh
   mitigation/OB with FVG inside] -> [retest, enter MID, SL beyond block] -> [target = prior
   structure liquidity / far pool]. Both directions, both flip types. This is THE setup to build.
 
+## T5 — LONG sequence + LTF TIGHT-STOP (HAVELLS T5 long, 5m, paper 1:9)
+- Bullish mirror: liquidity SWEEP of lows + swing -> BOS UP -> demand OB -> retest, ENTER MID,
+  SL just below block, target far. (Shorts = sweep-of-highs -> BOS down.) Mid-entry now 4x.
+- LTF (5m) refinement = tight STRUCTURAL stop (entry 1875 / SL 1870 = 5pt/0.27%) -> paper 1:9.
+  This is HOW the 1:5+ RR is achieved: refine to LTF where the stop is tiny but still below
+  valid structure.
+- CRITICAL HONEST FLAG (measured): the tiny-LTF-stop class realizes FAR below paper RR because
+  price FILLS THROUGH the stop next-candle (REFINE.md: 1-2m structural stops = -4.2R/trade from
+  gap/slippage, not filled AT stop). A 5pt/5m stop ~ 1xATR = danger zone. BUT T5's stop is
+  STRUCTURAL (below sweep-valid demand), better than arbitrary sub-ATR.
+- THE MAKE-OR-BREAK TEST: does a sweep-valid zone + structural tight LTF stop realize paper RR
+  after gap-through fills (our sims model this), or does fill-through eat it like arbitrary
+  tight stops did? This decides whether "1:9 via LTF refinement" is real or a paper mirage.
+  If real -> this is the profit lever (tiny risk, big target on the decisional zone).
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
