@@ -266,6 +266,12 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   −235pt. 4 stocks now (HAVELLS/VOLTAS/DLF/TITAN) both directions. Fits synthesis exactly. No
   new rule. ~24/50.
 
+## t24 — DABUR short (5th stock, low-vol FMCG) (5m)
+- Sweep ~451 -> supply OB 447-50 -> BOS -> entry ~449 -> −20pt/−4.5% to ~430. 5 stocks now
+  (HAVELLS/VOLTAS/DLF/TITAN/DABUR) incl. slow FMCG -> universal structure across VOL REGIMES,
+  not just fast names. No new rule. ~25/50 (halfway). Corpus: mechanically complete, symmetric,
+  5-stock general. Remaining high-value = LOSERS/scratches (break selection bias §5) or new tool.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
