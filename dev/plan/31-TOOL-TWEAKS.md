@@ -138,11 +138,24 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   the fill-through make-or-break (T5): does internal-OB entry + SL-below-internal-OB realize
   paper RR after gap-through?
 
-## T10 — CLEAN CONFIRMATION of the assembled thesis (HAVELLS T10 short, 5m, ~78pt runner)
-- Liquidity sweep (~1370) -> decisional OB born AFTER sweep (~1362-67, VALID per T1) -> retest
-  ENTRY mid (~1363, ~5 days later = delayed-retest/longevity law) -> ran ~78pt to next liquidity
-  below BOS (clean runway = magnitude lever). No new rule; the PROOF example that
-  post-sweep-decisional-OB + mid-entry + far-target + clean-runway = the 1:5+ runner. Mid-entry 7x.
+## T10 — OB CASCADE / sequential re-entry down a trend (HAVELLS T10, 5m, ~87pt in 2 trades) **HIGH VALUE**
+- NOT one trade: TWO sequential shorts. Sweep ~1370 -> OB#1 1360-67 -> ENTRY#1 1363 (21/06) ->
+  ride to ~1325 -> BOS -> OB#2 1325-32 (born 23/06) -> ENTRY#2 1330 (03/07, ~10 DAYS later,
+  SL above) -> EXIT ~1280. Each leg forms a FRESH decisional OB; each retest = a NEW entry with
+  its OWN tight stop above that OB.
+- DISTINCT from pyramiding (T6 = add to one position): cascade = SEPARATE trades at successive
+  OBs as the trend steps down. Captures a big trend move via a SERIES of tight-risk entries
+  instead of one wide-stop hold.
+- WHY POTENTIALLY THE PROFIT LEVER: the measured death was "one entry, symmetric excursion, wide
+  stop, toll eats it." Cascade re-entry = many tight-stop entries each riding one leg -> could
+  compound trend capture while keeping per-trade risk tiny (and per-trade toll is fixed, so more
+  R per trade helps). Directly attacks the toll/symmetry problem.
+- TEST (high priority): does OB-cascade re-entry (short each fresh post-BOS OB retest in a
+  downtrend; mirror up) beat single-entry-hold on trending legs, net after fill-through + toll,
+  4-way holdout? Confirms extreme longevity (10-day retest). Mid-entry 8x.
+- CODE: needs trend-context (sequence of same-dir BOS / EXT pivots) + emit a fresh signal on
+  EACH new decisional OB retest along the trend, not just the first. Ties T1 (each OB is the
+  decisional zone for its leg) + T5/T9 (tight internal-OB stop) + management (re-entry engine).
 
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
