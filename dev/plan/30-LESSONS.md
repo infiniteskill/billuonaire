@@ -196,6 +196,18 @@ LTF zone → far-liquidity target. Every prior lesson is one organ of this anima
   fill-rate not stop-at-CE. NOT covered by prior measurement -> test the EXACT combo
   (entry=FVG-CE, SL=below-OB, on the sweep-sequenced decisional zone) before accepting/rejecting.
 
+## Lesson 19 — OTE 70.2% CONFLUENCE (HAVELLS T1 revisited)
+- OTE = 70.2% retracement = Optimal Trade Entry. Drawn on the IMPULSE LEG (the displacement
+  that made the move). Levels: 38.2/50/61.8/70.2/(100).
+- The VALID zone retest tends to coincide with the leg's 70.2% -> when the OB/FVG entry ALSO
+  sits at ~70.2% fib of the impulse leg, that is the optimal fill (confluence CONFIRMS, not
+  replaces, the zone). Multi-TF: HTF leg 70.2% + LTF zone at that level = highest conviction.
+- T1 short entry ~ 70.2% retrace of its leg (verify numerically at test time).
+- TENSION w/ measured: OTE-alone was weak (<=+2pp; edge>CE>OTE in TAUGHT_OB, OTE fills select
+  into breaking zones) — BUT that was OTE as a standalone ENTRY. Here OTE is a CONFLUENCE
+  FILTER on an already-sweep-valid zone (untested combo). Test: does "zone retest AND lands at
+  60-75% fib of the impulse leg" concentrate the runners vs zone-retest alone.
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
