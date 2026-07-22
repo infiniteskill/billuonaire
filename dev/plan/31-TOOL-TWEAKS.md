@@ -196,6 +196,14 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   crack. If a runner-flag exists + holds out-of-sample -> the profit lever; if not, method stays
   scratch-plus-toll.
 
+## T13 — FULL BIDIRECTIONAL CYCLE (confirmation) (HAVELLS T13, 5m: short then long)
+- SHORT: sweep-SL ~1214 -> swing ~1223 -> supply OB 1200-1213 w/ INTERNAL OB (~1207) -> ENTRY
+  ~1208 -> BOS-after-BOS down -> ~1150. LONG: demand OB 1150-60 (swept low liquidity) -> ENTRY
+  ~1157 -> back to ~1210. Short's target = long's entry.
+- Confirms: internal OB (T9), sweep->OB engine both ways (T11), BOS cascade (T10), two-sided
+  (T7). The market rotates between swept liquidity extremes; trade each turn, mirrored. Mid 9x.
+- No new rule. Reinforces the engine is DIRECTION-SYMMETRIC (sweep-high->short, sweep-low->long).
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
