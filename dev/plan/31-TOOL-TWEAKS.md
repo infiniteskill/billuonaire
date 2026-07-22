@@ -157,6 +157,21 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   EACH new decisional OB retest along the trend, not just the first. Ties T1 (each OB is the
   decisional zone for its leg) + T5/T9 (tight internal-OB stop) + management (re-entry engine).
 
+## T11 — THE ENGINE / WHY IT WORKS + failed-breakout filter (HAVELLS T11 short)
+- RATIONALE (unifies everything): smart money SWEEPS liquidity resting above an OBVIOUS retail
+  level (old high, equal-highs, breakout point = clustered buy-stops + short SLs), TRAPS the
+  breakout longs, sells into them -> the OB forms AT the sweep (where they transacted) -> retest
+  = short; the trapped crowd's stops below = the runway/fuel. Mirror for longs (sweep of lows).
+- This is the WHY behind: T1 valid-zone-at-sweep (that's where SM transacted), breakouts-are-
+  traps, and post-sweep-OB-runs-far (trapped stops fuel it).
+- TESTABLE FILTER (new specificity): require the swept level to be OBVIOUS retail liquidity
+  (EXT-pivot old high/low, EQ-pool, round number) whose breakout FAILED (turtle_soup shape:
+  wick/close beyond then reversal). Fade the failed breakout via the post-sweep OB. Pieces exist:
+  turtle_soup + EQ pools + sweep->reversal (LIQ.md +2.2pp measured). 
+- TEST: does "post-sweep-of-OBVIOUS-liquidity + failed-breakout + OB retest" beat generic OB
+  retest on hit% AND reach-5R (the failed-breakout context may be the magnitude/runway proxy —
+  trapped crowd = guaranteed opposing fuel toward the far target).
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
