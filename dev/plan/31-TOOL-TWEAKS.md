@@ -236,6 +236,11 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   pattern is GENERAL market structure, not a stock quirk -> justifies the universe-wide (138-stock)
   scanner in the build. No new rule; the cross-stock validation the corpus needed. 18/50.
 
+## T19 — VOLTAS short (cross-stock, short side) (5m)
+- Range 1357-1400 (~2wk) -> rally sweeps ~1395 range-high -> supply OB 1388-95 -> retest ~1390
+  -> −80pt to ~1310. Same as T14/T10 on VOLTAS. VOLTAS now shows BOTH sides (T18 long + T19
+  short) -> method is direction-symmetric AND stock-general. No new rule. 19/50.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
