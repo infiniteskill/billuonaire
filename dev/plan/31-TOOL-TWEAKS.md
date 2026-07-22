@@ -209,6 +209,18 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   supply OB 1375-90 -> ENTRY mid ~1382 (retest 15/09) -> ~77pt drop, clean runway. Mid 10x.
   No new rule; clean sweep->supply-OB->retest->drop. Same engine as T10-12.
 
+## T15 + T16 — PERSISTENT ZONE -> MASSIVE breakdown + COMPRESSION runner-flag candidate
+- T15: mitigation block (no-sweep) ~1328-35 held ~157 bars -> final retest ENTRY ~1330 -> −105pt.
+- T16: supply ceiling ~1205-18 held 16-24/02 (~6-8 touches) -> ENTRY ~1212 -> BOS -> −137pt.
+- Both = T12 persistent-zone at extreme scale; huge runners (105-137pt). Mitigation confirmed.
+- SLAMS the unsolved problem: breakdown touch looked identical to prior range-fade touches.
+- NEW RUNNER-FLAG CANDIDATE (both charts): breakdown came after price COILED/COMPRESSED under
+  the zone (lower highs tapping the ceiling, range tightening) then broke. "Compression-under-
+  resistance -> break" (mirror: coil-above-support -> break up). Distinct from open two-sided
+  range. TESTABLE: does a zone touch PRECEDED by range-compression-into-the-zone (falling ATR /
+  narrowing range / lower-highs-into-ceiling) break/run more than a touch in an open range?
+  Add to the magnitude-flag test battery alongside T11 (failed-breakout/trapped-crowd) + runway.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
