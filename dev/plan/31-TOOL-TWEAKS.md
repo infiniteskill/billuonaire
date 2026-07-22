@@ -254,6 +254,12 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   oscillation supply<->demand (short target = long entry). Internal OB (T9) + bidirectional
   cycle (T13) + range (T7) all confirmed on DLF (3rd stock). No new rule. ~21/50.
 
+## T21 — DLF long multi-entry cascade (CONFIRMS SYNTHESIS §2/§3) (5m)
+- Demand OB ~388-90 held 11-30/11 (~3wk consolidation) -> 2 long entries (25/11, 30/11) on
+  successive retests -> big expansion 388->420. Confirms 32-SYNTHESIS: compression->expansion
+  magnitude (§3), cascade/re-entry long-side (§2, mirror of T10), persistent-zone longevity.
+  Synthesis proving predictive on the next trade. No new rule. ~22/50.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
