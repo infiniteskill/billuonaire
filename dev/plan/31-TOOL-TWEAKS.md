@@ -204,6 +204,11 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   (T7). The market rotates between swept liquidity extremes; trade each turn, mirrored. Mid 9x.
 - No new rule. Reinforces the engine is DIRECTION-SYMMETRIC (sweep-high->short, sweep-low->long).
 
+## T14 — sweep range-high -> supply OB -> drop (confirmation) (HAVELLS T14 short, 5m)
+- Range 1370-1400 -> dip 1365 -> rally back to ~1390 sweeping ~1385 range-high liquidity ->
+  supply OB 1375-90 -> ENTRY mid ~1382 (retest 15/09) -> ~77pt drop, clean runway. Mid 10x.
+  No new rule; clean sweep->supply-OB->retest->drop. Same engine as T10-12.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
