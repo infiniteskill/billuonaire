@@ -172,6 +172,30 @@ LTF zone → far-liquidity target. Every prior lesson is one organ of this anima
 - Void's far edge = the origin (usually the OB/base) = the decision point; FVGs inside =
   stepping stones. Void re-entry is NOT a reversal signal by itself.
 
+## Lesson 17 — SWEEP-SEQUENCED VALIDITY (the two-FVG rule; HAVELLS T1 short)
+- When several same-side zones coexist, the VALID (actionable) one is the freshest zone born
+  from/after the FINAL liquidity sweep before reversal. An earlier zone that a LATER same-
+  direction sweep ran PAST is INVALIDATED ("induced through") — dead as an entry.
+- HAVELLS T1: left FVG invalid (price continued up, swept the extreme high past it); right
+  OB/breaker/FVG at ~1221 valid (post-sweep) -> the 1:8 short.
+- CODE GAP (checked): ob_taught/breaker do lesson-12 breaker-vs-mitigation (swept test) but NO
+  detector invalidates a zone when a later sweep runs beyond it. Emitting run-past stale zones
+  IS the shitpile. Fix = mark a zone `superseded` on a later further-extreme same-dir sweep;
+  only emit/grade the non-superseded decisional zone. This is also the RUNWAY/MAGNITUDE lever
+  (post-sweep zone has swept liquidity as fuel behind + far target ahead = the 1:5+ runner).
+
+## Lesson 18 — ENTRY/SL MECHANICS (HAVELLS T2 long)
+- OB = backward retracement near a swing extreme: pauses, then continues; retest comes later.
+- FVG sits INSIDE the OB. ENTRY = the FVG's MIDPOINT (half its height), inside the OB (NOT
+  the outer edge). SL = BELOW the whole OB/FVG structure, at/below the swing extreme (risk =
+  OB height, not FVG height). Direction = continuation.
+- HAVELLS T2: swing low ~1125, OB 1141-1155, FVG 1141-1150, entry ~1145 (FVG mid), SL ~1133
+  (below OB at swing extreme) -> ran to 1221, ~1:6.
+- TENSION w/ measured (TAUGHT_OB: edge>=CE>>OTE): our CE-test tied SL to the zone; user ties
+  SL BELOW the OB, so a CE entry = more reward at fixed structural risk, and the question is
+  fill-rate not stop-at-CE. NOT covered by prior measurement -> test the EXACT combo
+  (entry=FVG-CE, SL=below-OB, on the sweep-sequenced decisional zone) before accepting/rejecting.
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
