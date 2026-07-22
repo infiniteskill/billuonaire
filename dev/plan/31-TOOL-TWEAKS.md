@@ -172,6 +172,24 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   retest on hit% AND reach-5R (the failed-breakout context may be the magnitude/runway proxy —
   trapped crowd = guaranteed opposing fuel toward the far target).
 
+## T12 — PERSISTENT OB (range ceiling, multi-touch, 13-day longevity) (HAVELLS T12 short)
+- Sweep (~1242) -> OB (~1228-33, born 10/02) tested ~6x over ~2 weeks, holds each time (range
+  ceiling), final touch 23/02 (~13 days later) breaks DOWN to ~1158 (the runner).
+- Reinforces: extreme longevity (13d, never closed-through -> break-depth law keeps it alive
+  correctly, code OK); persistent OB = repeated fade (like T7 range); final touch = breakout
+  runner.
+- HONEST TENSION (must resolve, do NOT ignore): LEARN measured touch-3+ DRAGS netR. Here ~6
+  touches "all valid" = small RANGE-FADES (price returns to range) + ONE breakout runner. Both
+  true ONLY if you catch the runner touch; distinguishing range-fade-touch vs breakout-runner-
+  touch ex-ante is the UNSOLVED magnitude question. Persistent-OB repeated fade is NOT free money
+  -> small scratches waiting for an unidentifiable runner. 
+- TEST: on a persistent OB (multi-touch), what ex-ante feature flags the touch that becomes the
+  breakout runner vs another range-fade? Candidates: T11 (trapped-breakout/failed-breakout at
+  the touch), runway to far liquidity (nothing below until the target), touch after a range
+  compression. This is the SAME magnitude problem across T5/T9/T10/T11/T12 -> the ONE thing to
+  crack. If a runner-flag exists + holds out-of-sample -> the profit lever; if not, method stays
+  scratch-plus-toll.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
