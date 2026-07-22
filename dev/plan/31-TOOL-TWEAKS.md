@@ -228,6 +228,14 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   compression-before-break. Code is already d=+1/d=-1 symmetric -> one direction's rule = other's.
   No new rule; validates direction-symmetry + compression runner-flag both ways. 17/50.
 
+## T18 — CROSS-STOCK GENERALIZATION (VOLTAS long, 5m — first non-HAVELLS)
+- VOLTAS: liquidity sweep of lows ~1200 -> demand OB 1205-18 -> persistent support 18/05-03/06
+  (~2wk multi-touch) -> ENTRY mid ~1210 (final retest) -> big rally to ~1325. Same as T17 on a
+  DIFFERENT STOCK.
+- KEY: kills the "HAVELLS-specific" worry (T1-T17 all HAVELLS). The sweep->OB->persistent->retest
+  pattern is GENERAL market structure, not a stock quirk -> justifies the universe-wide (138-stock)
+  scanner in the build. No new rule; the cross-stock validation the corpus needed. 18/50.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
