@@ -221,6 +221,13 @@ separately; adds can inflate winners but also add exposure -> honest per-leg acc
   narrowing range / lower-highs-into-ceiling) break/run more than a touch in an open range?
   Add to the magnitude-flag test battery alongside T11 (failed-breakout/trapped-crowd) + runway.
 
+## T17 — LONG MIRROR confirmation (HAVELLS T17 long, 5m, ~49pt rally)
+- Persistent demand OB floor ~567-70, held 16-30/07 (~2wk, coiled above), final retest ENTRY
+  ~569 -> +49pt rally to ~618. Exact mirror of T15/T16 (supply ceiling -> breakdown). Confirms
+  user's "long = short mirrored on water": same mid-entry, longevity, final-touch-runner,
+  compression-before-break. Code is already d=+1/d=-1 symmetric -> one direction's rule = other's.
+  No new rule; validates direction-symmetry + compression runner-flag both ways. 17/50.
+
 ## Cross-cutting note
 The three tweaks compose into ONE thesis: the tradeable setup = a DECISIONAL zone (post-final-sweep,
 lesson 17) entered at its FVG-CE with SL below the OB (lesson 18), confirmed by 70.2% OTE of the
