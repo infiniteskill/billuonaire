@@ -88,6 +88,17 @@ HTF decisional zone -> recurse to finer TF for the nested entry = decision-tree 
 => the decision tree runs top-down: establish HTF alignment/zone FIRST, only then seek the LTF
 nested entry. HTF alignment isn't a post-hoc filter — it is the STARTING NODE.
 
+## WORKED EXAMPLE 2 (t29, SBICARD — nesting refined to 1-MINUTE; the fill-through tension, sharpest)
+Same top-down nesting as t28 but adaptive HTF (15m/30m demand OB ~830-843, Dec base) -> drilled to
+1-MINUTE for the entry OB (~835-837) nested inside -> long -> +73pt/+9% to ~905. Adds: (a) HTF TF
+is ADAPTIVE (2H in t28, 15m/30m here = cleanest-zone TF, lesson 10); (b) refinement can go to
+1-MINUTE = the TIGHTEST stop (~0.24%) = max RR — BUT 1m is EXACTLY where doc-34's fill-through ghost
+lives (REFINE.md: 1-2m structural stops = −4.2R, gap-through). So the RR-maximizer (1m entry) and
+the fill-through-killer are the SAME choice. => the fill-through measurement is THE deciding number,
+and it must be run at the ACTUAL entry TF the user uses (1m-5m), not a coarser proxy. The taught
+edge and the taught risk are both concentrated in the LTF-refinement depth; the test is whether a
+STRUCTURAL 1m stop (below a valid nested OB) survives where an ARBITRARY 1m stop (−4.2R) did not.
+
 ## The one-line conclusion
 The losers are not random twins — they are HTF-MISALIGNED setups; HTF alignment is CAUSAL and
 knowable at entry (HTF is slow), which is precisely why it can be the discriminator that LTF chart
