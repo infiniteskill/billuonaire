@@ -87,7 +87,7 @@ def test_registered():
     d = ObTaughtDetector({})
     assert d.params == {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15,
                         "far_dist_atr": 99.0, "require_sweep_bos": False,
-                        "gate_window": 20}
+                        "gate_window": 20, "gate_mode": "sweep_and_bos"}
 
 
 def test_bodies_only_box_and_retest_fires():
@@ -174,3 +174,25 @@ def test_birth_gate_passes_with_sweep_and_bos():
                                      levels=[swept], evidence_history=[bos],
                                      day=DayState(session_date=now.date())))
     assert ev and ev[0].meta["event"] == "OB_RETEST"
+
+
+def test_gate_mode_sweep_arms_on_sweep_alone():
+    # range-fade: a swept level with NO structure BOS still arms the retest
+    store = make_store([FLAT] * 15 + [B15, B16, B17, PARM, PTOUCH])
+    swept = Level(id="X-EXT_L-99", symbol="X", kind=LevelKind.EXT_L,
+                  zone=(tick(99), tick(99)), born=bar_ts(0), tf=M5)
+    swept.record_state(bar_ts(16), LevelState.SWEPT)
+    det = ObTaughtDetector({"require_sweep_bos": True, "gate_mode": "sweep"})
+    ev = []
+    for n in range(15, 21):
+        now = bar_ts(n)
+        ev = det.detect(StockContext(symbol="X", now=now, candles=store.view("X", now),
+                                     levels=[swept], evidence_history=[],  # NO bos
+                                     day=DayState(session_date=now.date())))
+    assert ev and ev[0].meta["event"] == "OB_RETEST"
+
+
+def test_gate_mode_sweep_still_needs_a_sweep():
+    store = make_store([FLAT] * 15 + [B15, B16, B17, PARM, PTOUCH])
+    det = ObTaughtDetector({"require_sweep_bos": True, "gate_mode": "sweep"})
+    assert run_to(det, store, [], 20) == []          # no swept level -> no arm

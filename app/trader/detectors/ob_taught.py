@@ -45,7 +45,8 @@ from trader.models.evidence import Direction, Evidence
 from trader.models.level import LevelKind, LevelState
 
 _DEFAULTS = {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15,
-             "far_dist_atr": 99.0, "require_sweep_bos": False, "gate_window": 20}
+             "far_dist_atr": 99.0, "require_sweep_bos": False, "gate_window": 20,
+             "gate_mode": "sweep_and_bos"}  # "sweep" = swept-only (range-fade, no trend-BOS)
 _EVENT = {"OB": "OB_RETEST", "BRK": "BRK_RETEST", "MIT": "MIT_RETEST"}
 # extremes (zigzag) pivots are the taught anchor (lesson 1); fractal swings
 # are the fallback when the extremes detector is not enabled.
@@ -145,13 +146,16 @@ class ObTaughtDetector(Detector):
         if not w:
             return False
         cutoff = w[0].ts
+        swept = any(t >= cutoff and st is LevelState.SWEPT
+                    for lv in ctx.levels for t, st in lv.state_history)
+        mode = self.params.get("gate_mode", "sweep_and_bos")
+        if mode == "sweep":                    # range-fade: the sweep IS the trigger
+            return swept
         want = Direction.LONG if z.dir == 1 else Direction.SHORT
         bos = any(e.detector == "structure" and e.direction is want and e.ts >= cutoff
                   and e.meta.get("event") in ("BOS", "CHOCH")
                   for e in ctx.evidence_history)
-        swept = any(t >= cutoff and st is LevelState.SWEPT
-                    for lv in ctx.levels for t, st in lv.state_history)
-        return bos and swept
+        return (swept or bos) if mode == "sweep_or_bos" else (swept and bos)
 
     def _grade(self, ctx: StockContext, z: Zone) -> None:
         """Pivot-distance grade + the prior same-side extreme for the flip
