@@ -1,0 +1,19 @@
+=== HONEST DERIVED TRADEBOOK  syms=['DABUR', 'DLF', 'HAVELLS', 'TITAN', 'VOLTAS', 'AARTIIND', 'ABB', 'ABFRL', 'ADANIENT', 'ADANIPORTS', 'ADANIPOWER', 'ALKEM', 'APOLLOHOSP', 'APOLLOTYRE', 'ASHOKLEY', 'ASIANPAINT', 'AUBANK', 'AUROPHARMA', 'AXISBANK', 'BAJAJ-AUTO', 'BAJAJFINSV', 'BAJFINANCE', 'BALKRISIND', 'BANKBARODA', 'BEL', 'BERGEPAINT', 'BHARATFORG', 'BHARTIARTL', 'BIOCON', 'BOSCHLTD', 'BPCL', 'BRITANNIA', 'CANBK', 'CGPOWER', 'CHOLAFIN', 'CIPLA', 'COALINDIA', 'COFORGE', 'COLPAL', 'CROMPTON'] min_grade=1 ===
+closed=7392  (1m fill-through, rupee costs, holdout)
+outcomes: {'stop': 3373, 'gap': 2285, 'target': 1734}
+  ALL            n=7392 win%= 23 gross/t=+3.24R NET/t=-1.287R
+by grade:
+  grade 1        n=1135 win%= 11 gross/t=-0.67R NET/t=-7.032R
+  grade 2        n=1945 win%= 14 gross/t=+2.26R NET/t=-3.870R
+  grade 3        n=1608 win%= 18 gross/t=+1.56R NET/t=-3.952R
+  grade 4        n=1089 win%= 28 gross/t=+5.07R NET/t=+2.277R
+  grade 5        n=1002 win%= 41 gross/t=+7.70R NET/t=+6.141R
+  grade 6        n= 539 win%= 46 gross/t=+7.11R NET/t=+5.679R
+  grade 7        n=  74 win%= 63 gross/t=+9.86R NET/t=+8.821R
+HIGH-GRADE tier (>=4):
+  hi ALL         n=2704 win%= 37 gross/t=+6.58R NET/t=+4.566R
+  holdout quadrants (hi tier):
+    early/A      n= 537 win%= 32 gross/t=+9.42R NET/t=+7.058R
+    early/B      n= 745 win%= 30 gross/t=+6.01R NET/t=+3.996R
+    late/A       n= 551 win%= 44 gross/t=+6.36R NET/t=+4.367R
+    late/B       n= 871 win%= 43 gross/t=+5.47R NET/t=+3.643R
