@@ -237,6 +237,51 @@ PREMIUM / the distribution zone. => this is the CONTINUATION / target-chain half
   AND a structure-break monitor that (i) trails/exits the continuation and (ii) arms the reversal
   watch once premium/distribution is tagged. Ties to lesson 15 (PO3/AMD) + the P/D gate (ANALYSIS).
 
+## Lesson 21 — WYCKOFF: the LONG-TIMEFRAME macro skeleton the whole method already lives inside
+User taught Wyckoff as the HTF/long-TF strategy layer (6 reference schematics: accumulation,
+distribution, full price cycle, TSLA 4h distribution). THE INSIGHT: Wyckoff is the PARENT
+framework; the taught SMC method (fade the swept extreme + draw-on-liquidity ride, lessons
+1-20) is the SAME thing at execution grain. The vocabularies map 1:1 — nothing new to learn,
+everything to UNIFY and to add the phase-context + volume the SMC view lacked.
+
+### The two structures (events, in order)
+ACCUMULATION (buying structure → markup):
+- Phase A STOPPING: PS (prelim support) → SC (selling climax, high vol) → AR (auto rally) → ST (secondary test). Downtrend ends.
+- Phase B BUILDING (absorb supply): the trading range, repeated STs, smart money accumulates (longest = the CAUSE).
+- Phase C TEST: **SPRING** — shakeout BELOW support to grab sell-side liquidity/stops, then reclaim. The key long trigger.
+- Phase D TREND-in-range: **SOS** (sign of strength, break up) → **LPS** (last point of support, higher-low retest) → BU/LPS.
+- Phase E TREND-out: markup leaves the range up.
+DISTRIBUTION (selling structure → markdown) = the mirror: PSY → BC (buying climax) → AR → ST → (Phase B) UT/SOW →
+Phase C **UTAD** (upthrust ABOVE resistance = grab buy-side liquidity/breakout buyers, then fail) → Phase D LPSY (last
+point of supply) / SOW → Phase E markdown.
+
+### THE 1:1 MAP (Wyckoff term ↔ this method's term) — the whole point
+- **SPRING ↔ liquidity sweep of the range LOW** (long entry) ; **UTAD ↔ sweep of the range HIGH** (short entry).
+  The user's core "let retail get swept then fade the extreme" IS trading the Spring / UTAD. t31 SBILIFE short = a UTAD.
+- **LPS / LPSY ↔ the OB / breaker RETEST entry** (last point of support/supply = the demand/supply block re-touch).
+- **SOS / SOW ↔ BOS** (break of structure). **Phase-change ↔ CHoCH** (image 2 labels CHoCH at the transitions).
+- **Phase B trading range ↔ the RANGE regime** ANALYSIS.md found best (ADX<22, contracting) — accumulation/distribution
+  range = the coil. "Trade extremes not mid" = trade the range boundaries (SC/AR support, BC/AR resistance) at Spring/UTAD.
+- **Accumulation/Distribution ↔ the REVERSAL context** (fade mode); **Markup/Markdown ↔ the draw-on-liquidity RIDE**
+  (lesson 20 OB→liq→OB stair-step = Phase D/E: SPRING→SOS→LPS→markup taking liquidity above; reversal at premium = the
+  markup→DISTRIBUTION flip). Lesson 20's two modes ARE accumulation-range-fade vs markup-ride, now with Wyckoff names.
+- **CAUSE → EFFECT ↔ the compression/maturity thesis I quantified**: the wider/longer Phase B (cause) → the bigger the
+  markup (effect). Matches corr(ADX, move)=-0.26 and duration+touches+contraction = magnitude (docs 34/ANALYSIS).
+
+### The NEW dimension Wyckoff adds = VOLUME (not used by the SMC entries yet)
+Wyckoff is volume-driven: SC/BC on CLIMAX volume; Spring/UTAD on LOWER volume = supply/demand exhausted (the tell);
+SOS/SOW on EXPANDING volume = genuine break; no-supply/no-demand bars in the range. NSE volume is in the feed
+(data/*, Yahoo daily has volume) → a real, untested confirmation layer: a Spring with FALLING volume into the low +
+a reclaim on RISING volume is the high-conviction long. Add volume to the sweep + LPS gates.
+
+### Build implication (what Wyckoff gives the engine)
+- A HTF **phase classifier** (ACC-A/B/C/D/E vs DIST-A/B/C/D/E vs markup/markdown) = the top-level regime/context node
+  that GATES the LTF entries — only take longs in accumulation-Phase-C/D or markup pullbacks; shorts in distribution.
+- **Spring/UTAD detector** = the sweep-entry (already ~built as liquidity+sweep; relabel + add the range-boundary anchor
+  and volume). **LPS/LPSY** = the OB-retest (ob_taught). **SOS/SOW** = BOS (structure). Phase-change = CHoCH.
+- This is the LONG-TF context wrapper around the decision tree (doc 33): phase first, then the lesson-1-20 execution.
+Reference images: dev/IMG/trades/WYCKOFF/. This lesson = the macro roof over the whole corpus; no new entries, one framework.
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
