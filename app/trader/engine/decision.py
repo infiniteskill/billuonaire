@@ -81,6 +81,10 @@ def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2) -> D
         grade += 1; reasons.append("bos")
     if any(e.detector == "sweep" for e in evidence):
         grade += 1; reasons.append("sweep")
+    if pd.meta.get("ote"):                      # DEEP extreme (OTE band) — discriminator
+        grade += 1; reasons.append("ote")
+    if any(e.detector == "wyckoff" and e.direction is d for e in evidence):
+        grade += 1; reasons.append("phase")    # HTF phase aligns with the trade
 
     # node 3 -- htf_nest refines the entry (CE of innermost tier, tighter SL)
     nests = [e for e in evidence if e.detector == "htf_nest" and e.direction is d]

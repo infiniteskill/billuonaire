@@ -94,3 +94,14 @@ def test_short_side_target_is_ext_l_below():
     assert d.take is True and d.direction is Direction.SHORT
     assert d.target == tick(90)
     assert d.sl == tick(102)
+
+
+def test_ote_and_phase_raise_grade():
+    # deep-extreme (OTE) + wyckoff phase-alignment each add to the grade
+    evs = [ev("premium_discount", side="discount", permits="LONG", ote=True),
+           _zone_long(),
+           ev("wyckoff", Direction.LONG, event="MARKUP")]
+    d = decide(ctx(ext_h=110), evs, min_grade=1)
+    assert "ote" in d.reasons and "phase" in d.reasons
+    assert d.grade == 2                      # ote(1)+phase(1); no bos/sweep/nest/maturity
+    assert d.take is True
