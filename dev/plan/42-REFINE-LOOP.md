@@ -91,3 +91,30 @@ STATUS CHANGE: the loop's binding blocker (grade doesn't discriminate) is BROKEN
 remaining question is no longer "does anything separate" (nest_depth does) but "does the
 separated high-grade tier survive HONEST fill-through + hold out". Iteration 5 = honest
 cost/fill-through model + holdout on the high-grade tier; that is the real edge verdict.
+
+## Iteration 5 (2026-07-24) — THE HONEST EDGE VERDICT
+Upgraded derive_tradebook.py: 1m (finest) fill-through path, HONEST per-trade rupee costs
+(bps*price / tiny-risk = dominant toll on a tight stop), 4-way holdout, 5 taught stocks.
+895 trades. outcomes: stop 418 / GAP 306 / target 171 (34% gap-through).
+- **Overall NET = -3.46R/trade** -> the generic (ungated) system LOSES honestly. The paper
+  RR is a mirage; honest costs on tiny stops crush the average trade. Null confirmed for
+  the ungated pattern.
+- **The GRADE is cleanly MONOTONE and SURVIVES honest costs:**
+  g1 -9.16 · g2 -6.53 · g3 -3.12 · g4 **+0.76** · g5 **+6.01 (win 48%)** · g6 +2.78.
+  The nest_depth-enriched grade SEPARATES winners AND the separation holds after 1m
+  fill-through + rupee costs. First graded tier in the whole program to survive honest costs.
+- **High-grade tier (>=4): net +3.15R/trade, win 35%, n=250** -> POSITIVE after honest costs.
+- **Holdout NOT robust:** hi-tier quadrants early/A -2.22 (FAIL) · early/B +10.4 · late/A +2.56
+  · late/B +18.8. 3/4 positive but early/A negative and the big cells are thin-n (B=21/29).
+
+## VERDICT (honest, calibrated)
+A REAL discriminator exists and survives honest costs: the nest_depth (HTF-alignment-depth,
+doc-36) graded tier is monotone (-9R -> +6R) and the >=4 tier nets +3.15R/trade after 1m
+fill-through + rupee costs. This is the FIRST positive edge signal the program has produced,
+and it is CAUSAL/ex-ante (HTF depth), exactly the doc-36 hypothesis. BUT it is NOT yet a
+proven robust edge: the overall system loses (-3.46R), only the top ~28% of trades are
+positive, one holdout quadrant fails, and the strongest cells are thin-n on 5 stocks/17d.
+=> PROMISING edge CANDIDATE, robustness unproven. Next: MORE DATA (more stocks, longer 1m
+history) + holdout stability + confirm the high-grade winners = the user's 467 marks. If the
+>=4 tier stays positive across a wide holdout -> real edge, known mechanism. If early/A-style
+failures spread -> in-sample tail, null stands.
