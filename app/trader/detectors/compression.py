@@ -58,10 +58,23 @@ class CompressionDetector(Detector):
             last6 = candles[-6:]
             fsm.set_box(min(c.low for c in last6), max(c.high for c in last6),
                         candles[-1].ts)
-            out.extend(self._box_on_level(ctx, fsm))
+            out.extend(self._box_on_level(ctx, fsm, self._maturity(candles, fsm.box)))
         if fsm.step(candles[-1], ctx.atr(tf), self._bos_recent(ctx, tf)) == "DISTRIBUTION":
-            out.extend(self._distribution(ctx, fsm))
+            out.extend(self._distribution(ctx, fsm, self._maturity(candles, fsm.box)))
         return out
+
+    @staticmethod
+    def _maturity(w: list[Candle], box) -> float:
+        """Taught range maturity 0-1 (grade input, not a gate): contraction +
+        touch-count + duration. Higher = more coiled/mature = bigger expected
+        expansion (dev/plan/34)."""
+        lo, hi = box
+        first4 = fmean(c.range for c in w[:4]) or Decimal(1)
+        contraction = max(0.0, 1.0 - float(fmean(c.range for c in w[-4:]) / first4))
+        tol = (hi - lo) / 10 or Decimal("0.01")
+        touches = sum(1 for c in w if abs(c.high - hi) <= tol or abs(c.low - lo) <= tol)
+        return round(0.4 * contraction + 0.35 * min(touches / 5, 1.0)
+                     + 0.25 * min(len(w) / 12, 1.0), 3)
 
     def _score(self, w: list[Candle]) -> float:
         first4 = fmean(c.range for c in w[:4])
@@ -85,13 +98,14 @@ class CompressionDetector(Detector):
             e.meta.get("event") == "BOS" and e.ts >= recent[0].ts
             for e in ctx.evidence_history)
 
-    def _box_on_level(self, ctx: StockContext, fsm: PO3FSM) -> list[Evidence]:
+    def _box_on_level(self, ctx: StockContext, fsm: PO3FSM, maturity: float) -> list[Evidence]:
         if ("BOX_ON_LEVEL", fsm.box_ts) in self._seen:
             return []
         lo, hi = fsm.box
         out = [Evidence(detector=self.name, direction=_LEVEL_DIR[lv.kind],
                         strength=0.75, zone=fsm.box, ts=ctx.now, ttl_candles=24,
-                        meta={"event": "BOX_ON_LEVEL", "level_id": lv.id})
+                        meta={"event": "BOX_ON_LEVEL", "level_id": lv.id,
+                              "maturity": maturity})
                for lv in ctx.levels
                if lv.kind in _LEVEL_DIR
                and lv.state in (LevelState.ACTIVE, LevelState.TESTED)
@@ -100,11 +114,12 @@ class CompressionDetector(Detector):
             self._seen.add(("BOX_ON_LEVEL", fsm.box_ts))
         return out
 
-    def _distribution(self, ctx: StockContext, fsm: PO3FSM) -> list[Evidence]:
+    def _distribution(self, ctx: StockContext, fsm: PO3FSM, maturity: float) -> list[Evidence]:
         if ("PO3_DIST", fsm.box_ts) in self._seen:
             return []
         self._seen.add(("PO3_DIST", fsm.box_ts))
         energy = (fsm.box[1] - fsm.box[0]) * Decimal(str(self.params["expansion_factor"]))
         return [Evidence(detector=self.name, direction=fsm.true_direction,
                          strength=0.85, zone=fsm.box, ts=ctx.now, ttl_candles=24,
-                         meta={"event": "PO3_DIST", "energy": str(energy)})]
+                         meta={"event": "PO3_DIST", "energy": str(energy),
+                               "maturity": maturity})]

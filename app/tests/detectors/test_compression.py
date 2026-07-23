@@ -122,7 +122,9 @@ def test_box_on_active_ob_level_emits_075_at_confirmation():
     assert ev.direction is Direction.LONG  # OB_BULL direction
     assert ev.strength == 0.75
     assert ev.zone == BOX
-    assert ev.meta == {"event": "BOX_ON_LEVEL", "level_id": "OB1"}
+    assert ev.meta["event"] == "BOX_ON_LEVEL"
+    assert ev.meta["level_id"] == "OB1"
+    assert 0.0 <= ev.meta["maturity"] <= 1.0   # taught coil/maturity grade scalar
 
 
 def test_box_not_on_level_no_bonus():
