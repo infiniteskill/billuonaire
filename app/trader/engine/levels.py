@@ -79,11 +79,11 @@ logger = logging.getLogger("trader.engine.levels")
 # absent (side-less, resolved per level from the reference close).
 _SIDE_BY_KIND: dict[LevelKind, str] = {
     LevelKind.PDH: "below", LevelKind.PWH: "below", LevelKind.EQH: "below",
-    LevelKind.SWING_H: "below", LevelKind.OPEN_RANGE_H: "below",
+    LevelKind.SWING_H: "below", LevelKind.EXT_H: "below", LevelKind.OPEN_RANGE_H: "below",
     LevelKind.OI_WALL_CE: "below", LevelKind.OB_BEAR: "below",
     LevelKind.FVG_BEAR: "below",
     LevelKind.PDL: "above", LevelKind.PWL: "above", LevelKind.EQL: "above",
-    LevelKind.SWING_L: "above", LevelKind.OPEN_RANGE_L: "above",
+    LevelKind.SWING_L: "above", LevelKind.EXT_L: "above", LevelKind.OPEN_RANGE_L: "above",
     LevelKind.OI_WALL_PE: "above", LevelKind.OB_BULL: "above",
     LevelKind.FVG_BULL: "above",
 }
