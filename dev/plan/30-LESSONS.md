@@ -208,6 +208,35 @@ LTF zone → far-liquidity target. Every prior lesson is one organ of this anima
   FILTER on an already-sweep-valid zone (untested combo). Test: does "zone retest AND lands at
   60-75% fib of the impulse leg" concentrate the runners vs zone-retest alone.
 
+## Lesson 20 — DRAW-ON-LIQUIDITY: the TARGET-SEQUENCING cycle + structure-gated regime flip (SBILIFE 2021, t31b)
+User (verbatim intent): if price revisits the LOWEST SWING and RESPONDS to the FVG/OB and
+continues up, then NEXT it takes the LIQUIDITY above; after taking liquidity it pulls back to
+the next OB, and so on — BUT it DEPENDS on structure. If it BREAKS structure, that area becomes
+a liquidity-sweep zone with an OB, and it MIGHT REVERSE later from there once price reaches
+PREMIUM / the distribution zone. => this is the CONTINUATION / target-chain half of the method
+(the entry lessons were the WHERE; this is the WHAT-NEXT and the WHEN-IT-FLIPS).
+- **The cycle (markup):** OB (demand shelf, price responds) → DRAW to the nearest resting
+  LIQUIDITY above (that pool IS the target) → sweep it → pull back to the NEXT higher OB →
+  draw to the NEXT liquidity → repeat. Price alternates OB(support) ↔ liquidity(target),
+  stair-stepping. Liquidity is the ENGINE/DRAW; the OB is the refuel. Mirror inverts for markdown.
+- **Real-tape confirm (SBILIFE Dec2020→Jun2021):** monthly higher-lows 825→838→845→861→865→916→957
+  (each OB shelf higher) WHILE successive liquidity highs get taken (Jan 954 takes ~950, Mar 984
+  takes ~980, May 1045 takes ~1000). The draw-on-liquidity stair-step is literally on the data.
+- **Structure is the switch (the "be careful"):** the cycle-continues assumption holds ONLY while
+  structure holds (each pullback makes a higher low / respects the OB). A structure BREAK
+  invalidates the continuation thesis → the failed level converts to a sweep zone + OB for the
+  OTHER side → after price reaches PREMIUM (distribution), reversal begins = the markdown cycle.
+- **Reconciles the fader-vs-trend tension (ANALYSIS.md):** the method has TWO modes selected by
+  regime/structure — (a) TREND/markup: RIDE the OB→liquidity→OB chain (continuation, target
+  sequencing, add on pullbacks); (b) RANGE or at the PREMIUM extreme: FADE the swept extreme
+  (the high-RR reversal entries = most of the 30). Structure-break at premium is the hinge that
+  flips mode (a)→(b). So "continuation trades were rare/weak in the 30" = the 30 are mostly the
+  FADE entries; this lesson supplies the RIDE/target logic that manages them to the far pool.
+- **Build implication:** the engine needs a DRAW/target picker = "nearest opposite resting
+  liquidity" as the take-profit, chained (after TP1 liquidity, re-arm to next OB→next liquidity),
+  AND a structure-break monitor that (i) trails/exits the continuation and (ii) arms the reversal
+  watch once premium/distribution is tagged. Ties to lesson 15 (PO3/AMD) + the P/D gate (ANALYSIS).
+
 ## The unified law (user's grammar, one sentence)
 **Impulse off structure → zone left behind (OB = pause cluster, FVG = speed gap) → price leaves →
 returns LATER on continuous tape → touch → continues the impulse direction → target = the next
