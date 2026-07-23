@@ -28,5 +28,7 @@
  {"id":"Da_nov_long",    "stock":"DABUR",  "month":11,"day":4,"dir":"long", "entry":491, "sl":487, "target":520, "swept":488, "era":[480,525]},
  {"id":"S_t28_long",     "stock":"SBICARD","month":7,"day":9, "dir":"long", "entry":583, "sl":578, "target":660, "swept":567, "era":[560,600]},
  {"id":"S_t29_long",     "stock":"SBICARD","month":12,"day":30,"dir":"long","entry":835, "sl":828, "target":905, "swept":828, "era":[825,910]},
- {"id":"S_t30_long",     "stock":"SBICARD","month":9,"day":8, "dir":"long", "entry":798, "sl":790, "target":905, "swept":793, "era":[790,905]}
+ {"id":"S_t30_long",     "stock":"SBICARD","month":9,"day":8, "dir":"long", "entry":798, "sl":790, "target":905, "swept":793, "era":[790,905]},
+ {"id":"SL_t31_short",   "stock":"SBILIFE","month":9,"day":27,"dir":"short","entry":1910,"sl":1932,"target":1750,"swept":1925,"era":[1740,1935]},
+ {"id":"SL_t31_long",    "stock":"SBILIFE","month":9,"day":18,"dir":"long", "entry":1835,"sl":1820,"target":1925,"swept":1825,"era":[1800,1900]}
 ]

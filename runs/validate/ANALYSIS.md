@@ -84,6 +84,18 @@ entry_pos = (entry−lo)/(hi−lo) over the pre-entry swing window.
 - Regime/position are computed on a fixed 40/60-bar window, a proxy for your hand-drawn
   dealing range; directional, not exact. n per cell is small.
 
+## OUT-OF-SAMPLE CONFIRMATION — T31 SBILIFE (7th stock, added AFTER the conclusions)
+A fresh trade on a NEW stock (SBILIFE, 30m), resolved on real data to **2024-09-23**,
+fits the winner profile point-for-point and is one of the biggest moves in the corpus:
+- **SHORT (FVG+OB supply, retest after sweep)**: swept equal-highs liquidity (~1925, poke
+  0.21 ATR, clean), range 15% **contracting**, ranging coil → **+27.9% / +24R** to 1750 by
+  2024-10-07. RANGE-fade @ the premium extreme, stacked reversal block, far discount target
+  = the exact composite profile above, out-of-sample.
+- **LONG (BB demand)** earlier: swept the range low, ran to the liquidity (1925) +5.1% — the
+  mirror leg. Full cycle (BB-long to sweep the high → FVG+OB-short to the discount) on one chart.
+=> the "range + contracting + swept extreme + stacked block" profile predicted a top-tier
+trade on a stock not used to derive it. Encouraging, still winners-only (see caveat).
+
 ## WHAT THIS GIVES THE BUILD (a concrete, measurable filter)
 The decision engine's top gate is now numeric, not vibe:
 - **regime gate**: prefer daily ADX < 22 + contracting range (rank the coil).
