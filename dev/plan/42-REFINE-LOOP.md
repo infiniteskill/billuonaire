@@ -143,3 +143,20 @@ HONEST REMAINING GAPS (before calling it a proven strategy):
 => Status: CONFIRMED edge CANDIDATE, robust within-sample; upgrade to PROVEN needs multi-regime data +
 marks-faithfulness. This is the payoff of the build+refine loop: a causal, cost-surviving, discriminated
 tier — not a mirage, not the null.
+
+## Iteration 7 (2026-07-24) — PRECISION tunes APPLIED + re-measured: EDGE-POSITIVE
+12-agent precision deep-audit (dev/plan/43-PRECISION/) -> applied ranked top-3 (additive):
+ob_taught min_disp_atr=1.0, htf_nest min_depth=2, premium_discount edge_trigger. Re-measured
+the SAME 40 stocks vs the iter-6 baseline (+4.57R, n=2704, all quadrants +):
+- volume 7392 -> **3405 (-54%)** (furniture cut, as predicted).
+- **high-grade tier (>=4): net +4.57 -> +5.40R, win% 37 -> 45%**, all 4 holdout quadrants POSITIVE
+  (early/A +11.3, early/B +4.8, late/A +3.2, late/B +4.1). n 2704 -> 1249.
+- tail stronger: g5 +6.1->+8.0, g6 +5.7->+7.4, g7 +8.8->+11.0.
+- WRINKLE: grade-4 alone flipped NEGATIVE (-2.97, win 16%); discrimination sharpened to >=5
+  (g5-7 = +8..+11R). The min_grade tier boundary should move 4 -> 5.
+=> CONFIRMS the precision hypothesis (43-PRECISION/_SYNTHESIS c): tuning is a PURITY+VOLUME lever
+that RAISED the high-tier net-R + win% while cutting volume -- did NOT create edge (nest_depth
+still the discriminator), made the existing edge cleaner + cheaper. EDGE-POSITIVE. Remaining 9
+precision tunes should compound. Caveat unchanged: one 17d regime; faithfulness unchecked.
+NOTE (harness bug fixed for future): the honest derive_tradebook prints "NET/t=", not "per_trade"
+-- watchers must grep the right token.
