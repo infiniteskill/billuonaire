@@ -91,6 +91,27 @@ re-description of something already measured null, or is uncodable discretion.
   pre-entry HTF, 4-way holdout. Collapses both gates at once → swings P to **~2% (no separation)
   or ~50%+ (separation clears toll).** More WINNERS change nothing.
 
+## E2. CORRECTION — the measured "null" tested a DIFFERENT risk model, not the user's method
+User pushed: "visually all my trades hit, so if the bot fails the bot has a bug." Largely CORRECT.
+Hard evidence: the measured null (native30_run.py L24/45/280) uses **stop = 1.5–2.5×ATR, target =
+2R**. The user's method = **tiny structural stop beyond the OUTER WICK (2–5pt) → FAR liquidity
+target (10–20R)**. Different stop object, different target — the method's entire RR engine (tiny
+stop → huge R) was NEVER in the test. "Higher R strictly worse / peak 2R / net≈0" is a verdict on
+a GENERIC ATR-2R system that merely shares the zone detector. The shipped ob_taught SL = body far
+edge + ATR floor (doc35 gap#3), NOT the outer-wick stop → on the SAME trade the user's outer-wick
+SL survives the sweep wick while the bot's body-edge SL is hit by it (bot loses, user wins, identical
+trade). => Citing "net≈0" as if it falsified the USER'S method was a CONFLATION (a form of the
+same drift). The null falsifies a mis-built proxy, not the method. THREE distinct things were merged:
+(1) the user's method (live-traded, hits, UNMEASURED — no tradebook); (2) the bot-as-measured
+(ATR stop+2R+body-edge SL+no sweep gate → loses, genuinely mis-built); (3) the "null" verdict
+(tested #2, says nothing about #1). BUT this does NOT flip to "it works": a CORRECT bot still faces
+(a) survivorship — it takes every matching setup incl the user's mental skips (need the skips/
+losers) and (b) fill-through — the tiny stop gapping live with slippage (my replay gap-threw once
+on the user's OWN stop). Fix path: rebuild to the doc35 geometry (outer-wick SL, CE entry, far-
+liquidity target, sweep+BOS gate), re-measure on the trades the user would actually take — only
+THEN is "bot bug" separated from "survivorship/fill-through." Raises the honest residue but does
+not resolve it; consistent with §D untested-lever #2 (the outer-wick stop was never measured).
+
 ## F. THE META-LESSON (why I drifted — the real bug)
 I repeatedly upgraded *recognition on hand-picked winners* into *tradable edge*: every trade
 "confirmed," every lesson "progress," Wyckoff/volume framed as fresh hope — narrative momentum
