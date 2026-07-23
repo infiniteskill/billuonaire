@@ -68,3 +68,25 @@ The entry chain (premium_discount gate + liquidity/sweep trigger + ob_taught ent
 now fires end-to-end -> decision.py can produce take/skip. Edges remain recognition
 (+7..18% hit) with the standing fwd12~0 signature; profitability needs the derived
 tradebook (run decision.py over all data -> winners+losers -> net-R).
+
+## DERIVED TRADEBOOK (2026-07-24) — the user's idea, measured
+tools/derive_tradebook.py: run the wired taught profile over 1m, call decide() on
+every fresh-zone bar, each take = a trade, simulate forward on M5 (gap-aware,
+slippage on every fill). Winners AND losers derived from the tools — no user log.
+HAVELLS+DABUR, min_grade=1, slip=2 ticks:
+- takes=355, closed=345. **win%=15% (54W/291L)**. outcomes: stop 181, GAP 108, target 56.
+- gross +508R, net +1.4R/trade after slippage (was +7.3R before slippage).
+- avg_win **23.7R**, avg_loss -2.64R.
+HONEST READ — this is a PAPER MIRAGE, not an edge:
+1. **31% GAP-THROUGH** (108/345) — the fill-through killer materialising at scale
+   (RETHINK/doc-34's dominant risk, live).
+2. Net rests ENTIRELY on a huge-RR winner tail (24R avg wins) = the tiny-stop RR
+   illusion; sensitive to slippage (7.3R->1.4R on a 2-tick change) and to M5-vs-tick
+   granularity (finer path = MORE stop-outs = worse).
+3. **Grade NON-MONOTONE: grade 2 (+1.06R) < grade 1 (+1.79R)** — the decision grade
+   does NOT discriminate winners. The SELECTION (the whole point of the tools) is not
+   working yet; without it this is the generic pattern, not the user's edge.
+4. win% 15% matches the prior measured "16% run" — consistent with the standing null.
+=> The derived-tradebook METHOD works (winners+losers from tools, no user log). The
+NUMBER is paper. Before it means anything: tick-granular fill-through sim, per-trade
+rupee costs (not flat R), and a grade that actually separates winners (selection).
