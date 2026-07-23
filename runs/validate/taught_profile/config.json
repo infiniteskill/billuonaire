@@ -104,6 +104,19 @@
       },
       "ob_taught": {
         "require_sweep_bos": true
+      },
+      "extremes": {
+        "timeframes": [
+          "5m",
+          "15m",
+          "1h",
+          "1d"
+        ],
+        "leg_pct": 2.0
+      },
+      "premium_discount": {
+        "tf": "1h",
+        "min_range_atr": 4.0
       }
     }
   },
