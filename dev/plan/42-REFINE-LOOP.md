@@ -160,3 +160,18 @@ still the discriminator), made the existing edge cleaner + cheaper. EDGE-POSITIV
 precision tunes should compound. Caveat unchanged: one 17d regime; faithfulness unchecked.
 NOTE (harness bug fixed for future): the honest derive_tradebook prints "NET/t=", not "per_trade"
 -- watchers must grep the right token.
+
+## Iteration 8 (2026-07-24) — precision tunes 4-6 COMPOUND; overall system flips POSITIVE
+Applied sweep min_touches=3, fvg_n min_gap_atr=0.7, liquidity emit-EQ/EXT + prox0.35. Re-measured 40 stocks:
+- volume 3405 -> **2155** (-71% vs iter-6's 7392); furniture cut hard.
+- **overall net -2.92 -> +0.52R** — FIRST TIME the ungated system is net-positive after honest costs
+  (the low-grade loss mass collapsed with the furniture).
+- **high-grade tier (>=4): +5.40 -> +6.13R, win% 45 -> 49%**, all 4 holdout quadrants POSITIVE
+  (early/A +9.1, early/B +4.3, late/A +6.0, late/B +6.2). grade-4 re-stabilized +0.42.
+- tail g6 +9.4, g7 +10.3.
+=> Precision compounds MONOTONICALLY: high-tier +4.57 -> +5.40 -> +6.13R, win 37 -> 45 -> 49%,
+volume -71%, every batch. Confirms the purity+volume lever is reliable. Remaining tunes (#7-12:
+wyckoff/compression/propulsion/BRK/MIT/structure) are lower-volume, diminishing returns.
+STATE: strongest the program has reached — ungated +0.52R, high-tier +6.13R, holdout-stable.
+UNCHANGED GATE: one 17-day window (one regime). The make-or-break is now MULTI-REGIME DATA, not
+more tuning. In-sample the edge is robust; out-of-regime is unproven.
