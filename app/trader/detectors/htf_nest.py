@@ -20,9 +20,13 @@ from trader.models.candle import Timeframe
 from trader.models.evidence import Direction, Evidence
 from trader.models.level import LevelKind, LevelState
 
-_BULL = frozenset({LevelKind.OB_BULL, LevelKind.FVG_BULL})
+_BULL = frozenset({LevelKind.OB_BULL, LevelKind.FVG_BULL})   # base-zone direction
 _BEAR = frozenset({LevelKind.OB_BEAR, LevelKind.FVG_BEAR})
-_DEC = _BULL | _BEAR
+_BASE = _BULL | _BEAR                                        # the LTF entry object
+# HTF PARENTS: OB/FVG zones OR an EXT band (a swing low = demand, high = supply)
+_PAR_BULL = _BULL | {LevelKind.EXT_L}
+_PAR_BEAR = _BEAR | {LevelKind.EXT_H}
+_PAR = _PAR_BULL | _PAR_BEAR
 _ACTIVE = (LevelState.ACTIVE, LevelState.TESTED)
 _DEFAULTS = {"base_tf": "5m", "min_depth": 1, "ttl": 6,
              "htf_order": ["5m", "15m", "1h", "1d"]}
@@ -52,16 +56,19 @@ class HtfNestDetector(Detector):
     def detect(self, ctx: StockContext) -> list[Evidence]:
         base_tf = Timeframe(self.params["base_tf"])
         rank = {Timeframe(t): i for i, t in enumerate(self.params["htf_order"])}
-        zones = [lv for lv in ctx.levels
-                 if lv.kind in _DEC and lv.state in _ACTIVE and lv.tf in rank]
+        bases = [lv for lv in ctx.levels
+                 if lv.kind in _BASE and lv.state in _ACTIVE and lv.tf is base_tf]
+        pool = [lv for lv in ctx.levels
+                if lv.kind in _PAR and lv.state in _ACTIVE and lv.tf in rank]
         out: list[Evidence] = []
-        for b in zones:
-            if b.tf is not base_tf or b.id in self._seen:
+        for b in bases:
+            if b.id in self._seen:
                 continue
             bull = b.kind in _BULL
             br = rank[b.tf]
-            tiers = {z.tf for z in zones
-                     if rank.get(z.tf, -1) > br and (z.kind in _BULL) == bull
+            par_kinds = _PAR_BULL if bull else _PAR_BEAR
+            tiers = {z.tf for z in pool
+                     if rank.get(z.tf, -1) > br and z.kind in par_kinds
                      and _overlaps(z.zone, b.zone)}
             if len(tiers) < int(self.params["min_depth"]):
                 continue

@@ -70,3 +70,24 @@ starved (needs the multi-TF HTF-zone emitter). It is the LAST causal candidate. 
 build the HTF-zone emitter → htf_nest fires → add nest_depth to the grade → re-test
 monotonicity. If nest_depth ALSO fails to discriminate → the ex-ante-separability hypothesis
 is dead → the edge (if any) is the user's un-codable discretion, not a wired feature.
+
+## Iteration 4 (2026-07-24) — THE DISCRIMINATION TEST: nest_depth separates (first positive signal)
+Built the htf_nest infra minimally: htf_nest now uses multi-TF EXT bands as HTF parents
+(EXT_L=demand, EXT_H=supply), so a base M5 OB nests inside HTF extremes. htf_nest fires
+(n=89). nest_depth already feeds decide()'s grade (grade += 1 + nest_depth).
+Re-measured derived tradebook (HAVELLS+DABUR): win% 15%->21%, and the grade is now
+ROUGHLY MONOTONE (was flat/non-monotone):
+  g1 +0.19 · g2 -0.32 · g3 +1.34 · g4 +2.06 · **g5 +5.96 (n=48)** · g6 +0.81 · g7 +5.53
+=> nest_depth (HTF-alignment-DEPTH, doc-36) SEPARATES winners from losers — the FIRST
+ex-ante discriminator to work in the whole program. Confirms the doc-36 causal hypothesis
+and the "edge is the CONJUNCTION" thesis: htf_nest SOLO is NEGATIVE (-3.2%, fwd12 -0.93),
+but nest_depth AS PART OF a high-grade stack marks the winners (g5 +5.96R vs g1-2 ~0).
+HONEST CAVEATS (do not overclaim):
+- Still PAPER RR: 31% gap-through unaddressed (101/353); avg_win 16R = tiny-stop geometry.
+  The +5.96R needs tick-granular fill-through before it is real.
+- Small n at high grades (g5 n=48, g6-7 tiny); tails noisy (g6 dips).
+- HAVELLS+DABUR only, 17d. Needs more stocks/data + 4-way holdout.
+STATUS CHANGE: the loop's binding blocker (grade doesn't discriminate) is BROKEN. The
+remaining question is no longer "does anything separate" (nest_depth does) but "does the
+separated high-grade tier survive HONEST fill-through + hold out". Iteration 5 = honest
+cost/fill-through model + holdout on the high-grade tier; that is the real edge verdict.

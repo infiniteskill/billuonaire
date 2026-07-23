@@ -78,3 +78,20 @@ def test_dedupe_per_base_zone():
     det = HtfNestDetector({})
     assert len(det.detect(ctx(levels))) == 1
     assert det.detect(ctx(levels)) == []                    # same base -> no re-emit
+
+
+def test_ext_band_as_htf_parent():
+    # a base M5 demand OB nests inside a higher-TF EXT_L band (swing low = demand)
+    levels = [zone(LevelKind.OB_BULL, 100, 101, Timeframe.M5),
+              zone(LevelKind.EXT_L, 99, 102, Timeframe.H1)]   # HTF swing-low band
+    [ev] = HtfNestDetector({}).detect(ctx(levels))
+    assert ev.direction is Direction.LONG
+    assert ev.meta["nest_depth"] == 1
+    assert ev.meta["tiers"] == ["1h"]
+
+
+def test_ext_high_is_bear_parent_only():
+    # EXT_H (supply) must NOT parent a bull base
+    levels = [zone(LevelKind.OB_BULL, 100, 101, Timeframe.M5),
+              zone(LevelKind.EXT_H, 99, 102, Timeframe.H1)]
+    assert HtfNestDetector({}).detect(ctx(levels)) == []
