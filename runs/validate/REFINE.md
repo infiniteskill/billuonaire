@@ -52,3 +52,19 @@ The recognition-emitting detectors show +2–13% hit-edge but **fwd12 ≈ 0** �
 real, edge toll-bound" signature as the prior measured record. The refine loop tunes RECOGNITION
 (does the wired stack fire on the taught objects); the PROFITABILITY verdict still needs losing
 setups + a tradebook and is not obtainable from this loop.
+
+## Iteration 2 (2026-07-24) — the sweep-gate fix
+Applied: ob_taught gate_mode="sweep" (fire on the swept extreme, not trend-BOS);
+structure trend_swings 2. Re-measured HAVELLS+DABUR (5222 evidences).
+- **ob_taught UNSTARVED: 0 -> 689** (OB_RETEST 345 +7.2%, BRK_RETEST 135 +8.4%,
+  MIT_RETEST 209 +17.9%). The range-fade fix works: ob_taught now fires on the
+  sweep as designed. MIT (mitigation flip) is the strongest directional edge.
+- structure(ext) still 0 (17d rangy data has no EXT trend; no longer on the
+  critical path since ob_taught gates on sweep, not structure). Acceptable.
+- htf_nest still 0 -> needs multi-TF OB/FVG zones; orderblock/fvg run single-tf,
+  so no cross-TF nest forms. Needs an HTF-zone emitter or multi-instance detectors
+  (deferred infra). Iteration-3 target.
+The entry chain (premium_discount gate + liquidity/sweep trigger + ob_taught entry)
+now fires end-to-end -> decision.py can produce take/skip. Edges remain recognition
+(+7..18% hit) with the standing fwd12~0 signature; profitability needs the derived
+tradebook (run decision.py over all data -> winners+losers -> net-R).

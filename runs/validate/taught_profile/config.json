@@ -100,10 +100,12 @@
         "min_zone_detectors": 1
       },
       "structure": {
-        "anchor": "ext"
+        "anchor": "ext",
+        "trend_swings": 2
       },
       "ob_taught": {
-        "require_sweep_bos": true
+        "require_sweep_bos": true,
+        "gate_mode": "sweep"
       },
       "extremes": {
         "timeframes": [
