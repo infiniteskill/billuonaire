@@ -22,8 +22,8 @@ from trader.detectors.base import REGISTRY
 from trader.detectors.ob_taught import ObTaughtDetector
 from trader.engine.context import DayState, StockContext
 from trader.models.candle import Candle, Timeframe, tick
-from trader.models.evidence import Direction
-from trader.models.level import Level, LevelKind
+from trader.models.evidence import Direction, Evidence
+from trader.models.level import Level, LevelKind, LevelState
 from trader.store.candles import CandleStore
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -86,7 +86,8 @@ def test_registered():
     assert REGISTRY["ob_taught"] is ObTaughtDetector
     d = ObTaughtDetector({})
     assert d.params == {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15,
-                        "far_dist_atr": 99.0}
+                        "far_dist_atr": 99.0, "require_sweep_bos": False,
+                        "gate_window": 20}
 
 
 def test_bodies_only_box_and_retest_fires():
@@ -141,3 +142,35 @@ def test_meta_schema_contract():
         Decimal(ev.meta[k])
     assert ev.meta["sl_floor"] == str(Decimal("0.15") * ctx_at(store, 20, []).atr(M5))
     assert 0.0 <= ev.strength <= 1.0
+
+
+# ---- node-4 birth gate: require an upstream sweep + same-dir BOS ----
+
+def test_birth_gate_default_off_unchanged():
+    store = make_store([FLAT] * 15 + [B15, B16, B17, PARM, PTOUCH])
+    [ev] = run_to(ObTaughtDetector({}), store, [swing(LevelKind.SWING_L, 101)], 20)
+    assert ev.meta["event"] == "OB_RETEST"          # default behavior intact
+
+
+def test_birth_gate_suppresses_without_sweep_bos():
+    store = make_store([FLAT] * 15 + [B15, B16, B17, PARM, PTOUCH])
+    det = ObTaughtDetector({"require_sweep_bos": True})
+    assert run_to(det, store, [swing(LevelKind.SWING_L, 101)], 20) == []
+
+
+def test_birth_gate_passes_with_sweep_and_bos():
+    store = make_store([FLAT] * 15 + [B15, B16, B17, PARM, PTOUCH])
+    swept = Level(id="X-EXT_L-99", symbol="X", kind=LevelKind.EXT_L,
+                  zone=(tick(99), tick(99)), born=bar_ts(0), tf=M5)
+    swept.record_state(bar_ts(16), LevelState.SWEPT)
+    bos = Evidence(detector="structure", direction=Direction.LONG, strength=0.6,
+                   zone=(tick(103), tick(103)), ts=bar_ts(17), ttl_candles=12,
+                   meta={"event": "BOS"})
+    det = ObTaughtDetector({"require_sweep_bos": True})
+    ev = []
+    for n in range(15, 21):
+        now = bar_ts(n)
+        ev = det.detect(StockContext(symbol="X", now=now, candles=store.view("X", now),
+                                     levels=[swept], evidence_history=[bos],
+                                     day=DayState(session_date=now.date())))
+    assert ev and ev[0].meta["event"] == "OB_RETEST"

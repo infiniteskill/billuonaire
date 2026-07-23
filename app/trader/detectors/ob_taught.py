@@ -42,10 +42,10 @@ from trader.detectors.taught import Tape, Zone, step_zone
 from trader.engine.context import StockContext
 from trader.models.candle import Timeframe
 from trader.models.evidence import Direction, Evidence
-from trader.models.level import LevelKind
+from trader.models.level import LevelKind, LevelState
 
 _DEFAULTS = {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15,
-             "far_dist_atr": 99.0}
+             "far_dist_atr": 99.0, "require_sweep_bos": False, "gate_window": 20}
 _EVENT = {"OB": "OB_RETEST", "BRK": "BRK_RETEST", "MIT": "MIT_RETEST"}
 # extremes (zigzag) pivots are the taught anchor (lesson 1); fractal swings
 # are the fallback when the extremes detector is not enabled.
@@ -130,10 +130,28 @@ class ObTaughtDetector(Detector):
             for ev, z in self._z.step(c.ts, c.open, c.high, c.low, c.close):
                 if ev == "birth":
                     self._grade(ctx, z)
-                elif ev == "retest" and i == len(window) - 1:
+                elif ev == "retest" and i == len(window) - 1 and self._gated(ctx, tf, z):
                     out.append(self._evidence(ctx, tf, z))
         self._n = len(window)
         return out
+
+    def _gated(self, ctx: StockContext, tf: Timeframe, z: Zone) -> bool:
+        """Birth gate: when require_sweep_bos, only arm a retest that follows a
+        same-direction structure BOS/CHoCH AND a swept level within gate_window
+        candles (the taught sweep->BOS displacement). Default off -> always armed."""
+        if not self.params.get("require_sweep_bos"):
+            return True
+        w = ctx.candles.last(int(self.params["gate_window"]), tf)
+        if not w:
+            return False
+        cutoff = w[0].ts
+        want = Direction.LONG if z.dir == 1 else Direction.SHORT
+        bos = any(e.detector == "structure" and e.direction is want and e.ts >= cutoff
+                  and e.meta.get("event") in ("BOS", "CHOCH")
+                  for e in ctx.evidence_history)
+        swept = any(t >= cutoff and st is LevelState.SWEPT
+                    for lv in ctx.levels for t, st in lv.state_history)
+        return bos and swept
 
     def _grade(self, ctx: StockContext, z: Zone) -> None:
         """Pivot-distance grade + the prior same-side extreme for the flip
