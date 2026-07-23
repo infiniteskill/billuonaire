@@ -18,7 +18,8 @@ from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
 from trader.models.level import Level, LevelKind, LevelState
 
-_DEFAULTS = {"tf": "5m", "trend_swings": 4, "trap_window": 6, "fake_window": 5}
+_DEFAULTS = {"tf": "5m", "trend_swings": 4, "trap_window": 6, "fake_window": 5,
+             "anchor": "swing"}  # "ext" -> grade against taught EXT extremes not fractal
 
 
 def _mid(zone: tuple[Decimal, Decimal]) -> Decimal:
@@ -31,6 +32,9 @@ class StructureDetector(Detector):
 
     def __init__(self, params: dict):
         super().__init__({**_DEFAULTS, **params})
+        ext = self.params.get("anchor") == "ext"
+        self._hk = LevelKind.EXT_H if ext else LevelKind.SWING_H
+        self._lk = LevelKind.EXT_L if ext else LevelKind.SWING_L
         self._pending: dict[str, list[dict]] = {}  # symbol -> unresolved BOS breaks
         self._fake: dict[str, datetime] = {}       # symbol -> ts of last fake BOS
         self._session: date | None = None
@@ -46,7 +50,7 @@ class StructureDetector(Detector):
         last = ctx.candles.last(1, tf)
         swings = sorted(
             (lv for lv in ctx.levels
-             if lv.kind in (LevelKind.SWING_H, LevelKind.SWING_L) and lv.tf is tf),
+             if lv.kind in (self._hk, self._lk) and lv.tf is tf),
             key=lambda lv: lv.born,
         )
         if not last or not swings:
@@ -57,8 +61,8 @@ class StructureDetector(Detector):
         trend = self._trend(swings[-int(self.params["trend_swings"]):])
         if trend is Direction.NEUTRAL:
             return []
-        highs = [lv for lv in swings if lv.kind is LevelKind.SWING_H]
-        lows = [lv for lv in swings if lv.kind is LevelKind.SWING_L]
+        highs = [lv for lv in swings if lv.kind is self._hk]
+        lows = [lv for lv in swings if lv.kind is self._lk]
         up = trend is Direction.LONG
         with_, against = (highs[-1], lows[-1]) if up else (lows[-1], highs[-1])
 
@@ -76,10 +80,9 @@ class StructureDetector(Detector):
             return []
         return [ev] if ev else []
 
-    @staticmethod
-    def _trend(recent: list[Level]) -> Direction:
-        highs = [_mid(lv.zone) for lv in recent if lv.kind is LevelKind.SWING_H]
-        lows = [_mid(lv.zone) for lv in recent if lv.kind is LevelKind.SWING_L]
+    def _trend(self, recent: list[Level]) -> Direction:
+        highs = [_mid(lv.zone) for lv in recent if lv.kind is self._hk]
+        lows = [_mid(lv.zone) for lv in recent if lv.kind is self._lk]
         if len(highs) < 2 or len(lows) < 2:
             return Direction.NEUTRAL
         rising = lambda xs: all(a < b for a, b in zip(xs, xs[1:]))

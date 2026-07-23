@@ -142,3 +142,30 @@ def test_needs_swings_guard():
     assert StructureDetector(PARAMS).detect(make_ctx([116], [])) == []
     one_sided = [swing(LevelKind.SWING_H, 110, 0), swing(LevelKind.SWING_H, 115, 5)]
     assert StructureDetector(PARAMS).detect(make_ctx([116], one_sided)) == []
+
+
+# ---- anchor="ext": grade structure against taught EXT extremes, not fractal ----
+
+EXT_PARAMS = {**PARAMS, "anchor": "ext"}
+
+
+def bull_ext():  # same HH+HL as bull_swings but on EXT_H/EXT_L
+    return [swing(LevelKind.EXT_L, 100, 0), swing(LevelKind.EXT_H, 110, 5),
+            swing(LevelKind.EXT_L, 105, 10), swing(LevelKind.EXT_H, 115, 15)]
+
+
+def test_ext_anchor_bos_fires_on_ext_break():
+    [ev] = StructureDetector(EXT_PARAMS).detect(make_ctx([116], bull_ext()))
+    assert ev.direction is Direction.LONG
+    assert ev.meta["event"] == "BOS"
+    assert ev.meta["swing_id"] == "X-EXT_H-15"       # anchored on the EXT, not a swing
+
+
+def test_ext_anchor_ignores_fractal_swings():
+    # only fractal SWING levels present -> ext-mode sees no anchor -> nothing
+    assert StructureDetector(EXT_PARAMS).detect(make_ctx([116], bull_swings())) == []
+
+
+def test_swing_default_ignores_ext_levels():
+    # default swing-mode unchanged: EXT-only levels are invisible to it
+    assert StructureDetector(PARAMS).detect(make_ctx([116], bull_ext())) == []
