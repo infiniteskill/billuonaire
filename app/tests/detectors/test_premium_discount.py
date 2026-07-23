@@ -87,3 +87,10 @@ def test_swept_extreme_excluded():
     ctx = _ctx(94, [_ext(LevelKind.EXT_L, 90, state=LevelState.SWEPT),
                     _ext(LevelKind.EXT_H, 110)])
     assert PremiumDiscountDetector(PARAMS).detect(ctx) == []  # no live low -> no range
+
+
+def test_edge_trigger_emits_only_on_ote_entry():
+    det = PremiumDiscountDetector({**PARAMS, "edge_trigger": True})
+    c = _ctx(95, [_ext(LevelKind.EXT_L, 90), _ext(LevelKind.EXT_H, 110)])  # pos 0.25 = OTE
+    assert len(det.detect(c)) == 1        # 0->1 entry into OTE band -> emit
+    assert len(det.detect(c)) == 0        # dwell in band -> suppressed

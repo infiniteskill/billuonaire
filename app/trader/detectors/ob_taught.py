@@ -46,7 +46,7 @@ from trader.models.level import LevelKind, LevelState
 
 _DEFAULTS = {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15,
              "far_dist_atr": 99.0, "require_sweep_bos": False, "gate_window": 20,
-             "gate_mode": "sweep_and_bos"}  # "sweep" = swept-only (range-fade, no trend-BOS)
+             "gate_mode": "sweep_and_bos", "min_disp_atr": 0.0}  # "sweep" = swept-only (range-fade, no trend-BOS)
 _EVENT = {"OB": "OB_RETEST", "BRK": "BRK_RETEST", "MIT": "MIT_RETEST"}
 # extremes (zigzag) pivots are the taught anchor (lesson 1); fractal swings
 # are the fallback when the extremes detector is not enabled.
@@ -58,8 +58,9 @@ _ALL = 10 ** 9
 class ObZones:
     """Incremental taught-OB tracker; tf-agnostic (fed closed bars)."""
 
-    def __init__(self, depth: Decimal = Decimal("0.5")):
+    def __init__(self, depth: Decimal = Decimal("0.5"), min_disp: Decimal = Decimal(0)):
         self.depth = depth
+        self.min_disp = min_disp   # birth needs a >= min_disp*ATR displacement break
         self.tape = Tape()
         self.zones: list[Zone] = []
         self._run: list[tuple[Decimal, Decimal, int]] = []  # (body_lo, body_hi, sign)
@@ -97,6 +98,11 @@ class ObZones:
             bhi = max(b[1] for b in self._run)
             if c > bhi or c < blo:                       # continuation break
                 d = 1 if c > bhi else -1
+                disp = (c - bhi) if d == 1 else (blo - c)  # break displacement
+                if self.tape.atr and self.min_disp and disp < self.min_disp * self.tape.atr:
+                    self._run = []                       # sub-displacement -> mint nothing
+                    self._run.append(body)
+                    return None
                 k = next((j for j, bb in enumerate(self._run) if bb[2] == -d), None)
                 if k is not None:                        # pause had counter-pressure
                     sub = self._run[k:]
@@ -116,7 +122,8 @@ class ObTaughtDetector(Detector):
 
     def __init__(self, params: dict):
         super().__init__({**_DEFAULTS, **params})
-        self._z = ObZones(Decimal(str(self.params["depth_atr"])))
+        self._z = ObZones(Decimal(str(self.params["depth_atr"])),
+                          Decimal(str(self.params["min_disp_atr"])))
         self._n = 0
 
     def on_session_end(self) -> None:

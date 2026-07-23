@@ -29,7 +29,8 @@ from trader.models.evidence import Direction, Evidence
 from trader.models.level import LevelKind, LevelState
 
 _ACTIVE = (LevelState.ACTIVE, LevelState.TESTED)
-_DEFAULTS = {"tf": "1h", "min_range_atr": 8.0, "eq_deadband": 0.10}
+_DEFAULTS = {"tf": "1h", "min_range_atr": 8.0, "eq_deadband": 0.10,
+             "edge_trigger": False}  # True -> emit only on ENTRY into the OTE band
 _PERMITS = {"discount": "LONG", "premium": "SHORT", "mid": None}
 
 
@@ -39,6 +40,10 @@ class PremiumDiscountDetector(Detector):
 
     def __init__(self, params: dict):
         super().__init__({**_DEFAULTS, **params})
+        self._in_band: dict[str, bool] = {}   # symbol -> price was in OTE band last bar
+
+    def on_session_end(self) -> None:
+        self._in_band.clear()
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
@@ -63,11 +68,16 @@ class PremiumDiscountDetector(Detector):
         dead = float(self.params["eq_deadband"]) / 2
         side = ("discount" if pos <= 0.5 - dead
                 else "premium" if pos >= 0.5 + dead else "mid")
+        ote = 0.21 <= pos <= 0.38 or 0.62 <= pos <= 0.79
+        if self.params.get("edge_trigger"):    # emit only on 0->1 entry into OTE band
+            prev = self._in_band.get(ctx.symbol, False)
+            self._in_band[ctx.symbol] = ote
+            if not (ote and not prev):
+                return []
         return [Evidence(
             detector=self.name, direction=Direction.NEUTRAL,
             strength=min(1.0, abs(pos - 0.5) * 2), zone=(lo, hi),
             ts=ctx.now, ttl_candles=1,
             meta={"lo": str(lo), "hi": str(hi), "eq": str((lo + hi) / 2),
-                  "range_pos": round(pos, 3), "side": side,
-                  "ote": 0.21 <= pos <= 0.38 or 0.62 <= pos <= 0.79,
+                  "range_pos": round(pos, 3), "side": side, "ote": ote,
                   "permits": _PERMITS[side]})]

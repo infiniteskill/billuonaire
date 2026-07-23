@@ -105,7 +105,8 @@
       },
       "ob_taught": {
         "require_sweep_bos": true,
-        "gate_mode": "sweep"
+        "gate_mode": "sweep",
+        "min_disp_atr": 1.0
       },
       "extremes": {
         "timeframes": [
@@ -118,7 +119,11 @@
       },
       "premium_discount": {
         "tf": "1h",
-        "min_range_atr": 4.0
+        "min_range_atr": 4.0,
+        "edge_trigger": true
+      },
+      "htf_nest": {
+        "min_depth": 2
       }
     }
   },

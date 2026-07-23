@@ -87,7 +87,7 @@ def test_registered():
     d = ObTaughtDetector({})
     assert d.params == {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15,
                         "far_dist_atr": 99.0, "require_sweep_bos": False,
-                        "gate_window": 20, "gate_mode": "sweep_and_bos"}
+                        "gate_window": 20, "gate_mode": "sweep_and_bos", "min_disp_atr": 0.0}
 
 
 def test_bodies_only_box_and_retest_fires():
@@ -196,3 +196,15 @@ def test_gate_mode_sweep_still_needs_a_sweep():
     store = make_store([FLAT] * 15 + [B15, B16, B17, PARM, PTOUCH])
     det = ObTaughtDetector({"require_sweep_bos": True, "gate_mode": "sweep"})
     assert run_to(det, store, [], 20) == []          # no swept level -> no arm
+
+
+def test_min_disp_gate_suppresses_small_break():
+    # displacement gate: B17 clears the box by ~1.5 < 1.0*ATR(~2.55) -> mint nothing
+    store = make_store([FLAT] * 15 + [B15, B16, B17, PARM, PTOUCH])
+    assert run_to(ObTaughtDetector({"min_disp_atr": 1.0}), store, [], 20) == []
+
+
+def test_min_disp_default_off_unchanged():
+    store = make_store([FLAT] * 15 + [B15, B16, B17, PARM, PTOUCH])
+    [ev] = run_to(ObTaughtDetector({}), store, [], 20)     # default 0 -> fires
+    assert ev.meta["event"] == "OB_RETEST"
