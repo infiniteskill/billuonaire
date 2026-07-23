@@ -75,6 +75,19 @@ Refine verdict-number A (runner-flag) into ALIGNMENT DEPTH:
   fill-through → the method is real and we know exactly why. If depth doesn't separate → the 27 were
   survivorship and HTF-alignment is another dead flag.
 
+## WORKED EXAMPLE (t28, SBICARD, 6th stock — the method's live proof-of-concept)
+User's own multi-TF drill, 10 screenshots, top-down: 1D (fell 900->580, mature base May-Jul,
+circled = discount context) -> 2H (OB 2HR + FVG 2HR stacked ~575-590 = HTF decisional demand
+zone) -> 1H (confirms) -> 5m/10m/15m ("entry 5 min ob" ~582-587 = a 5m OB NESTED INSIDE the 2H
+OB). Entered ~582-587 (09/07) -> rallied to ~660 (20/07), ~+78pt/+13%. This confirms EVERY claim
+of this doc LIVE: (1) deep nesting 5mOB ⊂ 2H-OB ⊂ daily-base, ALL same direction; (2) big TF
+decides the sensitive zone (5m OB matters only because nested in the 2H OB); (3) the RR mechanism
+— tiny 5m stop (~2-5pt/~0.5%) inside the huge 2H OB => tight LTF stop + HTF direction + daily
+target = 1:15 geometry (doc 34 + doc 36 unified); (4) the PROCESS is TOP-DOWN (daily context ->
+HTF decisional zone -> recurse to finer TF for the nested entry = decision-tree node-3, doc 33).
+=> the decision tree runs top-down: establish HTF alignment/zone FIRST, only then seek the LTF
+nested entry. HTF alignment isn't a post-hoc filter — it is the STARTING NODE.
+
 ## The one-line conclusion
 The losers are not random twins — they are HTF-MISALIGNED setups; HTF alignment is CAUSAL and
 knowable at entry (HTF is slow), which is precisely why it can be the discriminator that LTF chart
