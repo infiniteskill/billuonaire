@@ -1,3 +1,10 @@
+> ⚠️ SUPERSEDED — see runs/validate/RETHINK.md. "RANGE-fade of a coil is the edge" is a
+> winners-only tautology: regime is DAILY for a 5m/30m method, RANGE is the default bucket,
+> target_reached=29/30 has no outcome variance, corr(ADX,move)=−0.26 is n=30 p≈0.16 (NS), and
+> premium/discount tags are window-fragile (5 trades violate the rule). The full-sample
+> compression detector measures NEGATIVE (BOX_ON_LEVEL −2.3pp), contradicting the coil-edge
+> thesis. Treat below as a description of WINNERS, not a proven filter.
+
 # ANALYSIS — what SITUATION made the 30 taught trades perform (real data, 2026-07-23)
 
 User's own trade criteria, restated: trade **EXTREMES** (never mid premium/discount),

@@ -1,3 +1,9 @@
+> ⚠️ SUPERSEDED — see runs/validate/RETHINK.md. The "96% target reached" is inflated ~3× (in
+> 19/30 the stop was breached before the target; correctly sequenced ≈10/30). Year-resolution is
+> partly circular (10/30 multi-year, picked outcome-maximising year; only t31 truly resolved) and
+> a timezone off-by-one corrupts daily dates. This doc proves anatomy FIDELITY only (structures
+> exist on real tape), NOT profitability/hit-rate. Numbers below are recognition, not edge.
+
 # VALIDATE — the 30 taught trades checked against REAL Yahoo OHLCV (2026-07-23)
 
 User ask: take the ~30 hand-drawn taught trades, FIND them in real market data, and
