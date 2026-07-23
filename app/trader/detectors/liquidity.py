@@ -29,7 +29,8 @@ _EXT = frozenset({LevelKind.EXT_H, LevelKind.EXT_L})  # lone-extreme pools: mast
 _HIGH_POOLS = frozenset({LevelKind.PWH, LevelKind.PWL,
                          LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L})
 _DEFAULTS = {"eq_tolerance": 0.001, "round_steps": [50, 100, 500],
-             "round_within_pct": 2.0, "proximity_atr": 1.0, "or_minutes": 15}
+             "round_within_pct": 2.0, "proximity_atr": 1.0, "or_minutes": 15,
+             "emit_only": None}   # e.g. ["EQH","EQL","EXT_H","EXT_L"] to surface only taught pools
 
 
 def _mid(zone: tuple[Decimal, Decimal]) -> Decimal:
@@ -186,9 +187,11 @@ class LiquidityDetector(Detector):
         proximity_atr = Decimal(str(self.params["proximity_atr"]))
         max_distance = proximity_atr * atr
 
+        emit_only = self.params.get("emit_only")   # None = all cataloged pools
         pools = [
             lv for lv in ctx.levels
             if lv.kind in _PROXIMITY_KINDS and lv.state in _ACTIVE_STATES
+            and (emit_only is None or lv.kind.name in emit_only)  # surface only taught pools
             and (lv.kind not in _EXT or lv.meta.get("master"))  # lone EXT: master only
         ]
         above = sorted((lv for lv in pools if _mid(lv.zone) >= price), key=lambda lv: _mid(lv.zone))

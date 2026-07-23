@@ -20,7 +20,8 @@ from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
 from trader.models.level import Level, LevelKind, LevelState
 
-_DEFAULTS = {"tf": "5m", "reclaim_bonus_candles": 3, "chain_window": 20}
+_DEFAULTS = {"tf": "5m", "reclaim_bonus_candles": 3, "chain_window": 20,
+             "min_touches": 0}   # gate SWEEP on stacked-stop pools (0 = off; daily/weekly exempt)
 _DAILY_WEEKLY = frozenset({LevelKind.PDH, LevelKind.PDL, LevelKind.PWH, LevelKind.PWL})
 _HIGH_POOLS = frozenset({LevelKind.PWH, LevelKind.PWL,
                          LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L})
@@ -66,6 +67,9 @@ class SweepDetector(Detector):
                     ts=ctx.now, ttl_candles=base.ttl_candles,
                     meta={**base.meta, "upgrade": True},
                 ))
+                continue
+            if (lv.touches < int(self.params["min_touches"])
+                    and lv.kind not in _DAILY_WEEKLY):   # need stacked-stop liquidity
                 continue
             direction = Direction.SHORT if side == "below" else Direction.LONG
             depth = self._chain_depth(ctx, tf, direction)

@@ -89,7 +89,7 @@ def test_registered():
     assert REGISTRY["fvg_n"] is FvgNDetector
     d = FvgNDetector({})
     assert d.params == {"tf": "5m", "mmax": 6, "depth_atr": 0.5,
-                        "sl_atr_floor": 0.15}
+                        "sl_atr_floor": 0.15, "min_gap_atr": 0.0}
 
 
 def test_long_gap_retest_fires():

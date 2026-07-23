@@ -39,7 +39,8 @@ from trader.engine.context import StockContext
 from trader.models.candle import Timeframe
 from trader.models.evidence import Direction, Evidence
 
-_DEFAULTS = {"tf": "5m", "mmax": 6, "depth_atr": 0.5, "sl_atr_floor": 0.15}
+_DEFAULTS = {"tf": "5m", "mmax": 6, "depth_atr": 0.5, "sl_atr_floor": 0.15,
+             "min_gap_atr": 0.0}   # birth needs gap >= min_gap_atr*ATR (0 = off)
 _EVENT = {"FVG": "FVG_N_RETEST", "IFVG": "IFVG_RETEST"}
 _ALL = 10 ** 9
 
@@ -47,8 +48,9 @@ _ALL = 10 ** 9
 class FvgZones:
     """Incremental merged-FVG tracker; tf-agnostic (fed closed bars)."""
 
-    def __init__(self, mmax: int = 6, depth: Decimal = Decimal("0.5")):
-        self.mmax, self.depth = mmax, depth
+    def __init__(self, mmax: int = 6, depth: Decimal = Decimal("0.5"),
+                 min_gap: Decimal = Decimal(0)):
+        self.mmax, self.depth, self.min_gap = mmax, depth, min_gap
         self.tape = Tape()
         self.zones: list[Zone] = []
         self._bars: deque = deque(maxlen=mmax + 2)   # (h, l, c)
@@ -76,6 +78,8 @@ class FvgZones:
         return events
 
     def _keep(self, d, lo, hi, a, b, ts) -> None:
+        if self.min_gap and self.tape.atr and (hi - lo) < self.min_gap * self.tape.atr:
+            return                                       # sub-size gap -> not a taught FVG
         # dedup (ts2_lib.fvg_n_extra): drop a fragment overlapping an existing
         # live same-dir FVG in window AND band; keep-first, box never grows.
         if any(z.alive and z.kind == "FVG" and z.dir == d
@@ -93,7 +97,8 @@ class FvgNDetector(Detector):
     def __init__(self, params: dict):
         super().__init__({**_DEFAULTS, **params})
         self._z = FvgZones(int(self.params["mmax"]),
-                           Decimal(str(self.params["depth_atr"])))
+                           Decimal(str(self.params["depth_atr"])),
+                           Decimal(str(self.params["min_gap_atr"])))
         self._n = 0
 
     def on_session_end(self) -> None:

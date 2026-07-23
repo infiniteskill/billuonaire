@@ -124,6 +124,21 @@
       },
       "htf_nest": {
         "min_depth": 2
+      },
+      "sweep": {
+        "min_touches": 3
+      },
+      "fvg_n": {
+        "min_gap_atr": 0.7
+      },
+      "liquidity": {
+        "emit_only": [
+          "EQH",
+          "EQL",
+          "EXT_H",
+          "EXT_L"
+        ],
+        "proximity_atr": 0.35
       }
     }
   },
