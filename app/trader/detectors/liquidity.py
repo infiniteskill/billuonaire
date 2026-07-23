@@ -22,8 +22,10 @@ _ACTIVE_STATES = (LevelState.ACTIVE, LevelState.TESTED)
 _PROXIMITY_KINDS = frozenset({
     LevelKind.PDH, LevelKind.PDL, LevelKind.PWH, LevelKind.PWL,
     LevelKind.EQH, LevelKind.EQL,
+    LevelKind.EXT_H, LevelKind.EXT_L,
     LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L, LevelKind.ROUND,
 })
+_EXT = frozenset({LevelKind.EXT_H, LevelKind.EXT_L})  # lone-extreme pools: master only
 _HIGH_POOLS = frozenset({LevelKind.PWH, LevelKind.PWL,
                          LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L})
 _DEFAULTS = {"eq_tolerance": 0.001, "round_steps": [50, 100, 500],
@@ -52,6 +54,8 @@ class LiquidityDetector(Detector):
         self._create_round(ctx)
         self._create_eq(ctx, LevelKind.SWING_H, LevelKind.EQH)
         self._create_eq(ctx, LevelKind.SWING_L, LevelKind.EQL)
+        self._create_eq(ctx, LevelKind.EXT_H, LevelKind.EQH)  # EQ pools from taught
+        self._create_eq(ctx, LevelKind.EXT_L, LevelKind.EQL)  # extremes, not just fractal
         return self._proximity_evidence(ctx)
 
     # ---- PDH/PDL + opening range (high/low pairs) ------------------------
@@ -185,6 +189,7 @@ class LiquidityDetector(Detector):
         pools = [
             lv for lv in ctx.levels
             if lv.kind in _PROXIMITY_KINDS and lv.state in _ACTIVE_STATES
+            and (lv.kind not in _EXT or lv.meta.get("master"))  # lone EXT: master only
         ]
         above = sorted((lv for lv in pools if _mid(lv.zone) >= price), key=lambda lv: _mid(lv.zone))
         below = sorted((lv for lv in pools if _mid(lv.zone) < price), key=lambda lv: _mid(lv.zone), reverse=True)
