@@ -74,6 +74,21 @@ the WIDEST/union fragment, not the smallest (dedup currently keeps minimal); rai
 (d) kill 0.5×ATR is stricter than user's plain decisive close-through for the flip.
 fvg_cb.py: has CE-hold (good) but strict-3 only + no iFVG flip → add the flip; keep as CE specialist.
 
+### iFVG ≡ OB CO-LOCATION (t30, SBICARD 15m→5m, 7th teaching of the stack)
+User asked "here ifvg is orderblock too" and labeled `ifvg` + `ob` at the SAME price (~800) inside a
+big `fvg` void, with a refined `fvg entry` box ~793-797 → long → +7-13% to 850+. CONFIRMS the stack:
+the iFVG and the OB are the SAME origin candles wearing two labels. MECHANISM: at a valid demand
+origin the up-displacement BOTH (a) leaves the last-down bodies = the OB AND (b) closes through the
+small bearish FVG resting on them → that gap INVERTS = iFVG. One cluster, two tags (same as t25
+ob+propulsion, t27 ob+fvg, T1 OB+FVG+breaker). => decisional zones are interchangeable co-located
+tags; MORE tags stacked at one price = higher conviction (here iFVG-flip + OB + inside-parent-FVG =
+triple-stack = the entry). DETECTOR IMPLICATION: iFVG-flip detection and OB detection must MERGE when
+co-located — a bearish FVG that gets closed-through, sitting on the OB origin bodies, is ONE zone not
+two; the decision tree scores a zone by how many detectors fire at the same band (stack-count = grade
+input, already in grade.py composite), and the iFVG flip is a CONFIRMATION that the OB origin is live
+(price closed through = displacement happened), not a separate signal. Same body-cluster geometry
+(outer wick + inner body, CE entry) applies to both labels.
+
 ## BREAKER / MITIGATION / PROPULSION
 BREAKER (user): a prior swing high (resting liquidity) is SWEPT (higher-high taken), THEN structure
 breaks the other way; the failed OB FLIPS. Box = BODIES of the failed-OB cluster, inner OB/50% line
