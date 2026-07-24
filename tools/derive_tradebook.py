@@ -81,7 +81,10 @@ def _sim(t, m1, m5, stop_mode="intrabar", hold=3000):
             if (b.close <= sl) if long else (b.close >= sl):     # M5-close stop -> fill at close
                 return "stop", round(float((b.close - e) / risk) * d, 2)
         return "timeout", None
+    eod = stop_mode == "eod"     # PRODUCTION intraday: force-close at 15:10 same session
     for b in [c for c in m1 if c.ts >= t["ts"]][:hold]:
+        if eod and (b.ts.hour * 60 + b.ts.minute) >= 15 * 60 + 10:
+            return "eod", round(float((b.close - e) / risk) * d, 2)  # squareoff at close
         if (long and b.open <= sl) or (not long and b.open >= sl):
             return "gap", float((b.open - e) / risk) * d
         if (b.low <= sl) if long else (b.high >= sl):
@@ -150,8 +153,9 @@ def main():
         for q in sorted(hq):
             stat(hq[q], "  " + q)
 
-    report("intrabar")     # research/strict (the +6.13R baseline)
+    report("intrabar")     # research/strict (the +6.13R baseline, multi-day holds)
     report("m5_close")     # PRODUCTION F9 — does the edge survive M5-close stops?
+    report("eod")          # PRODUCTION intraday — does it survive 15:10 same-day squareoff?
 
 
 if __name__ == "__main__":

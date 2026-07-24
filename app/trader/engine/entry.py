@@ -152,7 +152,7 @@ class EntryFSM:
         if sig is not None:  # signal-emitter drives the zone: honor its tiny stop
             # raw structural extreme, floored at 0.15xATR sl_floor -- NOT the
             # min_stop_atr cost-floor widening that would kill the RR edge.
-            stop_risk = max(abs(entry - sl), Decimal(sig.meta["sl_floor"]))
+            stop_risk = max(abs(entry - sl), Decimal(sig.meta.get("sl_floor", "0")))
             stop = snap_stop_off_round(  # round-snap still applies to the tiny stop
                 self.spec.quantize(entry - stop_risk if up else entry + stop_risk),
                 ctx.levels, self.spec, self.s.stops.round_offset_ticks, up)
