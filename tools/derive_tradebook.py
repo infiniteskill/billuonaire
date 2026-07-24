@@ -55,8 +55,18 @@ def _tap(pipe, trades, min_grade, gate_bars=20):
             window = list(evs) + [e for e in ctx.evidence_history if e.ts >= cutoff]
             d = decide(ctx, window, min_grade)
             if d.take:
+                rs = d.reasons
+                nd = next((int(x.split(":")[1]) for x in rs if x.startswith("nest:")), 0)
+                mat = next((float(x.split(":")[1]) for x in rs if x.startswith("maturity:")), 0.0)
+                mem = d.members[0] if d.members else ("", "", 0.0)
                 trades.append({"sym": pipe.symbol, "ts": ctx.now, "dir": d.direction.name,
-                               "entry": d.entry, "sl": d.sl, "target": d.target, "grade": d.grade})
+                               "entry": d.entry, "sl": d.sl, "target": d.target, "grade": d.grade,
+                               # ADDITIVE feature capture (Z1) — for offline A/B on the graded frame:
+                               "bos": "bos" in rs, "sweep": "sweep" in rs, "ote": "ote" in rs,
+                               "phase": "phase" in rs, "nest_depth": nd, "maturity": mat,
+                               "zone_lo": d.zone[0] if d.zone else None,
+                               "zone_hi": d.zone[1] if d.zone else None,
+                               "member_det": mem[0], "member_event": mem[1], "strength": mem[2]})
         return evs
     pipe.registry.run_all = run_all
 
@@ -115,6 +125,7 @@ def main():
     m1s = {sym: orch.store._data.get(sym, {}).get(Timeframe.M1, []) for sym in syms}
     m5s = {sym: orch.store._data.get(sym, {}).get(Timeframe.M5, []) for sym in syms}
     from collections import Counter
+    tb = []   # ADDITIVE (Z1): persist every closed trade-record for offline graded-frame A/B
 
     def stat(sub, label):
         if not sub:
@@ -153,10 +164,24 @@ def main():
             hq[_quad(row[0], split)].append(row)
         for q in sorted(hq):
             stat(hq[q], "  " + q)
+        for t, o, r, net in rows:      # ADDITIVE: one record per trade per mode
+            tb.append({"mode": mode, "outcome": o, "R": r, "net": round(float(net), 4),
+                       "quad": _quad(t, split),
+                       **{k: (float(v) if isinstance(v, Decimal)
+                              else (v.isoformat() if hasattr(v, "isoformat") else v))
+                          for k, v in t.items()}})
 
     report("intrabar")     # research/strict (the +6.13R baseline, multi-day holds)
     report("m5_close")     # PRODUCTION F9 — does the edge survive M5-close stops?
     report("eod")          # PRODUCTION intraday — does it survive 15:10 same-day squareoff?
+
+    import csv             # ADDITIVE (Z1): dump the tradebook — enables seconds-long A/B vs the +8R tier
+    out = Path(os.environ.get("DERIVE_TB_OUT", str(ROOT / "runs/validate/derive_tradebook.csv")))
+    if tb:
+        keys = sorted({k for row in tb for k in row})
+        with out.open("w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=keys); w.writeheader(); w.writerows(tb)
+        print(f"\nwrote {len(tb)} trade-records -> {out}")
 
 
 if __name__ == "__main__":
