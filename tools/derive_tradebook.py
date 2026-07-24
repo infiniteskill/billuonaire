@@ -44,7 +44,7 @@ def cost_R(entry, risk):
     return per_share / r + 2 * c["brokerage_flat"] / risk_budget
 
 
-def _tap(pipe, trades, min_grade, gate_bars=20):
+def _tap(pipe, trades, min_grade, gate_bars=20, min_rr=0.0):
     orig = pipe.registry.run_all
 
     def run_all(ctx):
@@ -53,7 +53,7 @@ def _tap(pipe, trades, min_grade, gate_bars=20):
             w = ctx.candles.last(gate_bars, Timeframe("5m"))
             cutoff = w[0].ts if w else ctx.now
             window = list(evs) + [e for e in ctx.evidence_history if e.ts >= cutoff]
-            d = decide(ctx, window, min_grade)
+            d = decide(ctx, window, min_grade, min_rr)
             if d.take:
                 rs = d.reasons
                 nd = next((int(x.split(":")[1]) for x in rs if x.startswith("nest:")), 0)
@@ -119,9 +119,10 @@ def main():
     jdir = Path(os.environ.get("DERIVE_JOURNAL", str(ROOT / "runs/validate/derive_work")))  # env override -> parallel shards
     orch = Orchestrator(s, FileFeed(DATA, s.market_spec()), syms, index_symbol=None,
                         max_qty=1, journal_dir=jdir)
+    min_rr = float(os.environ.get("DERIVE_MIN_RR", 0))   # proven cross-regime gate; 0=off (frozen)
     trades = []
     for pipe in orch.pipelines.values():
-        _tap(pipe, trades, min_grade)
+        _tap(pipe, trades, min_grade, min_rr=min_rr)
     orch.run()
     m1s = {sym: orch.store._data.get(sym, {}).get(Timeframe.M1, []) for sym in syms}
     m5s = {sym: orch.store._data.get(sym, {}).get(Timeframe.M5, []) for sym in syms}

@@ -58,7 +58,8 @@ def _runway(ctx: StockContext, d: Direction, entry: Decimal) -> Decimal | None:
     return min(cands) if long else max(cands)
 
 
-def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2) -> Decision:
+def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2,
+           min_rr: float = 0.0) -> Decision:
     # node 0/1 -- premium/discount permits a side (AT an extreme, never mid)
     pd = next((e for e in evidence if e.detector == "premium_discount"), None)
     permit = pd.meta.get("permits") if pd else None
@@ -106,6 +107,13 @@ def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2) -> D
     if target is None:
         return Decision(False, d, entry, sl, None, grade, reasons + ["no runway"])
     reasons.append("runway")
+
+    # min-RR gate (required, default-off) — reward:risk of the far target vs the structural stop.
+    # tinyRR (<~2) trades are net-neutral/negative (not the taught far-liquidity setup); proven
+    # cross-regime sharpener (dev/plan/47-40STOCK/_BULL-AND-DEDUP.md). Off unless configured.
+    risk = abs(entry - sl)
+    if min_rr and risk and abs(target - entry) / risk < Decimal(str(min_rr)):
+        return Decision(False, d, entry, sl, target, grade, reasons + [f"rr<{min_rr}"])
 
     take = grade >= min_grade
     reasons.append("take" if take else f"grade {grade}<{min_grade}")
