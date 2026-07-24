@@ -60,18 +60,30 @@ def _tap(pipe, trades, min_grade, gate_bars=20):
     pipe.registry.run_all = run_all
 
 
-def _sim(t, m1, hold=3000):
-    """Gap-aware forward sim on the finest (1m) candles = honest fill-through.
-    Raw R (costs applied separately). intrabar stop-before-target (conservative)."""
+def _sim(t, m1, m5, stop_mode="intrabar", hold=3000):
+    """Forward fill sim. stop_mode:
+      'intrabar' (research/strict) = 1m path, stop on intrabar TOUCH of sl (-1R).
+      'm5_close' (PRODUCTION, F9)   = 5m path, stop only when an M5 bar CLOSES beyond
+        sl and fills at that close (loss CAN exceed 1R); target is a limit (touch).
+    Both gap-aware (open beyond sl -> stop at open). Raw R; costs applied separately."""
     e, sl, tgt = t["entry"], t["sl"], t["target"]
     long = t["dir"] == "LONG"
+    d = 1 if long else -1
     risk = abs(e - sl)
     if not risk:
         return None, None
-    path = [c for c in m1 if c.ts >= t["ts"]][:hold]
-    for b in path:
+    if stop_mode == "m5_close":
+        for b in [c for c in m5 if c.ts >= t["ts"]][:hold]:
+            if (long and b.open <= sl) or (not long and b.open >= sl):
+                return "gap", float((b.open - e) / risk) * d
+            if (b.high >= tgt) if long else (b.low <= tgt):      # limit target = touch
+                return "target", round(float(abs(tgt - e) / risk), 2)
+            if (b.close <= sl) if long else (b.close >= sl):     # M5-close stop -> fill at close
+                return "stop", round(float((b.close - e) / risk) * d, 2)
+        return "timeout", None
+    for b in [c for c in m1 if c.ts >= t["ts"]][:hold]:
         if (long and b.open <= sl) or (not long and b.open >= sl):
-            return "gap", float((b.open - e) / risk) * (1 if long else -1)
+            return "gap", float((b.open - e) / risk) * d
         if (b.low <= sl) if long else (b.high >= sl):
             return "stop", -1.0
         if (b.high >= tgt) if long else (b.low <= tgt):
@@ -97,17 +109,8 @@ def main():
         _tap(pipe, trades, min_grade)
     orch.run()
     m1s = {sym: orch.store._data.get(sym, {}).get(Timeframe.M1, []) for sym in syms}
-
-    rows = []
-    for t in trades:
-        o, r = _sim(t, m1s[t["sym"]])
-        if r is None:
-            continue
-        net = r - cost_R(t["entry"], abs(t["entry"] - t["sl"]))
-        rows.append((t, o, r, net))
-    if not rows:
-        print("no closed trades"); return
-    split = sorted(t["ts"] for t, *_ in rows)[len(rows) // 2]
+    m5s = {sym: orch.store._data.get(sym, {}).get(Timeframe.M5, []) for sym in syms}
+    from collections import Counter
 
     def stat(sub, label):
         if not sub:
@@ -118,26 +121,37 @@ def main():
               f"gross/t={sum(r for _,o,r,n in sub)/len(sub):+.2f}R "
               f"NET/t={sum(net)/len(net):+.3f}R")
 
-    print(f"=== HONEST DERIVED TRADEBOOK  syms={syms} min_grade={min_grade} ===")
-    print(f"closed={len(rows)}  (1m fill-through, rupee costs, holdout)")
-    from collections import Counter
-    print("outcomes:", dict(Counter(o for _, o, r, n in rows)))
-    stat(rows, "ALL")
-    print("by grade:")
-    bg = defaultdict(list)
-    for row in rows:
-        bg[row[0]["grade"]].append(row)
-    for g in sorted(bg):
-        stat(bg[g], f"grade {g}")
-    print("HIGH-GRADE tier (>=4):")
-    hi = [r for r in rows if r[0]["grade"] >= 4]
-    stat(hi, "hi ALL")
-    print("  holdout quadrants (hi tier):")
-    hq = defaultdict(list)
-    for row in hi:
-        hq[_quad(row[0], split)].append(row)
-    for q in sorted(hq):
-        stat(hq[q], "  " + q)
+    def report(mode):
+        rows = []
+        for t in trades:
+            o, r = _sim(t, m1s[t["sym"]], m5s[t["sym"]], mode)
+            if r is None:
+                continue
+            net = r - cost_R(t["entry"], abs(t["entry"] - t["sl"]))
+            rows.append((t, o, r, net))
+        if not rows:
+            print("no closed trades"); return
+        split = sorted(t["ts"] for t, *_ in rows)[len(rows) // 2]
+        print(f"\n=== STOP_MODE={mode}  syms={len(syms)}  min_grade={min_grade} ===")
+        print(f"closed={len(rows)}  outcomes: {dict(Counter(o for _,o,r,n in rows))}")
+        stat(rows, "ALL")
+        print("by grade:")
+        bg = defaultdict(list)
+        for row in rows:
+            bg[row[0]["grade"]].append(row)
+        for g in sorted(bg):
+            stat(bg[g], f"grade {g}")
+        hi = [r for r in rows if r[0]["grade"] >= 4]
+        print("HIGH-GRADE tier (>=4):"); stat(hi, "hi ALL")
+        print("  holdout quadrants (hi tier):")
+        hq = defaultdict(list)
+        for row in hi:
+            hq[_quad(row[0], split)].append(row)
+        for q in sorted(hq):
+            stat(hq[q], "  " + q)
+
+    report("intrabar")     # research/strict (the +6.13R baseline)
+    report("m5_close")     # PRODUCTION F9 — does the edge survive M5-close stops?
 
 
 if __name__ == "__main__":
