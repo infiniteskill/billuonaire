@@ -24,14 +24,14 @@
     "max_cost_reward_ratio": 0.15
   },
   "time": {
-    "no_entry_after": "14:45",
+    "no_entry_after": "15:05",
     "squareoff": "15:10",
-    "observe_min": 105,
-    "entry_after_lock": true
+    "observe_min": 0,
+    "entry_after_lock": false
   },
   "entry": {
-    "arm_proximity_atr": 1.0,
-    "chase_tolerance_atr": 0.1,
+    "arm_proximity_atr": 3.0,
+    "chase_tolerance_atr": 2.0,
     "max_stop_atr": 2.0,
     "arm_ttl_candles": 12,
     "fill_ttl_candles": 6
@@ -41,7 +41,7 @@
     "cooldown_candles": 6
   },
   "ladder": {
-    "enabled": true,
+    "enabled": false,
     "min_rung": 3
   },
   "stops": {
@@ -139,6 +139,10 @@
           "EXT_L"
         ],
         "proximity_atr": 0.35
+      },
+      "decision": {
+        "engine": "taught",
+        "min_grade": 4
       }
     }
   },

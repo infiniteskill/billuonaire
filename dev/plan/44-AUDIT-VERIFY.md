@@ -124,3 +124,23 @@ REAL but NOT the killer — the edge survives it.** grade-4 marginal tier is sen
 -0.42 under m5_close), so the tradeable boundary is >=5. REMAINING production-parity to test:
 F6 (entry substitution) + F10 (laddered exits / arm-trigger gating) + F1 (wire decide() into
 pipeline for a true end-to-end production reproduction). Still one 17d regime.
+
+## F1 WIRING (2026-07-24) — decide() into production: part-1 done, 2 real gaps found
+Part-1 (COMMITTED, 915 green, default-preserving): decision.py Decision gains zone/members;
+pipeline reads detectors.params.decision.{engine,min_grade}; engine=taught routes _on_m5_close
+to _taught_zones() (fresh-zone-gated decide() -> forced-arm ScoredZone) instead of confluence.
+Smoke replay (engine=taught, 2 stocks): runs end-to-end, NO crash in the wiring -> taught zones
+reach the FSM. But 0 trades, revealing TWO production-parity gaps the derived sim never had:
+1. **Production GateChain rejects all taught signals**: skips = template 43, time_window 71,
+   ladder 16, chase 12. time/ladder/chase are config-relaxable; the TEMPLATE gate (gates.py:106,
+   rejects ctx.day.template=='UNCLASSIFIED') needs a taught bypass. These are confluence-era
+   SELECTION gates irrelevant to the taught decision (which already decided).
+2. **Meta-schema bug**: EntryFSM.arm (entry.py:155) does sig.meta['sl_floor'], but htf_nest (and
+   some taught signals) emit 'sl' WITHOUT 'sl_floor' -> KeyError. The FSM's tiny-stop logic assumes
+   ob_taught's exact meta schema.
+=> F1 is MULTI-PART. The +6.13R (raw decide() signals) is untouched; production wraps them in gates
++ a meta assumption that don't yet fit the taught chain. NEXT (verified): entry.py
+sig.meta.get('sl_floor','0'); bypass template/ladder for engine=taught; re-run replay -> net-R
+through production execution vs +6.13R. NO production-engine code changed this session (edge-safe).
+NOTE: taught_profile config.json has experiment values (gates relaxed, engine=taught) — a research
+artifact, not production defaults.
