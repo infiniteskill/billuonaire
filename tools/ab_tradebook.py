@@ -10,8 +10,10 @@ Usage: python3 tools/ab_tradebook.py <tradebook.csv> <filter> [arg]
 b_hit / regime are JOINED on demand (b_hit via merge_asof to the study parquet by sym,ts;
 regime via dev/plan/47-40STOCK/_REGIME.md).
 """
+import os
 import re
 import sys
+import zlib
 from pathlib import Path
 
 import pandas as pd
@@ -69,7 +71,18 @@ def apply_filter(tb, name, arg):
         return tb[tb["nest_depth"] >= int(arg)]
     if name == "strength_ge":
         return tb[tb["strength"] >= float(arg)]
+    if name == "min_rr":
+        rr = (tb["target"] - tb["entry"]).abs() / (tb["entry"] - tb["sl"]).abs()
+        return tb[rr >= float(arg)]
     raise SystemExit(f"unknown filter {name}")
+
+
+def dedup(df):
+    """One entry per unique (sym,entry,sl,target) — the same zone re-fires 2-3x in the gate window;
+    only the first is executable. This is the PRODUCTION-REALISTIC frame (raw over-counts ~70%)."""
+    k = (df["sym"] + "|" + df["entry"].round(1).astype(str) + "|"
+         + df["sl"].round(1).astype(str) + "|" + df["target"].round(1).astype(str))
+    return df.assign(_k=k).drop_duplicates(["mode", "_k"], keep="first").drop(columns="_k")
 
 
 def tier_stats(df):
@@ -120,20 +133,36 @@ def show(mode, base, filt):
     return ship
 
 
+def recompute_quad(m):
+    """GLOBAL median-ts holdout split (fixes parallel shard-local quads; consistent post-dedup)."""
+    ts = m["ts"].sort_values().values
+    if len(ts) == 0:
+        return m
+    split = ts[len(ts) // 2]
+    q = ["late" if t >= split else "early" for t in m["ts"]]
+    grp = m["sym"].map(lambda s: "A" if zlib.crc32(s.encode()) % 2 == 0 else "B")
+    return m.assign(quad=[a + "/" + b for a, b in zip(q, grp)])
+
+
 def main():
     tbfile = Path(sys.argv[1])
     name = sys.argv[2] if len(sys.argv) > 2 else "none"
     arg = sys.argv[3] if len(sys.argv) > 3 else None
+    raw = os.environ.get("AB_RAW") == "1"        # default = DEDUP (production-realistic); AB_RAW=1 keeps clustered
     tb = pd.read_csv(tbfile)
+    n0 = len(tb)
+    if not raw:
+        tb = dedup(tb)
     if "b_hit" in name or name == "bhit_gt0":
         tb = join_bhit(tb)
         print(f"joined b_hit: {tb['b_hit'].notna().sum()}/{len(tb)} matched")
     if name == "regime":
         tb["regime"] = tb["sym"].map(load_regime())
-    print(f"tradebook={tbfile.name}  filter={name} {arg or ''}  total-records={len(tb)}")
+    print(f"tradebook={tbfile.name}  filter={name} {arg or ''}  "
+          f"records={len(tb)}{'' if raw else f' (deduped from {n0}, -{100*(1-len(tb)/n0):.0f}%)'}")
     allship = True
     for mode in ["intrabar", "m5_close", "eod"]:
-        b = tb[tb["mode"] == mode]; f = apply_filter(b, name, arg)
+        b = recompute_quad(tb[tb["mode"] == mode].copy()); f = apply_filter(b, name, arg)
         allship &= show(mode, tier_stats(b), tier_stats(f))
     print(f"\n>>> OVERALL: {'SHIP-CANDIDATE (all modes pass gate)' if allship else 'REJECT (a mode fails the gate)'} <<<")
 
