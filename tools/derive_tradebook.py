@@ -116,8 +116,9 @@ def main():
     s = load_settings(PROFILE)
     s.detectors.enabled = list(TAUGHT)
     check_detector_deps(s.detectors.enabled)
+    jdir = Path(os.environ.get("DERIVE_JOURNAL", str(ROOT / "runs/validate/derive_work")))  # env override -> parallel shards
     orch = Orchestrator(s, FileFeed(DATA, s.market_spec()), syms, index_symbol=None,
-                        max_qty=1, journal_dir=ROOT / "runs/validate/derive_work")
+                        max_qty=1, journal_dir=jdir)
     trades = []
     for pipe in orch.pipelines.values():
         _tap(pipe, trades, min_grade)
