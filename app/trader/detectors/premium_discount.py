@@ -20,6 +20,8 @@ gate licenses a side via meta.permits, it does not itself push a trade.
 """
 from __future__ import annotations
 
+import os
+from datetime import timedelta
 from decimal import Decimal
 
 from trader.detectors.base import Detector, register
@@ -30,7 +32,9 @@ from trader.models.level import LevelKind, LevelState
 
 _ACTIVE = (LevelState.ACTIVE, LevelState.TESTED)
 _DEFAULTS = {"tf": "1h", "min_range_atr": 8.0, "eq_deadband": 0.10,
-             "edge_trigger": False}  # True -> emit only on ENTRY into the OTE band
+             "edge_trigger": False,   # True -> emit only on ENTRY into the OTE band
+             "range_lookback_days": 0}  # >0 -> LOCAL dealing range: only masters born within N days
+                                        # (all-history range flips direction as history grows; 0 = off)
 _PERMITS = {"discount": "LONG", "premium": "SHORT", "mid": None}
 
 
@@ -50,6 +54,10 @@ class PremiumDiscountDetector(Detector):
         masters = [lv for lv in ctx.levels
                    if lv.state in _ACTIVE and lv.meta.get("master")
                    and (lv.tf is tf or lv.tf is None)]
+        lb = float(self.params.get("range_lookback_days") or os.environ.get("PD_LOOKBACK_DAYS") or 0)
+        if lb > 0:
+            cut = ctx.now - timedelta(days=lb)
+            masters = [lv for lv in masters if lv.born >= cut]
         highs = [lv for lv in masters if lv.kind is LevelKind.EXT_H]
         lows = [lv for lv in masters if lv.kind is LevelKind.EXT_L]
         if not highs or not lows:
