@@ -142,7 +142,8 @@
       },
       "decision": {
         "engine": "taught",
-        "min_grade": 4
+        "min_grade": 4,
+        "min_rr": 3
       }
     }
   },

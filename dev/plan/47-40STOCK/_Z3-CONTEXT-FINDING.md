@@ -43,3 +43,22 @@ longs don't fire); (c) fetch prior-year (2024/2025) data for the 12 Aug-Dec mark
 Superseded in part: the marks ARE dated (mostly 2026), temporal co-location IS possible, and it shows
 context-dependent faithfulness for shorts. Still open: LONG recall, the 12 prior-year marks, and whether
 a local-window p-d improves both faithfulness AND the edge.
+
+## WINDOW-ROBUSTNESS — min-RR resolves the production risk (2026-07-24, follow-up)
+The window-sensitivity raised a production risk: live history GROWS the lookback → does the edge survive?
+Test = the 6-month full-2026 tradebook (grown context, same 7 stocks) vs the 17-day local:
+| context | hi>=5 eod net-R | win | tinyRR<3 |
+|---|---|---|---|
+| 17-day LOCAL | +6.05R | 71% | 0% |
+| 6-month grown (raw) | +3.44R | 73% | **44%** |
+| 6-month grown + min-RR>=3 | **+7.21R** | 71% | 0% |
+
+The ~45% haircut is ENTIRELY tinyRR proliferation (the wide range spawns near targets). The far-RR>3
+trades net +7.22R at 6-month vs +6.05R local -> **the real edge is window-INVARIANT**. min-RR>=3 removes
+the tinyRR -> the edge RECOVERS to +7.21R regardless of window. **min-RR is a WINDOW-ROBUSTIFIER, not just
+a sharpener** -> the production risk (edge softening as history grows) is SOLVED by min-RR.
+
+=> min-RR>=3 now proven across FOUR contexts (2026-mixed, bull, bear, 6-month-grown) + implemented +
+verified + window-robustifier. SHIPPED to production: taught_profile config decision.min_rr=3, pipeline.py
+wired (decide min_rr from config), 46 tests green. (Note: EDGE robustness is solved by min-RR + any window;
+DIRECTION faithfulness to the user's specific shorts still needs the LOCAL window — separate lever.)

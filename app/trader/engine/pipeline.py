@@ -87,6 +87,7 @@ class SymbolPipeline:
         _dcfg = settings.detectors.params.get("decision", {})   # F1: taught decision tree
         self._decision_engine = _dcfg.get("engine", "confluence")
         self._decision_min_grade = int(_dcfg.get("min_grade", 4))
+        self._decision_min_rr = float(_dcfg.get("min_rr", 0))   # proven cross-context RR gate (0=off)
         self.gates, self.fsm = GateChain(settings), EntryFSM(settings, self.spec)
         self.ladder = Ladder() if settings.ladder.enabled and not is_index else None
         self.wyckoff = WyckoffDetector(settings.detectors.params.get("wyckoff", {}))
@@ -299,7 +300,7 @@ class SymbolPipeline:
                    for e in evidence):
             return []
         window = list(evidence) + list(self.evidence_history[-60:])
-        d = decide(ctx, window, self._decision_min_grade)
+        d = decide(ctx, window, self._decision_min_grade, self._decision_min_rr)
         if not d.take or d.zone is None:
             return []
         return [ScoredZone(zone=d.zone, direction=d.direction, members=d.members,
