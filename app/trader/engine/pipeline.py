@@ -34,8 +34,9 @@ from trader.config import Settings
 from trader.detectors.base import DetectorRegistry
 from trader.detectors.timestats import bucket_index
 from trader.detectors.wyckoff import WyckoffDetector
-from trader.engine.confluence import ConfluenceEngine
+from trader.engine.confluence import ConfluenceEngine, ScoredZone
 from trader.engine.context import DayState, IndexView, StockContext
+from trader.engine.decision import _ZONE_DETS, _ZONE_EVENTS, decide
 from trader.engine.entry import EntryFSM, EntryState
 from trader.engine.gates import GateChain, RiskState, fill_time_caps
 from trader.engine.grade import context_tags, zone_grade
@@ -83,6 +84,9 @@ class SymbolPipeline:
         self.classifier = TemplateClassifier(self.spec)
         self.confluence = ConfluenceEngine(
             settings, settings.detectors.params.get("confluence"))
+        _dcfg = settings.detectors.params.get("decision", {})   # F1: taught decision tree
+        self._decision_engine = _dcfg.get("engine", "confluence")
+        self._decision_min_grade = int(_dcfg.get("min_grade", 4))
         self.gates, self.fsm = GateChain(settings), EntryFSM(settings, self.spec)
         self.ladder = Ladder() if settings.ladder.enabled and not is_index else None
         self.wyckoff = WyckoffDetector(settings.detectors.params.get("wyckoff", {}))
@@ -266,8 +270,9 @@ class SymbolPipeline:
                                         *self.wyckoff.phase(ctx), ts=now)
             return
         htf = self.wyckoff.htf_phase(ctx)
-        zones = self.confluence.score(ctx, self.evidence_history, htf,
-                                      self._m15_trend())
+        zones = (self._taught_zones(ctx, evidence) if self._decision_engine == "taught"
+                 else self.confluence.score(ctx, self.evidence_history, htf,
+                                            self._m15_trend()))
         # verdicts are OBSERVATIONS: journal any zone scoring >= 3, raw or
         # final (final is forced 0 below min_zone_detectors; near-misses and
         # armed zones alike must land in the journal, so the bar sits far
@@ -284,6 +289,22 @@ class SymbolPipeline:
             self._revalidate_pending(ctx, zones)
         else:
             self._entry_flow(ctx, zones, htf, evidence)
+
+    def _taught_zones(self, ctx, evidence) -> list:
+        """F1: run the taught decision tree (decide) on a fresh-zone bar and, if it
+        takes, hand the FSM a forced-arm ScoredZone from the decisional zone (its
+        signal's tiny meta.sl drives the stop; final=100 clears the arm threshold).
+        Mirrors tools/derive_tradebook.py's fresh-zone gate + evidence window."""
+        if not any(e.detector in _ZONE_DETS and e.meta.get("event") in _ZONE_EVENTS
+                   for e in evidence):
+            return []
+        window = list(evidence) + list(self.evidence_history[-60:])
+        d = decide(ctx, window, self._decision_min_grade)
+        if not d.take or d.zone is None:
+            return []
+        return [ScoredZone(zone=d.zone, direction=d.direction, members=d.members,
+                           distinct=d.grade, raw=float(d.grade) * 10.0, final=100.0,
+                           mults={"taught_grade": float(d.grade)})]
 
     def _revalidate_pending(self, ctx, zones) -> None:
         """Audit 5: a resting limit lives up to fill_ttl_candles with risk

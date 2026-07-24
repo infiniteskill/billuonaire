@@ -43,6 +43,8 @@ class Decision:
     target: Decimal | None
     grade: int
     reasons: list[str] = field(default_factory=list)
+    zone: tuple[Decimal, Decimal] | None = None   # the decisional zone band (for prod wiring)
+    members: list = field(default_factory=list)    # (detector, event, strength) contributors
 
 
 def _runway(ctx: StockContext, d: Direction, entry: Decimal) -> Decimal | None:
@@ -107,4 +109,5 @@ def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2) -> D
 
     take = grade >= min_grade
     reasons.append("take" if take else f"grade {grade}<{min_grade}")
-    return Decision(take, d, entry, sl, target, grade, reasons)
+    members = [(z.detector, z.meta.get("event", ""), float(z.strength))]
+    return Decision(take, d, entry, sl, target, grade, reasons, zone=z.zone, members=members)
