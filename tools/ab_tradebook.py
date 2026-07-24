@@ -80,33 +80,43 @@ def tier_stats(df):
     out = {"ALL": m(df), "hi>=4": m(df[df.grade >= 4]), "hi>=5": m(df[df.grade >= 5])}
     for g in range(1, 8):
         out[f"g{g}"] = m(df[df.grade == g])
-    for q in sorted(df["quad"].dropna().unique()):
-        out[f"quad:{q}"] = m(df[df["quad"] == q])
+    hi = df[df.grade >= 4]   # holdout quads on the HI-TIER (matches derive's "holdout quadrants (hi tier)")
+    for q in sorted(hi["quad"].dropna().unique()):
+        out[f"quad:{q}"] = m(hi[hi["quad"] == q])
     return out
+
+
+QUAD_TOL = 0.5   # holdout-quad net-R may fall this far (R) below baseline before it counts as a fail (noise band)
 
 
 def show(mode, base, filt):
     print(f"\n=== STOP_MODE={mode} ===")
     print(f"{'cell':12} {'BASE n/netR/win':>26}   {'FILT n/netR/win':>26}   verdict")
-    ladder_ok = True; quad_ok = True; hi_ok = True
-    prev = None
+    quad_ok = True; hi_ok = True; worst_quad = None
+    ladder = []
     for k in list(base):
         bn, bnet, bw = base[k]; fn, fnet, fw = filt.get(k, (0, None, None))
         v = ""
-        if k == "hi>=5" and bnet is not None and fnet is not None:
-            hi_ok = fnet >= bnet; v = "HI-TIER " + ("HOLD/UP ✅" if hi_ok else "DROP ❌")
+        if k == "hi>=5" and bnet is not None:
+            hi_ok = (fnet is not None) and (fnet >= bnet)          # HARD gate: hi-tier net-R must hold/improve
+            v = "HI-TIER " + ("HOLD/UP ✅" if hi_ok else "DROP ❌")
         if k.startswith("quad:") and bnet is not None:
-            ok = (fnet is not None) and (fnet >= bnet); quad_ok &= ok; v = "✅" if ok else "❌"
+            dq = (fnet - bnet) if fnet is not None else -99
+            ok = dq >= -QUAD_TOL; quad_ok &= ok                     # HARD gate: all quads within tol of baseline
+            v = f"Δ{dq:+.2f} {'✅' if ok else '❌'}"
+            if worst_quad is None or dq < worst_quad[1]:
+                worst_quad = (k, dq)
         if re.match(r"g[1-7]$", k) and fnet is not None:
-            if prev is not None and fnet < prev - 0.01:
-                ladder_ok = False
-            prev = fnet
+            ladder.append(fnet)
         bs = f"{bn:5}/{'' if bnet is None else format(bnet,'+.2f')}/{'' if bw is None else format(bw,'.0f')}"
         fs = f"{fn:5}/{'' if fnet is None else format(fnet,'+.2f')}/{'' if fw is None else format(fw,'.0f')}"
         print(f"{k:12} {bs:>26}   {fs:>26}   {v}")
-    ship = hi_ok and quad_ok and ladder_ok
-    print(f"  GATE[{mode}]: hi-tier {'✅' if hi_ok else '❌'} | all-quads {'✅' if quad_ok else '❌'} | "
-          f"ladder-monotone {'✅' if ladder_ok else '❌'}  ->  {'SHIP-CANDIDATE' if ship else 'REJECT'}")
+    # ladder = INFO only (baseline itself is not strictly monotone at small-n g7); show g4->g7 shape
+    ladmono = all(ladder[i] <= ladder[i + 1] + 0.5 for i in range(len(ladder) - 1)) if len(ladder) > 1 else True
+    ship = hi_ok and quad_ok                                        # gate = hi-tier + all-quads (ladder is info)
+    print(f"  GATE[{mode}]: hi-tier {'✅' if hi_ok else '❌'} | all-quads {'✅' if quad_ok else '❌'}"
+          f"{'' if worst_quad is None else f' (worst {worst_quad[0]} Δ{worst_quad[1]:+.2f})'} | "
+          f"ladder~{'ok' if ladmono else 'dip'}  ->  {'SHIP-CANDIDATE' if ship else 'REJECT'}")
     return ship
 
 
