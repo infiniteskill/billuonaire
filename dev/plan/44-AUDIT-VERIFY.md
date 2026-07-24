@@ -105,3 +105,22 @@ signal in the tradebook. **The +6.13R is not contaminated by lookahead.**
 *Verified 2026-07-24. Load-bearing facts checked against source: scanner import sites;
 `decision.py` independence; `derive_tradebook.py` decide()-wiring, TAUGHT override, and
 absent level_dir; +6.13R location.*
+
+## F9 PRODUCTION-PARITY TEST (2026-07-24) — the edge SURVIVES the M5-close stop rule
+Added stop_mode to tools/derive_tradebook.py (research harness only; intrabar default =
+the +6.13R baseline). 'm5_close' replicates production PositionManager (manager.py:78):
+stop only on an M5 CLOSE beyond sl, filled at that close (loss CAN exceed 1R); target =
+limit touch. BOTH modes run on the SAME decide() signals, 40 stocks, one pass.
+| tier>=4 | intrabar (research) | m5_close (production F9) |
+|---|---|---|
+| net/trade | +6.13R | **+5.80R (-5.4%)** |
+| win% | 49% | 50% |
+| holdout all-4 | + (4.3..9.1) | + (3.7..9.3) |
+| outcomes | stop993/gap557/tgt605 | stop877/gap604/tgt660 |
+READ: the production stop rule gives FEWER stops (survives intrabar wicks) + MORE targets,
+roughly offsetting the bigger close-through losses -> net -5% on the high tier, win% holds,
+all 4 holdout quadrants stay positive. **F9 (the audit's biggest execution R-reshaper) is
+REAL but NOT the killer — the edge survives it.** grade-4 marginal tier is sensitive (flips
+-0.42 under m5_close), so the tradeable boundary is >=5. REMAINING production-parity to test:
+F6 (entry substitution) + F10 (laddered exits / arm-trigger gating) + F1 (wire decide() into
+pipeline for a true end-to-end production reproduction). Still one 17d regime.
