@@ -26,7 +26,8 @@ from trader.models.candle import Timeframe
 ROOT = Path("/home/doom/Public/PROJECT/2026/trader")
 PROFILE = ROOT / "runs/validate/taught_profile/config.json"
 CFG = json.loads(PROFILE.read_text())
-DATA = ROOT / "data/wide"
+import os
+DATA = Path(os.environ.get("DERIVE_DATA", str(ROOT / "data/wide")))
 TAUGHT = ["extremes", "swings", "liquidity", "sweep", "structure", "wyckoff",
           "orderblock", "fvg", "compression", "ob_taught", "fvg_n", "propulsion2",
           "premium_discount", "htf_nest"]
