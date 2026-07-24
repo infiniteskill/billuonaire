@@ -1,0 +1,57 @@
+
+=== STOP_MODE=intrabar  syms=40  min_grade=1 ===
+closed=2155  outcomes: {'stop': 993, 'gap': 557, 'target': 605}
+  ALL            n=2155 win%= 28 gross/t=+2.66R NET/t=+0.519R
+by grade:
+  grade 1        n= 320 win%= 15 gross/t=-2.25R NET/t=-4.551R
+  grade 2        n= 700 win%= 18 gross/t=+0.50R NET/t=-2.063R
+  grade 3        n= 429 win%= 18 gross/t=+1.79R NET/t=-0.718R
+  grade 4        n= 174 win%= 32 gross/t=+2.08R NET/t=+0.418R
+  grade 5        n= 284 win%= 51 gross/t=+7.93R NET/t=+6.620R
+  grade 6        n= 203 win%= 56 gross/t=+10.84R NET/t=+9.421R
+  grade 7        n=  45 win%= 66 gross/t=+11.53R NET/t=+10.278R
+HIGH-GRADE tier (>=4):
+  hi ALL         n= 706 win%= 49 gross/t=+7.55R NET/t=+6.130R
+  holdout quadrants (hi tier):
+    early/A      n= 128 win%= 39 gross/t=+10.89R NET/t=+9.144R
+    early/B      n= 210 win%= 37 gross/t=+5.74R NET/t=+4.314R
+    late/A       n= 132 win%= 61 gross/t=+7.19R NET/t=+6.030R
+    late/B       n= 236 win%= 57 gross/t=+7.55R NET/t=+6.167R
+
+=== STOP_MODE=m5_close  syms=40  min_grade=1 ===
+closed=2141  outcomes: {'stop': 877, 'gap': 604, 'target': 660}
+  ALL            n=2141 win%= 30 gross/t=+2.32R NET/t=+0.179R
+by grade:
+  grade 1        n= 316 win%= 18 gross/t=-2.49R NET/t=-4.798R
+  grade 2        n= 694 win%= 22 gross/t=+0.29R NET/t=-2.283R
+  grade 3        n= 428 win%= 21 gross/t=+1.13R NET/t=-1.380R
+  grade 4        n= 174 win%= 33 gross/t=+1.24R NET/t=-0.418R
+  grade 5        n= 282 win%= 53 gross/t=+7.98R NET/t=+6.680R
+  grade 6        n= 202 win%= 57 gross/t=+10.35R NET/t=+8.937R
+  grade 7        n=  45 win%= 66 gross/t=+11.43R NET/t=+10.172R
+HIGH-GRADE tier (>=4):
+  hi ALL         n= 703 win%= 50 gross/t=+7.21R NET/t=+5.795R
+  holdout quadrants (hi tier):
+    early/A      n= 127 win%= 42 gross/t=+11.04R NET/t=+9.281R
+    early/B      n= 206 win%= 37 gross/t=+5.10R NET/t=+3.659R
+    late/A       n= 133 win%= 63 gross/t=+7.23R NET/t=+6.074R
+    late/B       n= 237 win%= 58 gross/t=+6.99R NET/t=+5.627R
+
+=== STOP_MODE=eod  syms=40  min_grade=1 ===
+closed=2240  outcomes: {'stop': 740, 'eod': 658, 'gap': 475, 'target': 367}
+  ALL            n=2240 win%= 44 gross/t=+3.38R NET/t=+1.267R
+by grade:
+  grade 1        n= 332 win%= 31 gross/t=-1.05R NET/t=-3.319R
+  grade 2        n= 712 win%= 31 gross/t=+0.67R NET/t=-1.867R
+  grade 3        n= 441 win%= 34 gross/t=+3.24R NET/t=+0.771R
+  grade 4        n= 178 win%= 47 gross/t=+2.84R NET/t=+1.188R
+  grade 5        n= 308 win%= 72 gross/t=+9.55R NET/t=+8.211R
+  grade 6        n= 220 win%= 75 gross/t=+9.23R NET/t=+7.819R
+  grade 7        n=  49 win%= 73 gross/t=+10.85R NET/t=+9.549R
+HIGH-GRADE tier (>=4):
+  hi ALL         n= 755 win%= 67 gross/t=+7.96R NET/t=+6.528R
+  holdout quadrants (hi tier):
+    early/A      n= 131 win%= 64 gross/t=+10.51R NET/t=+8.775R
+    early/B      n= 219 win%= 56 gross/t=+5.79R NET/t=+4.384R
+    late/A       n= 135 win%= 70 gross/t=+6.61R NET/t=+5.466R
+    late/B       n= 270 win%= 75 gross/t=+9.16R NET/t=+7.708R

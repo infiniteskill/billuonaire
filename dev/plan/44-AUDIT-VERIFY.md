@@ -144,3 +144,22 @@ sig.meta.get('sl_floor','0'); bypass template/ladder for engine=taught; re-run r
 through production execution vs +6.13R. NO production-engine code changed this session (edge-safe).
 NOTE: taught_profile config.json has experiment values (gates relaxed, engine=taught) — a research
 artifact, not production defaults.
+
+## F1 part-2 RESULT (2026-07-24) — the taught edge is BETTER intraday (production's holding period)
+The deepest F1/architectural worry was: production is INTRADAY (force-close EOD, squareoff 15:10)
+but the taught method is POSITIONAL (multi-day). Tested by adding 'eod' exit to derive_tradebook
+(exit at 15:10 same day) + comparing all 3 exit modes on the SAME 40-stock decide() signals.
+| mode | overall net | hi-tier>=4 net | hi win% | holdout |
+|---|---|---|---|---|
+| intrabar (multi-day, +6.13R baseline) | +0.52 | +6.13R | 49% | all + (4.3..9.1) |
+| m5_close (prod F9 stops) | +0.18 | +5.80R | 50% | all + (3.7..9.3) |
+| **eod (PRODUCTION intraday 15:10)** | **+1.27** | **+6.53R** | **67%** | **all + (4.4..8.8)** |
+RESULT: production's intraday squareoff IMPROVES the edge (hi-tier +6.13->+6.53R, win 49->67%,
+overall +0.52->+1.27R, all 4 holdout quadrants positive). Mechanism: EOD force-close CUTS the
+multi-day losers before they stop/gap (stops 993->740, gaps 557->475) and banks partial winners;
+the overnight holds added risk without reward. => the taught edge is NOT positional-only; it is
+FULLY COMPATIBLE with (and better in) the intraday production engine. The F1 architectural blocker
+is RESOLVED-POSITIVE. Also fixed entry.py sl_floor KeyError (safe default, 915 green).
+REMAINING for full end-to-end production replay: bypass template/ladder selection gates for
+engine=taught (mechanical), then the FSM/PositionManager reproduce this intraday result live.
+Still one 17d regime; the sim uses decide()'s entry, not the FSM arm mechanics (a smaller parity gap).
