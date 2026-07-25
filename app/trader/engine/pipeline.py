@@ -193,8 +193,14 @@ class SymbolPipeline:
         fill -- or older than max_age_sessions weekday sessions (stale-zone
         hygiene + bounded memory; day count is None-safe pre-first-session)."""
         ref = self.day.session_date if self.day else None
+        carry = _CARRY
+        if self.s.detectors.params.get("levels", {}).get("carry_ext"):
+            # S4 (48-VISUAL audit_liquidity): carry EXT anchors across days so their
+            # touch/SWEPT continuity survives (extremes re-derives the same ids anyway;
+            # without carry the state history resets nightly = phantom DEAD churn).
+            carry = _CARRY | {LevelKind.EXT_H, LevelKind.EXT_L}
         live = [lv for lv in self.levels if lv.state not in TERMINAL
-                and (lv.kind in _CARRY or
+                and (lv.kind in carry or
                      (lv.kind in _ZONES and
                       _sessions_old(lv.born.date(), ref) < self._zone_max_age))]
         top = {k: max((lv.born for lv in live if lv.kind is k), default=None)

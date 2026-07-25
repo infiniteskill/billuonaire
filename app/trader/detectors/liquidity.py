@@ -239,7 +239,7 @@ class LiquidityDetector(Detector):
     def _pool_strength(level: Level, now: datetime) -> float:
         if level.kind in (LevelKind.EQH, LevelKind.EQL):
             hours = (now - level.born).total_seconds() / 3600
-            recency = max(0.0, 1 - hours / 48)
+            recency = max(0.0, 1 - hours / 48)  # S5 floor via param handled by caller
             return min(level.touches / 5, 1.0) * 0.7 + recency * 0.3
         if level.kind in _HIGH_POOLS:  # axiom 5: OR + weekly = HIGH liquidity
             return 0.7
