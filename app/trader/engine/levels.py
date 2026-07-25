@@ -130,6 +130,7 @@ class LevelEngine:
         self._pending_break: dict[str, int] = {}   # level_id -> candles since close beyond
         self._since_swept: dict[str, int] = {}     # level_id -> closed candles since sweep
         self._pending_invert: dict[str, int] = {}  # level_id -> candles since close through
+        self._poke: dict[str, tuple] = {}          # level_id -> (poke ts, wick price) G3
         self._round_side: dict[str, str] = {}      # level_id -> cached ROUND side
         self._prev_close: dict[tuple[str, Timeframe], Decimal] = {}
 
@@ -157,6 +158,7 @@ class LevelEngine:
         self._pending_break.clear()
         self._since_swept.clear()
         self._pending_invert.clear()
+        self._poke.clear()
         self._round_side.clear()
         self._prev_close.clear()
 
@@ -194,16 +196,24 @@ class LevelEngine:
                 return self._apply(level, LevelState.DEAD, candle.ts)
             if on_origin(close):
                 self._since_swept[level.id] = 0
+                poke = self._poke.pop(level.id, None)  # G3: sweep = the PENDING bar's wick
+                if poke:
+                    level.meta["poke_ts"], level.meta["poke_price"] = poke
                 return self._apply(level, LevelState.SWEPT, candle.ts)
+            self._poke.pop(level.id, None)
             return None  # closed inside the zone: break fizzled, level lives
 
         state = level.state
         if state in (LevelState.ACTIVE, LevelState.TESTED):
             if wick_beyond and on_origin(close):           # SWEPT beats TESTED
                 self._since_swept[level.id] = 0
+                level.meta["poke_ts"] = candle.ts          # G3: poke = this bar's wick
+                level.meta["poke_price"] = candle.high if side == "below" else candle.low
                 return self._apply(level, LevelState.SWEPT, candle.ts)
             if beyond_far(close):                          # arm 2-candle confirm
                 self._pending_break[level.id] = 0
+                self._poke[level.id] = (candle.ts,         # G3: remember the poke bar
+                                        candle.high if side == "below" else candle.low)
                 return None
             if touched and on_origin(close):               # TESTED (lowest)
                 level.touches += 1

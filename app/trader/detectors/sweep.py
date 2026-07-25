@@ -76,11 +76,15 @@ class SweepDetector(Detector):
             q = (0.4 + 0.25 * self._pool_strength(lv, ctx.now)
                  + 0.2 * (lv.touches >= 3) + 0.15 * (lv.kind in _DAILY_WEEKLY)
                  + 0.1 * (depth >= 2))
+            meta = {"level_id": lv.id, "kind": lv.kind.name, "chain_depth": depth,
+                    "event": "SWEEP"}
+            if lv.meta.get("poke_ts"):        # G3: THE poke bar (wick), not the resolve bar
+                meta["poke_ts"] = lv.meta["poke_ts"].isoformat() if hasattr(
+                    lv.meta["poke_ts"], "isoformat") else str(lv.meta["poke_ts"])
+                meta["poke_price"] = str(lv.meta["poke_price"])
             ev = Evidence(
                 detector=self.name, direction=direction, strength=min(q, 1.0),
-                zone=lv.zone, ts=ctx.now, ttl_candles=18,
-                meta={"level_id": lv.id, "kind": lv.kind.name, "chain_depth": depth,
-                      "event": "SWEEP"},
+                zone=lv.zone, ts=ctx.now, ttl_candles=18, meta=meta,
             )
             self._base[(lv.id, swept_ts)] = ev
             out.append(ev)
