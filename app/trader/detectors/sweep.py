@@ -22,7 +22,10 @@ from trader.models.level import Level, LevelKind, LevelState
 
 _DEFAULTS = {"tf": "5m", "reclaim_bonus_candles": 3, "chain_window": 20,
              "min_touches": 0,        # gate SWEEP on stacked-stop pools (0 = off; daily/weekly exempt)
-             "min_touches_eq": None}  # S2: separate EQ gate (taught lines are 2-touch; None = min_touches)
+             "min_touches_eq": None,  # S2: separate EQ gate (taught lines are 2-touch; None = min_touches)
+             "dead_reversal_sessions": 0}  # S3: a level DEAD by break whose break FULLY REVERSES
+# within N sessions = a session-scale sweep (multi-day wick-through-close-back; the 5m state
+# machine can't see it -- audit_liquidity DABUR-451 case). 0 = off.
 _DAILY_WEEKLY = frozenset({LevelKind.PDH, LevelKind.PDL, LevelKind.PWH, LevelKind.PWL})
 _HIGH_POOLS = frozenset({LevelKind.PWH, LevelKind.PWL,
                          LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L})
@@ -35,6 +38,9 @@ class SweepDetector(Detector):
     def __init__(self, params: dict):
         super().__init__({**_DEFAULTS, **params})
         self._seen: set[tuple[str, datetime, bool]] = set()  # (level_id, swept ts, upgraded)
+        self._dead_done: set[str] = set()   # S3: dead-reversal emitted per level
+        self._dead_mem: dict[str, tuple] = {}  # S3: id -> (kind, zone, death_ts); levels are
+        # pruned from ctx.levels at session carry, so remember recent deaths detector-side
         self._base: dict[tuple[str, datetime], Evidence] = {}  # swept-tick evidence, keyed
         # by (level_id, swept ts); consulted to build the later reclaim upgrade.
 
@@ -93,6 +99,54 @@ class SweepDetector(Detector):
             )
             self._base[(lv.id, swept_ts)] = ev
             out.append(ev)
+        out += self._dead_reversals(ctx, tf)
+        return out
+
+    def _dead_reversals(self, ctx: StockContext, tf: Timeframe) -> list[Evidence]:
+        """S3 session-scale sweep: level DEAD by break, break fully reversed
+        within dead_reversal_sessions -> SWEEP evidence (poke = extreme since
+        death). State machine untouched (DEAD stays terminal)."""
+        n = int(self.params.get("dead_reversal_sessions") or 0)
+        if not n:
+            return []
+        out = []
+        kinds_h = (LevelKind.EQH, LevelKind.EXT_H, LevelKind.PDH, LevelKind.PWH)
+        kinds_l = (LevelKind.EQL, LevelKind.EXT_L, LevelKind.PDL, LevelKind.PWL)
+        for lv in ctx.levels:      # harvest fresh deaths (before carry prunes them)
+            if (lv.state is LevelState.DEAD and lv.id not in self._dead_mem
+                    and (lv.kind in kinds_h or lv.kind in kinds_l)):
+                death = next((ts for ts, st in reversed(lv.state_history)
+                              if st is LevelState.DEAD), None)
+                if death is not None:
+                    self._dead_mem[lv.id] = (lv.kind, lv.zone, death)
+        for lid, (kind, zone, death) in list(self._dead_mem.items()):
+            if lid in self._dead_done:
+                continue
+            high = kind in kinds_h
+            # SESSION-scale: judge on completed D1 candles (an intraday wobble is
+            # not a multi-day sweep; the D1 close must be back on the origin side)
+            days = [c for c in ctx.candles.last(n + 2, Timeframe.D1) if c.ts > death]
+            if len(days) > n:
+                self._dead_mem.pop(lid, None)      # window expired
+                continue
+            if not days:
+                continue
+            lo, hi = min(zone), max(zone)
+            reversed_back = (days[-1].close < lo) if high else (days[-1].close > hi)
+            if not reversed_back:
+                continue
+            self._dead_done.add(lid)
+            self._dead_mem.pop(lid, None)
+            poke = max(c.high for c in days) if high else min(c.low for c in days)
+            out.append(Evidence(
+                detector=self.name,
+                direction=Direction.SHORT if high else Direction.LONG,
+                strength=0.75, zone=zone, ts=ctx.now, ttl_candles=18,
+                meta={"level_id": lid, "kind": kind.name, "event": "SWEEP",
+                      "dead_reversal": True, "poke_ts": days[
+                          max(range(len(days)), key=lambda i: days[i].high) if high
+                          else min(range(len(days)), key=lambda i: days[i].low)
+                      ].ts.isoformat(), "poke_price": str(poke)}))
         return out
 
     @staticmethod
