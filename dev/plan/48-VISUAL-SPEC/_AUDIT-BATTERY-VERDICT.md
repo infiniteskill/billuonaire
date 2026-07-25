@@ -59,3 +59,8 @@ stage2 profile on FIDELITY grounds (wick-line EQ, honest touch counts, EQ sweeps
 ## S3 gate (wide2026): FIRST RECALL-EXPANDER SHIPPED
 n 1239->1313 (+74 multi-day-sweep killshots), per-trade +5.86 (holds, -0.03 noise), hit 64.7%,
 **TOTAL R +7298->+7701 (+5.5%)**. Recall fixes = more killshots at same quality = more total money.
+
+## I1 gate (wide2026): SECOND RECALL-EXPANDER SHIPPED
+n 1313->1479 (+166 sub-displacement OB killshots), hit holds 64.5%, per-trade +5.65 (-0.21 documented
+tradeoff), quads all + (0.87..4.06), **TOTAL R +7701->+8359 (+8.5%)**. Cumulative recall arc vs main:
+n 1215->1479 (+22%), TOTAL R +7314->+8359 (+14.3%).

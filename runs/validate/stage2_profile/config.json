@@ -106,7 +106,8 @@
    "ob_taught": {
     "require_sweep_bos": true,
     "gate_mode": "sweep",
-    "min_disp_atr": 1.0
+    "min_disp_atr": 1.0,
+    "disp_to_grade": true
    },
    "extremes": {
     "timeframes": [
@@ -152,7 +153,8 @@
    "orderblock": {},
    "fvg": {},
    "propulsion2": {
-    "min_disp_atr": 1.0
+    "min_disp_atr": 1.0,
+    "disp_to_grade": true
    }
   }
  },
