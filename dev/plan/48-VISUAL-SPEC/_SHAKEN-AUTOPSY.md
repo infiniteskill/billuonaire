@@ -22,3 +22,14 @@ DEEPEST-TIER ENTRY design: decide() takes the FIRST qualifying zone evidence; ch
 same-direction candidates in window prefer the DEEPEST zone (long->lowest / short->highest;
 generalizes the htf_nest-CE preference). Distinct from G5 (same-zone depth, neutral) — this changes
 WHICH zone we wait for. Param-gated -> wide2026 gate.
+
+## FORENSICS (185 vs 278, joined features) — runs/validate/shaken_detail.csv
+NO ex-ante separator: grade 5.79/5.76, nest 2.29/2.25, dir/AM/sweep/phase/member all ~equal ->
+cannot filter shaken from doomed at entry (also finally kills re-entry).
+Signals: (1) rr 13.3 vs 22.7 — true losers chased farther targets; (2) SL width MICROSCOPIC
+(median 0.092% price; deepest bucket 0.08%) -> the shaken class is a GEOMETRY artifact of
+ultra-tight taught stops at noise scale (same coin as +13.9R avg winners); 76% of shaken are
+>4R-deep = unsavable by any buffer.
+PARITY FLAG: derive uses RAW zone-edge SL; production applies sl_atr_floor 0.15 ATR (>= these
+stops) -> live stop anatomy differs from sim; needs a floor-on sim pass.
+NEXT (gated): deepest-tier entry; sl_floor parity pass.
