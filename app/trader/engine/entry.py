@@ -190,6 +190,9 @@ class EntryFSM:
                   if sig is not None else None)
         if mapped is not None:  # manager exits AT mapped R, never rides to a farther T1
             tgt = min(tgt, Decimal(str(mapped)) * risk)
+        taught_tgt = zone.mults.get("taught_target") if zone.mults else None
+        if taught_tgt is not None:   # F6: taught plan prices its OWN far target
+            tgt = abs(Decimal(str(taught_tgt)) - entry)
         reward = tgt * qty                           # expected reward to actual exit
         from trader.execution.manager import ladder_exits  # local: manager imports us
         n_exits = ladder_exits(self.s, sig.detector if sig else None, qty)

@@ -305,13 +305,22 @@ class SymbolPipeline:
         if not any(e.detector in _ZONE_DETS and e.meta.get("event") in _ZONE_EVENTS
                    for e in evidence):
             return []
-        window = list(evidence) + list(self.evidence_history[-60:])
+        w = ctx.candles.last(20, Timeframe.M5)          # EXACT derive window (F6 parity):
+        cutoff = w[0].ts if w else ctx.now              # research counted trades from THIS
+        window = list(evidence) + [e for e in self.evidence_history  # evidence set only
+                                   if e.ts >= cutoff]
         d = decide(ctx, window, self._decision_min_grade, self._decision_min_rr)
         if not d.take or d.zone is None:
             return []
         return [ScoredZone(zone=d.zone, direction=d.direction, members=d.members,
                            distinct=d.grade, raw=float(d.grade) * 10.0, final=100.0,
-                           mults={"taught_grade": float(d.grade)})]
+                           mults={"taught_grade": float(d.grade),
+                                  # F6 parity: the FSM's cost/reward economics must
+                                  # price the TAUGHT far-liquidity target, not the
+                                  # legacy mapped ~2R exit (costs_dominate strangled
+                                  # 55% of taught arms pricing 9bps stops vs 2R).
+                                  "taught_target": float(d.target),
+                                  "taught_sl": float(d.sl)})]
 
     def _revalidate_pending(self, ctx, zones) -> None:
         """Audit 5: a resting limit lives up to fill_ttl_candles with risk

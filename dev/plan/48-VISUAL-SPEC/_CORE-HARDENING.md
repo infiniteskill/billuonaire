@@ -20,3 +20,15 @@
 - extremes incremental zigzag (last O(n^2)); bit-identity proof required.
 - F6 entry-parity test (FSM arm/entry mechanics vs decide-tap).
 - Multi-year continuous stress run.
+
+## F6 ENTRY-PARITY LOOP (2026-07-26) — 3 real production divergences found + fixed, 1 truth exposed
+1. FIXED: FSM cost/reward priced the legacy mapped ~2R exit, not the taught far target ->
+   costs_dominate strangled 55% of taught arms. Taught plans now ship taught_target/taught_sl via
+   ScoredZone.mults; entry.arm prices the real target.
+2. FIXED: production decide() window (evidence_history[-60:]) != research window (20x5m cutoff) ->
+   production took trades research never validated. Aligned to the exact derive window.
+3. FIXED(test): qty=1 harness starved economics (31 rupees reward vs 41 flat brokerage).
+4. THE TRUTH (not a bug): the fill funnel — 194 verdicts -> ~44 armed -> 4 filled on the fixture.
+   Resting limit at zone-CE fills ~10-20% of what the sim counts (rest: limit expires unfilled or
+   zone breaks first). **LIVE total R = sim R x fill-rate x fill-quality-shift — the paper-pilot
+   metric.** Pilot design must also test entry variants (edge-touch vs CE-limit vs marketable).
