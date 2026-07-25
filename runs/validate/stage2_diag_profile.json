@@ -148,8 +148,18 @@
     "min_grade": 4,
     "min_rr": 3
    },
-   "orderblock": {},
-   "fvg": {},
+   "orderblock": {
+    "timeframes": [
+     "15m",
+     "1h"
+    ]
+   },
+   "fvg": {
+    "timeframes": [
+     "15m",
+     "1h"
+    ]
+   },
    "propulsion2": {
     "min_disp_atr": 1.0
    }
