@@ -101,7 +101,7 @@
    },
    "structure": {
     "anchor": "ext",
-    "trend_swings": 2
+    "trend_swings": 4
    },
    "ob_taught": {
     "require_sweep_bos": true,
@@ -156,6 +156,9 @@
      "15m",
      "1h"
     ]
+   },
+   "propulsion2": {
+    "min_disp_atr": 1.0
    }
   }
  },
