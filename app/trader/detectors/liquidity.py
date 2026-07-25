@@ -30,7 +30,9 @@ _HIGH_POOLS = frozenset({LevelKind.PWH, LevelKind.PWL,
                          LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L})
 _DEFAULTS = {"eq_tolerance": 0.001, "round_steps": [50, 100, 500],
              "round_within_pct": 2.0, "proximity_atr": 1.0, "or_minutes": 15,
-             "emit_only": None}   # e.g. ["EQH","EQL","EXT_H","EXT_L"] to surface only taught pools
+             "emit_only": None,   # e.g. ["EQH","EQL","EXT_H","EXT_L"] to surface only taught pools
+             "eq_wick_line": False,        # S1 (48-VISUAL): EQ zone = tight line at the wick
+             "eq_distinct_touches": False}  # S2: touches = distinct pivot prices (kills TF echo)
 
 
 def _mid(zone: tuple[Decimal, Decimal]) -> Decimal:
@@ -150,11 +152,22 @@ class LiquidityDetector(Detector):
             groups.append(current)
 
         for group in groups:
-            zone = (
-                min(lv.zone[0] for lv in group),
-                max(lv.zone[1] for lv in group),
-            )
-            touches = len(group)
+            if self.params.get("eq_wick_line"):    # S1: line AT the wick, not a union band
+                T = Decimal("0.05")
+                w = (max(lv.zone[1] for lv in group) if target is LevelKind.EQH
+                     else min(lv.zone[0] for lv in group))
+                zone = (w - T, w + T)
+            else:
+                zone = (
+                    min(lv.zone[0] for lv in group),
+                    max(lv.zone[1] for lv in group),
+                )
+            if self.params.get("eq_distinct_touches"):  # S2: TF-echo dedup
+                touches = len({round(float(_mid(lv.zone)), 1) for lv in group})
+                if touches < 2:
+                    continue                       # one echoed pivot != equal highs/lows
+            else:
+                touches = len(group)
             born = max(lv.born for lv in group)
             existing = next(
                 (lv for lv in ctx.levels if lv.kind is target and _overlaps(lv.zone, zone)),

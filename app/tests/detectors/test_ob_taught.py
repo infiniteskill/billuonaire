@@ -87,7 +87,8 @@ def test_registered():
     d = ObTaughtDetector({})
     assert d.params == {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15,
                         "far_dist_atr": 99.0, "require_sweep_bos": False,
-                        "gate_window": 20, "gate_mode": "sweep_and_bos", "min_disp_atr": 0.0}
+                        "gate_window": 20, "gate_mode": "sweep_and_bos", "min_disp_atr": 0.0,
+                        "include_break_bar": False}
 
 
 def test_bodies_only_box_and_retest_fires():

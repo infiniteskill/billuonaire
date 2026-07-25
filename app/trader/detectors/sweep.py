@@ -21,7 +21,8 @@ from trader.models.evidence import Direction, Evidence
 from trader.models.level import Level, LevelKind, LevelState
 
 _DEFAULTS = {"tf": "5m", "reclaim_bonus_candles": 3, "chain_window": 20,
-             "min_touches": 0}   # gate SWEEP on stacked-stop pools (0 = off; daily/weekly exempt)
+             "min_touches": 0,        # gate SWEEP on stacked-stop pools (0 = off; daily/weekly exempt)
+             "min_touches_eq": None}  # S2: separate EQ gate (taught lines are 2-touch; None = min_touches)
 _DAILY_WEEKLY = frozenset({LevelKind.PDH, LevelKind.PDL, LevelKind.PWH, LevelKind.PWL})
 _HIGH_POOLS = frozenset({LevelKind.PWH, LevelKind.PWL,
                          LevelKind.OPEN_RANGE_H, LevelKind.OPEN_RANGE_L})
@@ -68,7 +69,11 @@ class SweepDetector(Detector):
                     meta={**base.meta, "upgrade": True},
                 ))
                 continue
-            if (lv.touches < int(self.params["min_touches"])
+            need = self.params["min_touches"]
+            if lv.kind in (LevelKind.EQH, LevelKind.EQL) \
+                    and self.params.get("min_touches_eq") is not None:
+                need = self.params["min_touches_eq"]     # S2: taught lines are 2-touch
+            if (lv.touches < int(need)
                     and lv.kind not in _DAILY_WEEKLY):   # need stacked-stop liquidity
                 continue
             direction = Direction.SHORT if side == "below" else Direction.LONG
