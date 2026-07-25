@@ -231,7 +231,15 @@ class GateChain:
     """Fixed-order chain; cheap/static gates first, stateful budget last."""
 
     def __init__(self, settings: Settings):
-        self.gates = [TimeWindowGate(settings), TemplateGate(), RegimeVetoGate(),
+        taught = getattr(settings.detectors, "params", {}).get(
+            "decision", {}).get("engine") == "taught"
+        # engine=taught (F1 part-2): the taught grade+RR conjunction already
+        # self-adapts to regime (mode-switch measured + REJECTED as an add-on;
+        # regime_veto blocked the counter-trend fades that made +9.93R in bull)
+        # and needs no day-template. Legacy selection gates OFF; safety gates
+        # (time window, event cooldown, chase, risk budget) STAY.
+        legacy = [] if taught else [TemplateGate(), RegimeVetoGate()]
+        self.gates = [TimeWindowGate(settings), *legacy,
                       EventCooldownGate(settings), ChaseGate(settings),
                       RiskBudgetGate(settings)]
 
