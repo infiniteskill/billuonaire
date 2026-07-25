@@ -191,13 +191,24 @@ def _band(o, h, l, c, piv, j):
 class ExtremesDetector(Detector):
     name = "extremes"
 
+    def __init__(self, params: dict):
+        super().__init__(params)
+        self._sig: dict = {}   # tf -> (n_closed, last_ts) window signature (perf memo)
+
     def detect(self, ctx: StockContext) -> list[Evidence]:
         pct = float(self.params.get("leg_pct", _DEFAULT_LEG_PCT)) / 100.0
         for tf_value in self.params.get("timeframes", _DEFAULT_TIMEFRAMES):
             tf = Timeframe(tf_value)
             candles = ctx.candles.last(_ALL, tf)
             if len(candles) > _ATR_PERIOD:
+                # PERF (bit-identical): _sync is a pure function of the closed-candle
+                # window; skip when the window is unchanged since the last call (a new
+                # 15m/1h/1d bar closes far less often than the M5 tick cadence).
+                sig = (len(candles), candles[-1].ts, ctx.day.session_date)  # session in sig: carry prunes EXT levels at the boundary -> must re-emit
+                if self._sig.get(tf) == sig:
+                    continue
                 self._sync(ctx, tf, candles, pct)
+                self._sig[tf] = sig
         return []  # always -- infrastructure detector, no Evidence
 
     def _sync(self, ctx: StockContext, tf: Timeframe, candles, pct) -> None:
