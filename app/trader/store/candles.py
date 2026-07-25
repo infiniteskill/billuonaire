@@ -79,17 +79,27 @@ class CandleView:
         self._symbol = symbol
         self._now = now
         self._complete_only = complete_only
+        self._memo: dict[Timeframe, list[Candle]] = {}  # per-tick closed cache:
+        # the view is point-in-time and shared by every detector of the tick, so
+        # the closed prefix per tf is computed ONCE (was a fresh full copy per
+        # detector call -> O(n^2) over a long tape = the 3-hour derive). The
+        # returned list is READ-ONLY by contract (callers never mutate).
 
     def _closed(self, tf: Timeframe) -> list[Candle]:
         """All candles of tf closed as of now (ts + tf duration <= now).
         complete_only views additionally drop incomplete buckets (missing M1
         members, audit 5 fail-closed)."""
+        hit = self._memo.get(tf)
+        if hit is not None:
+            return hit
         candles = self._store._data.get(self._symbol, {}).get(tf, [])
         cutoff = self._now - timedelta(minutes=_tf_minutes(tf, self._store.spec))
         out = candles[: bisect_right(candles, cutoff, key=_TS)]
         bad = self._store._incomplete
-        return [c for c in out if (self._symbol, tf, c.ts) not in bad] \
+        out = [c for c in out if (self._symbol, tf, c.ts) not in bad] \
             if bad and self._complete_only else out
+        self._memo[tf] = out
+        return out
 
     def _today(self) -> "datetime.date":
         """Session date of 'now', in the tz the candles are stored in."""
@@ -99,7 +109,12 @@ class CandleView:
 
     def last(self, n: int, tf: Timeframe) -> list[Candle]:
         """Most recent n fully closed tf candles (oldest first)."""
-        return self._closed(tf)[-n:] if n > 0 else []
+        if n <= 0:
+            return []
+        closed = self._closed(tf)
+        # full-window ask (detectors' _ALL cursor pattern): no copy — the memoized
+        # list IS the window. Read-only contract as _closed.
+        return closed if n >= len(closed) else closed[-n:]
 
     def today(self, tf: Timeframe) -> list[Candle]:
         """Fully closed tf candles of the current session day."""
