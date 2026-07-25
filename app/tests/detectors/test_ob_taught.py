@@ -88,7 +88,7 @@ def test_registered():
     assert d.params == {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15,
                         "far_dist_atr": 99.0, "require_sweep_bos": False,
                         "gate_window": 20, "gate_mode": "sweep_and_bos", "min_disp_atr": 0.0,
-                        "include_break_bar": False}
+                        "include_break_bar": False, "disp_to_grade": False}
 
 
 def test_bodies_only_box_and_retest_fires():
@@ -137,7 +137,7 @@ def test_second_life_shallow_close_through_keeps_zone():
 def test_meta_schema_contract():
     store = make_store([FLAT] * 15 + [B15, B16, B17, PARM, PTOUCH])
     [ev] = run_to(ObTaughtDetector({}), store, [], 20)
-    assert set(ev.meta) == {"event", "sl", "sl_floor", "pivot_dist_atr"}
+    assert set(ev.meta) == {"event", "sl", "sl_floor", "pivot_dist_atr", "disp_atr"}
     for k in ("sl", "sl_floor"):
         assert isinstance(ev.meta[k], str)
         Decimal(ev.meta[k])

@@ -47,7 +47,8 @@ from trader.models.level import LevelKind, LevelState
 _DEFAULTS = {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15,
              "far_dist_atr": 99.0, "require_sweep_bos": False, "gate_window": 20,
              "gate_mode": "sweep_and_bos", "min_disp_atr": 0.0,  # "sweep" = swept-only (range-fade)
-             "include_break_bar": False}  # I3: engulf body joins the box (T13/t24 visual anchor)
+             "include_break_bar": False,  # I3: engulf body joins the box (T13/t24 visual anchor)
+             "disp_to_grade": False}      # I1: mint sub-disp zones, disp as quality tag not veto
 _EVENT = {"OB": "OB_RETEST", "BRK": "BRK_RETEST", "MIT": "MIT_RETEST"}
 # extremes (zigzag) pivots are the taught anchor (lesson 1); fractal swings
 # are the fallback when the extremes detector is not enabled.
@@ -60,11 +61,14 @@ class ObZones:
     """Incremental taught-OB tracker; tf-agnostic (fed closed bars)."""
 
     def __init__(self, depth: Decimal = Decimal("0.5"), min_disp: Decimal = Decimal(0),
-                 include_break_bar: bool = False):
+                 include_break_bar: bool = False, disp_to_grade: bool = False):
         self.depth = depth
         self.min_disp = min_disp   # birth needs a >= min_disp*ATR displacement break
         self.include_break_bar = include_break_bar  # I3 (audit_zones): when the sweep candle IS
         # the run-breaker the visual box includes the engulf bar's body; frozen code excludes it
+        self.disp_to_grade = disp_to_grade  # I1: sub-displacement break MINTS the zone anyway
+        # (recall: the taught post-sweep basing OBs are sub-ATR breaks; 3/7 -> 6/7 recognition)
+        # carrying disp_atr in zone meta as a QUALITY tag instead of a birth veto
         self.tape = Tape()
         self.zones: list[Zone] = []
         self._run: list[tuple[Decimal, Decimal, int]] = []  # (body_lo, body_hi, sign)
@@ -103,7 +107,9 @@ class ObZones:
             if c > bhi or c < blo:                       # continuation break
                 d = 1 if c > bhi else -1
                 disp = (c - bhi) if d == 1 else (blo - c)  # break displacement
-                if self.tape.atr and self.min_disp and disp < self.min_disp * self.tape.atr:
+                weak = (self.tape.atr and self.min_disp
+                        and disp < self.min_disp * self.tape.atr)
+                if weak and not self.disp_to_grade:
                     self._run = []                       # sub-displacement -> mint nothing
                     self._run.append(body)
                     return None
@@ -116,7 +122,9 @@ class ObZones:
                              max(bb[1] for bb in sub), ts,
                              i - len(self._run) + k, i,
                              id=f"OB{d:+d}@{ts.isoformat()}",
-                             meta={"ext": h if d == 1 else l})
+                             meta={"ext": h if d == 1 else l,
+                                   "disp_atr": float(disp / self.tape.atr)
+                                   if self.tape.atr else None})
                 self._run = []
         self._run.append(body)
         return z
@@ -130,7 +138,8 @@ class ObTaughtDetector(Detector):
         super().__init__({**_DEFAULTS, **params})
         self._z = ObZones(Decimal(str(self.params["depth_atr"])),
                           Decimal(str(self.params["min_disp_atr"])),
-                          bool(self.params.get("include_break_bar")))
+                          bool(self.params.get("include_break_bar")),
+                          bool(self.params.get("disp_to_grade")))
         self._n = 0
 
     def on_session_end(self) -> None:
@@ -198,4 +207,5 @@ class ObTaughtDetector(Detector):
             strength=0.7, zone=(z.lo, z.hi), ts=ctx.now, ttl_candles=6,
             meta={"event": _EVENT[z.kind], "sl": str(z.lo if up else z.hi),
                   "sl_floor": str(floor),
-                  "pivot_dist_atr": z.meta.get("pivot_dist_atr")})
+                  "pivot_dist_atr": z.meta.get("pivot_dist_atr"),
+                  "disp_atr": z.meta.get("disp_atr")})
