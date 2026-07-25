@@ -68,7 +68,7 @@ def _runway(ctx: StockContext, d: Direction, entry: Decimal,
 
 def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2,
            min_rr: float = 0.0, runway: str = "ext",
-           entry_depth: float = 0.5) -> Decision:
+           entry_depth: float = 0.5, zone_pick: str = "first") -> Decision:
     """entry_depth (G5, 48-VISUAL): where in the zone the entry sits — 0.5 = mid/CE
     (frozen), 0.25 = discount-half for longs / premium-half for shorts (deeper fill,
     tighter risk, taught 'fvg entry' sub-box)."""
@@ -81,8 +81,14 @@ def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2,
     reasons = [f"extreme:{pd.meta['side']}"]
 
     # node 2 -- a same-direction decisional zone (the entry object)
-    z = next((e for e in evidence if e.detector in _ZONE_DETS and e.direction is d
-              and e.meta.get("event") in _ZONE_EVENTS), None)
+    cands = [e for e in evidence if e.detector in _ZONE_DETS and e.direction is d
+             and e.meta.get("event") in _ZONE_EVENTS]
+    if zone_pick == "deepest" and cands:
+        # SHAKEN-AUTOPSY fix: enter where the sweep lands — the DEEPEST same-direction
+        # zone on offer (long -> lowest, short -> highest), not the first touch.
+        z = min(cands, key=lambda e: _mid(e.zone)) if d is Direction.LONG             else max(cands, key=lambda e: _mid(e.zone))
+    else:
+        z = cands[0] if cands else None
     if z is None:
         return Decision(False, d, None, None, None, 0, reasons + ["no decisional zone"])
     lo_z, hi_z = min(z.zone), max(z.zone)

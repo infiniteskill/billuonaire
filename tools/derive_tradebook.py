@@ -46,7 +46,7 @@ def cost_R(entry, risk):
     return per_share / r + 2 * c["brokerage_flat"] / risk_budget
 
 
-def _tap(pipe, trades, min_grade, gate_bars=20, min_rr=0.0, runway="ext", entry_depth=0.5):
+def _tap(pipe, trades, min_grade, gate_bars=20, min_rr=0.0, runway="ext", entry_depth=0.5, zone_pick="first"):
     orig = pipe.registry.run_all
 
     def run_all(ctx):
@@ -55,14 +55,16 @@ def _tap(pipe, trades, min_grade, gate_bars=20, min_rr=0.0, runway="ext", entry_
             w = ctx.candles.last(gate_bars, Timeframe("5m"))
             cutoff = w[0].ts if w else ctx.now
             window = list(evs) + [e for e in ctx.evidence_history if e.ts >= cutoff]
-            d = decide(ctx, window, min_grade, min_rr, runway, entry_depth)
+            d = decide(ctx, window, min_grade, min_rr, runway, entry_depth, zone_pick)
             if d.take:
                 rs = d.reasons
                 nd = next((int(x.split(":")[1]) for x in rs if x.startswith("nest:")), 0)
                 mat = next((float(x.split(":")[1]) for x in rs if x.startswith("maturity:")), 0.0)
                 mem = d.members[0] if d.members else ("", "", 0.0)
+                _a = ctx.atr(Timeframe("5m"))
                 trades.append({"sym": pipe.symbol, "ts": ctx.now, "dir": d.direction.name,
                                "entry": d.entry, "sl": d.sl, "target": d.target, "grade": d.grade,
+                               "atr": float(_a) if _a is not None else None,   # sl_floor parity col
                                # ADDITIVE feature capture (Z1) — for offline A/B on the graded frame:
                                "bos": "bos" in rs, "sweep": "sweep" in rs, "ote": "ote" in rs,
                                "phase": "phase" in rs, "nest_depth": nd, "maturity": mat,
@@ -124,9 +126,10 @@ def main():
     min_rr = float(os.environ.get("DERIVE_MIN_RR", 0))   # proven cross-regime gate; 0=off (frozen)
     runway = os.environ.get("DERIVE_RUNWAY", "ext")      # G4 target menu: "ext" (frozen) | "ext+eq"
     entry_depth = float(os.environ.get("DERIVE_ENTRY_DEPTH", 0.5))  # G5: 0.5 mid (frozen) | 0.25 discount
+    zone_pick = os.environ.get("DERIVE_ZONE_PICK", "first")         # deepest = shaken-autopsy fix
     trades = []
     for pipe in orch.pipelines.values():
-        _tap(pipe, trades, min_grade, min_rr=min_rr, runway=runway, entry_depth=entry_depth)
+        _tap(pipe, trades, min_grade, min_rr=min_rr, runway=runway, entry_depth=entry_depth, zone_pick=zone_pick)
     orch.run()
     m1s = {sym: orch.store._data.get(sym, {}).get(Timeframe.M1, []) for sym in syms}
     m5s = {sym: orch.store._data.get(sym, {}).get(Timeframe.M5, []) for sym in syms}
