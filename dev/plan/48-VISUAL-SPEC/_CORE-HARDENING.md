@@ -32,3 +32,9 @@
    Resting limit at zone-CE fills ~10-20% of what the sim counts (rest: limit expires unfilled or
    zone breaks first). **LIVE total R = sim R x fill-rate x fill-quality-shift — the paper-pilot
    metric.** Pilot design must also test entry variants (edge-touch vs CE-limit vs marketable).
+
+## SEAL (2026-07-26): 920 unit + 13 golden (5 chain + 5 regime + 3 parity) ALL GREEN.
+Stress: 261-session continuous life, 228MB flat, no creep, no crash. Perf: hours -> ~5min/7mo-stock.
+One command: `pytest tests/ -q && pytest tests/ -m golden -q`. CORE = SEALED.
+Remaining before live: merge (user word) -> app essentials (feed/scanner/UI) -> PAPER PILOT
+(fill-rate x fill-quality = the last unknown, pre-quantified at ~10-20% CE-limit fills on fixture).
