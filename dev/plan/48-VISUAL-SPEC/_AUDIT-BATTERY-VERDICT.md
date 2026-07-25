@@ -30,3 +30,13 @@ without passing this gate.
 liquidity S-set (wick-keyed EQ lines, kind-aware touch gate, session-scale sweep pass, EXT carry,
 recency floor) — improves the DIAGNOSTIC map; ob_taught include_break_bar/mono_run variants; 5 user
 questions (_SPEC.md §D).
+
+## Battery-2 (2026-07-25 late): keepers cross-regime + s12/obi
+| variant | eod hi>=5 +minRR | ref | verdict |
+|---|---|---|---|
+| keepers BULL | +8.53 n333 | +8.63 | HOLDS → merge-blocker cleared |
+| keepers BEAR | +6.70 n465 | +6.75 | HOLDS |
+| **s12** (S1 wick-line EQ + S2 distinct-touch + EQ-gate 2) | **+7.62 n158** | +7.34 | **+0.28 — FIRST fidelity fix to IMPROVE the money gate** (C3 selective-error fix); cross-regime confirm in battery-3 |
+| obi (I3 break-bar) | +7.29 n151 | +7.34 | neutral → param off |
+Battery-3 running: s12×bull/bear + wide2026 (7-month, 40-stock) frozen anchor + s12-wide2026.
+Gate tape upgraded: data/wide2026 (Jan-Jul, 137 sessions) replaces the 17-day tape as anchor.
