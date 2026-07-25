@@ -32,7 +32,9 @@ from trader.engine.context import StockContext
 from trader.models.candle import Timeframe
 from trader.models.evidence import Direction, Evidence
 
-_DEFAULTS = {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15}
+_DEFAULTS = {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15,
+             "min_disp_atr": 0.0}  # MIRROR ob_taught's birth gate (audit_zones: without it the
+                                   # private parent universe is 8.2x the journaled ob_taught set)
 _ALL = 10 ** 9
 
 
@@ -42,7 +44,8 @@ class Propulsion2Detector(Detector):
 
     def __init__(self, params: dict):
         super().__init__({**_DEFAULTS, **params})
-        self._obz = ObZones(Decimal(str(self.params["depth_atr"])))
+        self._obz = ObZones(Decimal(str(self.params["depth_atr"])),
+                            Decimal(str(self.params["min_disp_atr"])))
         self._kids: list[Zone] = []
         self._n = 0
 

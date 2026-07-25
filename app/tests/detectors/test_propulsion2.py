@@ -72,7 +72,8 @@ def run_to(det, store, n_last):
 def test_registered():
     assert REGISTRY["propulsion2"] is Propulsion2Detector
     d = Propulsion2Detector({})
-    assert d.params == {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15}
+    assert d.params == {"tf": "5m", "depth_atr": 0.5, "sl_atr_floor": 0.15,
+                        "min_disp_atr": 0.0}
 
 
 def test_child_body_zone_fires_with_parent_id():

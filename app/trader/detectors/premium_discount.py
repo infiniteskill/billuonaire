@@ -51,13 +51,20 @@ class PremiumDiscountDetector(Detector):
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
         tf = Timeframe(self.params["tf"])
-        masters = [lv for lv in ctx.levels
-                   if lv.state in _ACTIVE and lv.meta.get("master")
-                   and (lv.tf is tf or lv.tf is None)]
         lb = float(self.params.get("range_lookback_days") or os.environ.get("PD_LOOKBACK_DAYS") or 0)
         if lb > 0:
+            # LOCAL dealing range (audit_regime fix): recompute masters WITHIN the
+            # window from ALL live EXT pivots — filtering the singleton global-master
+            # pair by born can only silence the gate (the old bug).
             cut = ctx.now - timedelta(days=lb)
-            masters = [lv for lv in masters if lv.born >= cut]
+            masters = [lv for lv in ctx.levels
+                       if lv.state in _ACTIVE and lv.born >= cut
+                       and lv.kind in (LevelKind.EXT_H, LevelKind.EXT_L)
+                       and (lv.tf is tf or lv.tf is None)]
+        else:
+            masters = [lv for lv in ctx.levels
+                       if lv.state in _ACTIVE and lv.meta.get("master")
+                       and (lv.tf is tf or lv.tf is None)]
         highs = [lv for lv in masters if lv.kind is LevelKind.EXT_H]
         lows = [lv for lv in masters if lv.kind is LevelKind.EXT_L]
         if not highs or not lows:

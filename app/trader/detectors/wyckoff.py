@@ -37,7 +37,9 @@ from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
 from trader.models.level import LevelKind, LevelState
 
-_DEFAULTS = {"tf": "5m", "window": 40, "range_atr": 3.0, "vol_sma": 20}
+_DEFAULTS = {"tf": "5m", "window": 40, "range_atr": 3.0, "vol_sma": 20,
+             "vol_ratio": 1.5}  # spring/upthrust volume gate; audit_regime: untaught, vetoes
+                                # the taught 1141-spring/1234-upthrust at 1h scale — 0 disables
 
 
 @register
@@ -101,7 +103,8 @@ class WyckoffDetector(Detector):
         lo, hi = min(c.low for c in rng), max(c.high for c in rng)
         if hi - lo >= self._band_max(atr):
             return None  # not in-range: no spring/upthrust possible
-        if not latest.volume > 1.5 * fmean(
+        vr = float(self.params.get("vol_ratio", 1.5))
+        if vr and not latest.volume > vr * fmean(
                 c.volume for c in candles[-int(self.params["vol_sma"]) - 1:-1]):
             return None
         mid = latest.low + latest.range / 2
