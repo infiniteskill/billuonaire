@@ -126,7 +126,8 @@
     "min_depth": 2
    },
    "sweep": {
-    "min_touches": 3
+    "min_touches": 3,
+    "min_touches_eq": 2
    },
    "fvg_n": {
     "min_gap_atr": 0.7
@@ -138,7 +139,9 @@
      "EXT_H",
      "EXT_L"
     ],
-    "proximity_atr": 0.35
+    "proximity_atr": 0.35,
+    "eq_wick_line": true,
+    "eq_distinct_touches": true
    },
    "decision": {
     "engine": "taught",

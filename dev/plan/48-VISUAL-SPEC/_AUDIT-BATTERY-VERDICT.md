@@ -40,3 +40,18 @@ questions (_SPEC.md §D).
 | obi (I3 break-bar) | +7.29 n151 | +7.34 | neutral → param off |
 Battery-3 running: s12×bull/bear + wide2026 (7-month, 40-stock) frozen anchor + s12-wide2026.
 Gate tape upgraded: data/wide2026 (Jan-Jul, 137 sessions) replaces the 17-day tape as anchor.
+
+## Battery-3 FINAL (2026-07-25): s12 cross-regime + wide2026 anchor
+| leg | s12 | frozen ref | delta |
+|---|---|---|---|
+| 2026 17-day | +7.62 | +7.34 | +0.28 |
+| bull | +8.93 | +8.63 | +0.30 |
+| bear | +6.68 | +6.75 | −0.07 |
+| **wide2026 7-month (n1233)** | **+5.89** | **+6.02** | **−0.13** |
+n-weighted ≈ 0.00 → **s12 = edge-NEUTRAL** (battery-2's +0.28 was small-tape flattery). SHIPPED to
+stage2 profile on FIDELITY grounds (wick-line EQ, honest touch counts, EQ sweeps emitting; zero edge cost).
+
+## NEW GATE ANCHOR: data/wide2026 (frozen config, 40 stk, Jan-Jul, 137 sess, deduped eod hi>=5+minRR)
+**+6.02R n=1215 win 66%** — the honest production number (Jan-May untouched by tuning; the 17-day
++7.34 carried in-sample flattery). All future gates reference THIS. Perf fix made the 7-month derive
+~15min (was ~hours).
