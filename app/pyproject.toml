@@ -20,3 +20,7 @@ include = ["trader*"]
 
 [tool.setuptools.package-data]
 trader = ["templates/*.json"]
+
+[tool.pytest.ini_options]
+markers = ["golden: end-to-end golden-path chain test (slow)", "slow: slow tests"]
+addopts = "-m 'not golden'"
