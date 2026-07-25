@@ -15,6 +15,10 @@ BANK AS LIQUIDITY SWEEP" lesson at scale. The +28R move starts from the DEEPER z
 FIX CANDIDATES (both taught-native, both need sim extension + gate):
 1. DEEPEST-REFINEMENT ENTRY: when nested tiers exist, entry = innermost/deepest zone not first touch
    (t28 discipline). Sim: re-derive with entry at deepest available nest tier.
-2. RE-ENTRY RULE: after stop, zone/setup still valid -> re-enter on reclaim of entry (second-life /
-   mitigation), SL beyond the new extreme, same target. Captures the shaken 28.6R median.
-Both change trade generation -> full gate (recognition -> wide2026 total-R + per-trade + quads).
+2. RE-ENTRY RULE: REJECTED by user reasoning (2026-07-25): the 60% true losers would re-trigger on
+   reclaim wiggles -> doubled losses; reclaim signal unproven to separate shaken-from-doomed;
+   revenge-trade shaped. BETTER ENTRY IS THE FIX.
+DEEPEST-TIER ENTRY design: decide() takes the FIRST qualifying zone evidence; change = among
+same-direction candidates in window prefer the DEEPEST zone (long->lowest / short->highest;
+generalizes the htf_nest-CE preference). Distinct from G5 (same-zone depth, neutral) — this changes
+WHICH zone we wait for. Param-gated -> wide2026 gate.
