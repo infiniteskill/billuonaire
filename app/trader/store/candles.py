@@ -116,19 +116,32 @@ class CandleView:
         # list IS the window. Read-only contract as _closed.
         return closed if n >= len(closed) else closed[-n:]
 
+    def _day_start_idx(self, closed: list[Candle], d) -> int:
+        """First index whose ts.date() >= d — bisect on the sorted ts axis
+        (identical result to a linear .date() scan, without the O(n) cost)."""
+        import datetime as _dt
+        if not closed:
+            return 0
+        tz = closed[-1].ts.tzinfo
+        cut = _dt.datetime.combine(d, _dt.time.min, tzinfo=tz)
+        return bisect_right(closed, cut - _dt.timedelta(microseconds=1), key=_TS)
+
     def today(self, tf: Timeframe) -> list[Candle]:
         """Fully closed tf candles of the current session day."""
         d = self._today()
-        return [c for c in self._closed(tf) if c.ts.date() == d]
+        closed = self._closed(tf)
+        return closed[self._day_start_idx(closed, d):]
 
     def prev_day(self, tf: Timeframe) -> list[Candle]:
         """Fully closed tf candles of the latest session day before today."""
         d = self._today()
-        earlier = [c for c in self._closed(tf) if c.ts.date() < d]
+        closed = self._closed(tf)
+        i = self._day_start_idx(closed, d)
+        earlier = closed[:i]
         if not earlier:
             return []
         prev = earlier[-1].ts.date()  # list is sorted, so last date is max
-        return [c for c in earlier if c.ts.date() == prev]
+        return earlier[self._day_start_idx(earlier, prev):]
 
 
 class CandleStore:
