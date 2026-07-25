@@ -23,7 +23,9 @@ from trader.models.candle import Candle, Timeframe
 from trader.models.evidence import Direction, Evidence
 from trader.models.level import Level, LevelKind, LevelState
 
-_DEFAULTS = {"tf": "5m", "min_gap_atr": 0.3}
+# timeframes: extra TFs to CREATE FVG Levels on (HTF nesting parents, 48-VISUAL G1/G2);
+# fill/DEAD judged per level's OWN tf close; Evidence stays base-tf only.
+_DEFAULTS = {"tf": "5m", "min_gap_atr": 0.3, "timeframes": None}
 _LIVE = (LevelState.ACTIVE, LevelState.TESTED)
 _FVG_KINDS = (LevelKind.FVG_BULL, LevelKind.FVG_BEAR)
 
@@ -44,22 +46,32 @@ class FvgDetector(Detector):
             m.clear()   # episodes are per-session; carried zones re-fire fresh
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
-        tf = Timeframe(self.params["tf"])
-        window = ctx.candles.last(3, tf)
-        if not window:
+        base = Timeframe(self.params["tf"])
+        tfs = list(dict.fromkeys(
+            [base] + [Timeframe(t) for t in (self.params.get("timeframes") or [])]))
+        lasts: dict[Timeframe, Candle] = {}
+        for tf in tfs:
+            window = ctx.candles.last(3, tf)
+            if not window:
+                continue
+            lasts[tf] = window[-1]
+            atr = ctx.atr(tf)
+            if len(window) == 3 and atr is not None and atr > 0:
+                self._create(ctx, tf, window, atr)
+        if base not in lasts:
             return []
-        atr = ctx.atr(tf)
-        if len(window) == 3 and atr is not None and atr > 0:
-            self._create(ctx, tf, window, atr)
-        last = window[-1]
+        last = lasts[base]
         out: list[Evidence] = []
         for lv in ctx.levels:
             if lv.kind not in _FVG_KINDS:
                 continue
             bull = lv.kind is LevelKind.FVG_BULL
-            filled = last.close < lv.zone[0] if bull else last.close > lv.zone[1]
+            own = lasts.get(lv.tf, last)     # fill judged on the level's OWN tf close
+            filled = own.close < lv.zone[0] if bull else own.close > lv.zone[1]
             if filled and lv.state not in (LevelState.DEAD, LevelState.INVERTED):
-                lv.record_state(last.ts, LevelState.DEAD)
+                lv.record_state(own.ts, LevelState.DEAD)
+            if lv.tf is not base:            # HTF levels = nesting parents only
+                continue
             if lv.state is LevelState.INVERTED:
                 out += self._ifvg(ctx, lv, last, bull)
             elif lv.state in _LIVE:
@@ -116,8 +128,9 @@ class FvgDetector(Detector):
                          meta={"level_id": lv.id, "event": "IFVG"})]
 
     def _bpr(self, ctx: StockContext, last: Candle) -> list[Evidence]:
+        base = Timeframe(self.params["tf"])
         live = [lv for lv in ctx.levels
-                if lv.kind in _FVG_KINDS and lv.state in _LIVE]
+                if lv.kind in _FVG_KINDS and lv.state in _LIVE and lv.tf is base]
         out = []
         for b in (lv for lv in live if lv.kind is LevelKind.FVG_BULL):
             for r in (lv for lv in live if lv.kind is LevelKind.FVG_BEAR):

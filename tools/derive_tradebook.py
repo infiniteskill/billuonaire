@@ -24,7 +24,9 @@ from trader.feed.file import FileFeed
 from trader.models.candle import Timeframe
 
 ROOT = Path("/home/doom/Public/PROJECT/2026/trader")
-PROFILE = ROOT / "runs/validate/taught_profile/config.json"
+import os as _os
+PROFILE = Path(_os.environ.get("DERIVE_PROFILE",
+                               str(ROOT / "runs/validate/taught_profile/config.json")))
 CFG = json.loads(PROFILE.read_text())
 import os
 DATA = Path(os.environ.get("DERIVE_DATA", str(ROOT / "data/wide")))
