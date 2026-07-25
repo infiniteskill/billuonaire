@@ -1,0 +1,75 @@
+data=data/regime_2024q4  40 stocks -> 12 shards  (sizes [4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3])
+  shard 0: rc=0 OK  (4 stocks)
+  shard 1: rc=0 OK  (4 stocks)
+  shard 2: rc=0 OK  (4 stocks)
+  shard 3: rc=0 OK  (4 stocks)
+  shard 4: rc=0 OK  (3 stocks)
+  shard 5: rc=0 OK  (3 stocks)
+  shard 6: rc=0 OK  (3 stocks)
+  shard 7: rc=0 OK  (3 stocks)
+  shard 8: rc=0 OK  (3 stocks)
+  shard 9: rc=0 OK  (3 stocks)
+  shard 10: rc=0 OK  (3 stocks)
+  shard 11: rc=0 OK  (3 stocks)
+
+merged 37102 records -> runs/validate/tb_final_bear.csv
+
+=== STOP_MODE=intrabar  syms=40 (parallel) ===
+  ALL            n=12324 win%= 40 gross/t=+4.05R NET/t=+0.985R
+by grade:
+  grade 1        n= 1448 win%= 25 gross/t=+0.22R NET/t=-4.653R
+  grade 2        n= 3395 win%= 26 gross/t=+0.02R NET/t=-4.310R
+  grade 3        n= 2297 win%= 26 gross/t=+1.14R NET/t=-2.776R
+  grade 4        n=  729 win%= 38 gross/t=+8.88R NET/t=+6.030R
+  grade 5        n= 1657 win%= 56 gross/t=+7.22R NET/t=+6.056R
+  grade 6        n= 1888 win%= 67 gross/t=+10.58R NET/t=+9.471R
+  grade 7        n=  787 win%= 68 gross/t=+9.20R NET/t=+8.168R
+  grade 8        n=  122 win%= 77 gross/t=+10.34R NET/t=+9.400R
+  grade 9        n=    1 win%=100 gross/t=+1.18R NET/t=+0.737R
+HIGH-GRADE tier (>=4):
+  hi ALL         n= 5184 win%= 60 gross/t=+9.05R NET/t=+7.695R
+  holdout quadrants (hi tier):
+    early/A      n=  859 win%= 57 gross/t=+12.21R NET/t=+10.531R
+    early/B      n= 1255 win%= 55 gross/t=+11.44R NET/t=+9.980R
+    late/A       n= 1282 win%= 67 gross/t=+6.78R NET/t=+5.639R
+    late/B       n= 1788 win%= 59 gross/t=+7.48R NET/t=+6.202R
+
+=== STOP_MODE=m5_close  syms=40 (parallel) ===
+  ALL            n=12351 win%= 43 gross/t=+3.92R NET/t=+0.868R
+by grade:
+  grade 1        n= 1447 win%= 29 gross/t=-0.65R NET/t=-5.523R
+  grade 2        n= 3393 win%= 29 gross/t=-0.47R NET/t=-4.801R
+  grade 3        n= 2295 win%= 31 gross/t=+0.95R NET/t=-2.955R
+  grade 4        n=  729 win%= 41 gross/t=+9.72R NET/t=+6.871R
+  grade 5        n= 1672 win%= 59 gross/t=+7.26R NET/t=+6.096R
+  grade 6        n= 1899 win%= 69 gross/t=+10.94R NET/t=+9.836R
+  grade 7        n=  793 win%= 70 gross/t=+9.51R NET/t=+8.485R
+  grade 8        n=  122 win%= 79 gross/t=+10.55R NET/t=+9.609R
+  grade 9        n=    1 win%=100 gross/t=+1.18R NET/t=+0.737R
+HIGH-GRADE tier (>=4):
+  hi ALL         n= 5216 win%= 62 gross/t=+9.36R NET/t=+8.010R
+  holdout quadrants (hi tier):
+    early/A      n=  880 win%= 59 gross/t=+12.61R NET/t=+10.951R
+    early/B      n= 1265 win%= 58 gross/t=+11.48R NET/t=+10.029R
+    late/A       n= 1282 win%= 69 gross/t=+6.89R NET/t=+5.753R
+    late/B       n= 1789 win%= 62 gross/t=+8.03R NET/t=+6.754R
+
+=== STOP_MODE=eod  syms=40 (parallel) ===
+  ALL            n=12427 win%= 51 gross/t=+4.23R NET/t=+1.185R
+by grade:
+  grade 1        n= 1448 win%= 39 gross/t=-0.00R NET/t=-4.873R
+  grade 2        n= 3400 win%= 36 gross/t=+0.68R NET/t=-3.644R
+  grade 3        n= 2302 win%= 37 gross/t=+1.17R NET/t=-2.735R
+  grade 4        n=  734 win%= 50 gross/t=+8.51R NET/t=+5.684R
+  grade 5        n= 1680 win%= 67 gross/t=+7.30R NET/t=+6.146R
+  grade 6        n= 1930 win%= 76 gross/t=+10.32R NET/t=+9.221R
+  grade 7        n=  803 win%= 77 gross/t=+9.43R NET/t=+8.409R
+  grade 8        n=  129 win%= 91 gross/t=+11.98R NET/t=+11.031R
+  grade 9        n=    1 win%=100 gross/t=+1.18R NET/t=+0.737R
+HIGH-GRADE tier (>=4):
+  hi ALL         n= 5277 win%= 70 gross/t=+9.01R NET/t=+7.669R
+  holdout quadrants (hi tier):
+    early/A      n=  880 win%= 68 gross/t=+11.05R NET/t=+9.386R
+    early/B      n= 1272 win%= 68 gross/t=+10.19R NET/t=+8.737R
+    late/A       n= 1300 win%= 75 gross/t=+7.08R NET/t=+5.957R
+    late/B       n= 1825 win%= 70 gross/t=+8.59R NET/t=+7.317R

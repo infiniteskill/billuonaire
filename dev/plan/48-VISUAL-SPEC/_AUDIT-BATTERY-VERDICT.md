@@ -69,3 +69,15 @@ n 1215->1479 (+22%), TOTAL R +7314->+8359 (+14.3%).
 binds at tick level; deeper zones fire later as their own trades). Param off.
 ## sl_floor PARITY: closed — 9% of killshots below floor, widened 1.3x, net impact bounded ±4% total R.
 Sim ≈ production. (Those 127 sub-floor trades = the best cohort: +9.83R, 68% win.)
+
+## FINAL CROSS-REGIME VALIDATION (2026-07-26): MERGE-READY
+Final stage2 profile (minRR3+prp+ts4+s12+S3+I1) vs main, traded tier (eod g>=5+minRR):
+| tape | main TOTAL | stage2 TOTAL | delta |
+|---|---|---|---|
+| 2023 BULL | +2874 n333 | +3144 n422 | +9.4% |
+| 2024 BEAR | +3139 n465 | +3483 n564 | +11.0% |
+| 2026 7mo | +7314 n1215 | +8359 n1479 | +14.3% |
+Traded-tier holdout quads ALL POSITIVE in all 3 regimes (bull 5.73/8.5/8.69/6.78; bear all+; 2026 all+).
+(g>=4-no-minRR slice has one -0.53 pocket in bull = below the production cut, not traded.)
+Recall economics consistent everywhere: +21-27% trades, per-trade slightly lower, MORE total money.
+NOT a 2026 artifact. VERDICT: stage2 strictly dominates main on money across regimes -> MERGE.
