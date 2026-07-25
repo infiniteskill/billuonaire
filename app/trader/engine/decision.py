@@ -47,11 +47,19 @@ class Decision:
     members: list = field(default_factory=list)    # (detector, event, strength) contributors
 
 
-def _runway(ctx: StockContext, d: Direction, entry: Decimal) -> Decimal | None:
-    """Nearest FAR opposite extreme in the trade direction = the target draw."""
-    kind = LevelKind.EXT_H if d is Direction.LONG else LevelKind.EXT_L
+_RUNWAY_KINDS = {  # G4 (48-VISUAL): the taught target menu — opposing extreme AND liquidity pools
+    "ext": {Direction.LONG: (LevelKind.EXT_H,), Direction.SHORT: (LevelKind.EXT_L,)},
+    "ext+eq": {Direction.LONG: (LevelKind.EXT_H, LevelKind.EQH),
+               Direction.SHORT: (LevelKind.EXT_L, LevelKind.EQL)},
+}
+
+
+def _runway(ctx: StockContext, d: Direction, entry: Decimal,
+            menu: str = "ext") -> Decimal | None:
+    """Nearest FAR opposite draw in the trade direction = the target."""
+    kinds = _RUNWAY_KINDS.get(menu, _RUNWAY_KINDS["ext"])[d]
     long = d is Direction.LONG
-    cands = [_mid(lv.zone) for lv in ctx.levels if lv.kind is kind
+    cands = [_mid(lv.zone) for lv in ctx.levels if lv.kind in kinds
              and ((_mid(lv.zone) > entry) if long else (_mid(lv.zone) < entry))]
     if not cands:
         return None
@@ -59,7 +67,11 @@ def _runway(ctx: StockContext, d: Direction, entry: Decimal) -> Decimal | None:
 
 
 def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2,
-           min_rr: float = 0.0) -> Decision:
+           min_rr: float = 0.0, runway: str = "ext",
+           entry_depth: float = 0.5) -> Decision:
+    """entry_depth (G5, 48-VISUAL): where in the zone the entry sits — 0.5 = mid/CE
+    (frozen), 0.25 = discount-half for longs / premium-half for shorts (deeper fill,
+    tighter risk, taught 'fvg entry' sub-box)."""
     # node 0/1 -- premium/discount permits a side (AT an extreme, never mid)
     pd = next((e for e in evidence if e.detector == "premium_discount"), None)
     permit = pd.meta.get("permits") if pd else None
@@ -73,7 +85,10 @@ def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2,
               and e.meta.get("event") in _ZONE_EVENTS), None)
     if z is None:
         return Decision(False, d, None, None, None, 0, reasons + ["no decisional zone"])
-    entry = _mid(z.zone)
+    lo_z, hi_z = min(z.zone), max(z.zone)
+    dep = Decimal(str(entry_depth))
+    entry = (lo_z + dep * (hi_z - lo_z) if d is Direction.LONG      # 0.5 = mid (frozen)
+             else hi_z - dep * (hi_z - lo_z))
     sl = (Decimal(z.meta["sl"]) if z.meta.get("sl")
           else (z.zone[0] if d is Direction.LONG else z.zone[1]))
     reasons.append(f"zone:{z.detector}:{z.meta.get('event')}")
@@ -103,7 +118,7 @@ def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2,
         grade += 1; reasons.append(f"maturity:{max(mats)}")
 
     # node 4 -- runway (required): a far opposite extreme = the target
-    target = _runway(ctx, d, entry)
+    target = _runway(ctx, d, entry, runway)
     if target is None:
         return Decision(False, d, entry, sl, None, grade, reasons + ["no runway"])
     reasons.append("runway")

@@ -46,7 +46,7 @@ def cost_R(entry, risk):
     return per_share / r + 2 * c["brokerage_flat"] / risk_budget
 
 
-def _tap(pipe, trades, min_grade, gate_bars=20, min_rr=0.0):
+def _tap(pipe, trades, min_grade, gate_bars=20, min_rr=0.0, runway="ext", entry_depth=0.5):
     orig = pipe.registry.run_all
 
     def run_all(ctx):
@@ -55,7 +55,7 @@ def _tap(pipe, trades, min_grade, gate_bars=20, min_rr=0.0):
             w = ctx.candles.last(gate_bars, Timeframe("5m"))
             cutoff = w[0].ts if w else ctx.now
             window = list(evs) + [e for e in ctx.evidence_history if e.ts >= cutoff]
-            d = decide(ctx, window, min_grade, min_rr)
+            d = decide(ctx, window, min_grade, min_rr, runway, entry_depth)
             if d.take:
                 rs = d.reasons
                 nd = next((int(x.split(":")[1]) for x in rs if x.startswith("nest:")), 0)
@@ -122,9 +122,11 @@ def main():
     orch = Orchestrator(s, FileFeed(DATA, s.market_spec()), syms, index_symbol=None,
                         max_qty=1, journal_dir=jdir)
     min_rr = float(os.environ.get("DERIVE_MIN_RR", 0))   # proven cross-regime gate; 0=off (frozen)
+    runway = os.environ.get("DERIVE_RUNWAY", "ext")      # G4 target menu: "ext" (frozen) | "ext+eq"
+    entry_depth = float(os.environ.get("DERIVE_ENTRY_DEPTH", 0.5))  # G5: 0.5 mid (frozen) | 0.25 discount
     trades = []
     for pipe in orch.pipelines.values():
-        _tap(pipe, trades, min_grade, min_rr=min_rr)
+        _tap(pipe, trades, min_grade, min_rr=min_rr, runway=runway, entry_depth=entry_depth)
     orch.run()
     m1s = {sym: orch.store._data.get(sym, {}).get(Timeframe.M1, []) for sym in syms}
     m5s = {sym: orch.store._data.get(sym, {}).get(Timeframe.M5, []) for sym in syms}
