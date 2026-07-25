@@ -55,3 +55,7 @@ stage2 profile on FIDELITY grounds (wick-line EQ, honest touch counts, EQ sweeps
 **+6.02R n=1215 win 66%** — the honest production number (Jan-May untouched by tuning; the 17-day
 +7.34 carried in-sample flattery). All future gates reference THIS. Perf fix made the 7-month derive
 ~15min (was ~hours).
+
+## S3 gate (wide2026): FIRST RECALL-EXPANDER SHIPPED
+n 1239->1313 (+74 multi-day-sweep killshots), per-trade +5.86 (holds, -0.03 noise), hit 64.7%,
+**TOTAL R +7298->+7701 (+5.5%)**. Recall fixes = more killshots at same quality = more total money.

@@ -127,7 +127,8 @@
    },
    "sweep": {
     "min_touches": 3,
-    "min_touches_eq": 2
+    "min_touches_eq": 2,
+    "dead_reversal_sessions": 3
    },
    "fvg_n": {
     "min_gap_atr": 0.7
