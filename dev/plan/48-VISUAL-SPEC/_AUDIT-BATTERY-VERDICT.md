@@ -64,3 +64,8 @@ n 1239->1313 (+74 multi-day-sweep killshots), per-trade +5.86 (holds, -0.03 nois
 n 1313->1479 (+166 sub-displacement OB killshots), hit holds 64.5%, per-trade +5.65 (-0.21 documented
 tradeoff), quads all + (0.87..4.06), **TOTAL R +7701->+8359 (+8.5%)**. Cumulative recall arc vs main:
 n 1215->1479 (+22%), TOTAL R +7314->+8359 (+14.3%).
+
+## Deepest-tier entry gate: NEUTRAL reject (n1477/+8320 vs n1479/+8359 identical — zone choice never
+binds at tick level; deeper zones fire later as their own trades). Param off.
+## sl_floor PARITY: closed — 9% of killshots below floor, widened 1.3x, net impact bounded ±4% total R.
+Sim ≈ production. (Those 127 sub-floor trades = the best cohort: +9.83R, 68% win.)
