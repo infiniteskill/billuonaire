@@ -88,6 +88,7 @@ class SymbolPipeline:
         self._decision_engine = _dcfg.get("engine", "confluence")
         self._decision_min_grade = int(_dcfg.get("min_grade", 4))
         self._decision_min_rr = float(_dcfg.get("min_rr", 0))   # proven cross-context RR gate (0=off)
+        self._decision_runway = _dcfg.get("runway", "ext")      # ext | master | far | ext+eq
         self.gates, self.fsm = GateChain(settings), EntryFSM(settings, self.spec)
         self.ladder = Ladder() if settings.ladder.enabled and not is_index else None
         self.wyckoff = WyckoffDetector(settings.detectors.params.get("wyckoff", {}))
@@ -309,7 +310,8 @@ class SymbolPipeline:
         cutoff = w[0].ts if w else ctx.now              # research counted trades from THIS
         window = list(evidence) + [e for e in self.evidence_history  # evidence set only
                                    if e.ts >= cutoff]
-        d = decide(ctx, window, self._decision_min_grade, self._decision_min_rr)
+        d = decide(ctx, window, self._decision_min_grade, self._decision_min_rr,
+                   self._decision_runway)
         if not d.take or d.zone is None:
             return []
         return [ScoredZone(zone=d.zone, direction=d.direction, members=d.members,
