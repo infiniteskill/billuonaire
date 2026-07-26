@@ -29,6 +29,7 @@ BUDGET = CAP * RISK_PCT / 100
 SESSION = 375
 SL_H = 0.7
 BARS, DR, SIG = {}, {}, []
+GRADE = []          # grade per SIG entry, parallel list (see grade_sep.py)
 
 
 def cost_per_share(px, qty):
@@ -44,7 +45,7 @@ def load(tb_path, data_dir, sl_h=0.7, min_grade=5):
     Signals that can never be traded (zero-height zone, qty<1, no room in the
     tape) are dropped here rather than mid-race, so race() output stays aligned
     with SIG and fill% means "limit touched", not "was tradeable at all"."""
-    global SL_H, SIG
+    global SL_H, SIG, GRADE
     SL_H = sl_h
     tb = pd.read_csv(tb_path)
     k = (tb.sym + "|" + tb.entry.round(1).astype(str) + "|" + tb.sl.round(1).astype(str)
@@ -63,7 +64,7 @@ def load(tb_path, data_dir, sl_h=0.7, min_grade=5):
         DR[sym] = float((g.h - g.l).median())
         BARS[sym] = (tsv.values, d.high.values, d.low.values, d.close.values,
                      (tsv.dt.hour * 60 + tsv.dt.minute).values, day)
-    SIG = []
+    SIG, GRADE = [], []
     for t in s.itertuples():
         tsv, hi, lo, cl, mins, day = BARS[t.sym]
         zlo, zhi = float(min(t.zone_lo, t.zone_hi)), float(max(t.zone_lo, t.zone_hi))
@@ -81,6 +82,7 @@ def load(tb_path, data_dir, sl_h=0.7, min_grade=5):
             se += 1
         SIG.append((t.sym, t.dir == "LONG", entry, risk,
                     cost_per_share(entry, qty), i, se, ts))
+        GRADE.append(int(t.grade))
     return len(SIG)
 
 
