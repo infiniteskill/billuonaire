@@ -115,6 +115,10 @@ def record(evs, tf_tag):
         # ctx.now, which is merely when the evidence was last re-emitted
         born = e.meta.get("born")
         born = int(pd.Timestamp(born).timestamp()) if born else int(e.ts.timestamp())
+        # a gap is drawn from the FIRST of its candles, so step back over its span
+        span = int(e.meta.get("span") or 1)
+        if span > 1:
+            born -= (span - 1) * 60 * TF_MIN.get(tf, 5)
         rec = {"det": det, "tf": tf, "lo": lo, "hi": hi,
                "dir": e.direction.name, "strength": float(e.strength),
                "born": born, "n": 1, "why": reason(e.detector, e.meta)}

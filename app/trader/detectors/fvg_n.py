@@ -125,5 +125,10 @@ class FvgNDetector(Detector):
             detector=self.name,
             direction=Direction.LONG if up else Direction.SHORT,
             strength=0.6, zone=(z.lo, z.hi), ts=ctx.now, ttl_candles=6,
+            # ts is ctx.now -- when this evidence last RE-FIRED, which can be days
+            # after the gap formed. A gap is drawn from its own candles rightward
+            # until price returns, so the birth bar and the span are what a consumer
+            # actually needs; carry them explicitly.
             meta={"event": _EVENT[z.kind], "sl": str(z.lo if up else z.hi),
-                  "sl_floor": str(floor)})
+                  "sl_floor": str(floor), "born": z.born.isoformat(),
+                  "span": int(z.b - z.a) + 1, "tf": tf.value})

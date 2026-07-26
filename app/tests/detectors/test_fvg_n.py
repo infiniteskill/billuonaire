@@ -157,10 +157,17 @@ def test_deep_close_through_kills_and_flips_ifvg():
 def test_meta_schema_contract():
     store = make_store([FLAT] * 15 + [GAP2, GAP3, BRKR, REC, ARM, TOUCH])
     [ev] = run_to(FvgNDetector({}), store, 21)
-    assert set(ev.meta) == {"event", "sl", "sl_floor"}
+    # born/span/tf added 2026-07-26: Evidence.ts is ctx.now, i.e. when the zone last
+    # RE-FIRED, which can be days after the gap formed -- a consumer that draws the
+    # gap from its own candles rightward needs the birth bar and the candle span.
+    assert set(ev.meta) == {"event", "sl", "sl_floor", "born", "span", "tf"}
     for k in ("sl", "sl_floor"):
         assert isinstance(ev.meta[k], str)
         Decimal(ev.meta[k])
+    assert isinstance(ev.meta["span"], int) and ev.meta["span"] >= 1
+    assert ev.meta["tf"] == M5.value
+    from datetime import datetime
+    assert datetime.fromisoformat(ev.meta["born"]) <= ctx_at(store, 21).now
     assert ev.meta["sl_floor"] == str(Decimal("0.15") * ctx_at(store, 21).atr(M5))
     assert 0.0 <= ev.strength <= 1.0
 

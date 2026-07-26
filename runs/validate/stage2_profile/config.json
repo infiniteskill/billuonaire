@@ -135,7 +135,8 @@
         "dead_reversal_sessions": 3
       },
       "fvg_n": {
-        "min_gap_atr": 0.7
+        "min_gap_atr": 0.7,
+        "tf": "30m"
       },
       "liquidity": {
         "emit_only": [
