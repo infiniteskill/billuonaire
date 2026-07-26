@@ -76,6 +76,15 @@ def _tap(pipe, trades, min_grade, gate_bars=20, min_rr=0.0, runway="ext", entry_
 
 
 ASSUME_FILL = os.environ.get("DERIVE_ASSUME_FILL") == "1"   # legacy phantom-fill sim
+ENTRY_STYLE = os.environ.get("DERIVE_ENTRY_STYLE", "signal")  # signal | taught
+# taught (ENTRY-SPEC from 36 measured hand-trades, entry_obs_a-d):
+#   fill  = limit at ZONE MID (median measured 0.48-0.57)
+#   SL    = 0.7 x zone-height from entry (beyond far edge w/ ~0.2H cushion —
+#           EVERY observed zone wicked its far edge at least once)
+#   BE    = once favorable excursion >= BE_TRIGGER_R x risk, stop -> entry
+#           ("fix SL at buying price so fees covered, failed trade loses nothing")
+BE_TRIGGER_R = float(os.environ.get("DERIVE_BE_TRIGGER_R", "1.0"))
+SL_H = float(os.environ.get("DERIVE_SL_H", "0.7"))
 # (pre-2026-07-26 behavior, kept ONLY for comparison studies: it credits trades
 # whose entry price never traded -- the trace audit measured 57% phantoms
 # carrying 91% of the recorded profit)
@@ -109,6 +118,13 @@ def _sim(t, m1, m5, stop_mode="intrabar", hold=3000):
     e, sl, tgt = t["entry"], t["sl"], t["target"]
     long = t["dir"] == "LONG"
     d = 1 if long else -1
+    if ENTRY_STYLE == "taught" and t.get("zone_lo") is not None:
+        zlo, zhi = Decimal(str(t["zone_lo"])), Decimal(str(t["zone_hi"]))
+        H = zhi - zlo
+        if H > 0:
+            e = (zlo + zhi) / 2                      # fill at ZONE MID
+            sl = e - Decimal(str(SL_H)) * H if long else e + Decimal(str(SL_H)) * H
+            t = {**t, "entry": e, "sl": sl}
     risk = abs(e - sl)
     if not risk:
         return None, None
@@ -139,15 +155,23 @@ def _sim(t, m1, m5, stop_mode="intrabar", hold=3000):
         return "timeout", None
     eod = stop_mode == "eod"     # PRODUCTION intraday: force-close at 15:10 same session
     cmp = (lambda c: c.ts > t["ts"]) if not ASSUME_FILL else (lambda c: c.ts >= t["ts"])
+    be_armed = ENTRY_STYLE == "taught"
+    be_trig = Decimal(str(BE_TRIGGER_R)) * risk
+    stop = sl
     for b in [c for c in m1 if cmp(c)][:hold]:
         if eod and (b.ts.hour * 60 + b.ts.minute) >= 15 * 60 + 10:
             return "eod", round(float((b.close - e) / risk) * d, 2)  # squareoff at close
-        if (long and b.open <= sl) or (not long and b.open >= sl):
+        if (long and b.open <= stop) or (not long and b.open >= stop):
             return "gap", float((b.open - e) / risk) * d
-        if (b.low <= sl) if long else (b.high >= sl):
-            return "stop", -1.0
+        if (b.low <= stop) if long else (b.high >= stop):
+            return ("be" if stop == e else "stop",
+                    0.0 if stop == e else -1.0)
         if (b.high >= tgt) if long else (b.low <= tgt):
             return "target", round(float(abs(tgt - e) / risk), 2)
+        if be_armed and stop != e:                   # taught BE-move: fees-safe scratch
+            fav = (b.high - e) if long else (e - b.low)
+            if fav >= be_trig:
+                stop = e
     return "timeout", None
 
 
