@@ -232,9 +232,23 @@ class ExtremesDetector(Detector):
         o, h, l, c = ([float(getattr(cd, f)) for cd in candles]
                       for f in ("open", "high", "low", "close"))
         atr = _wilder_atr(h, l, c)
-        K = _leg_K(atr, c, pct, float(self.params.get("k_floor",
-                                                      _DEFAULT_K_FLOOR)))
-        piv = _zigzag(h, l, [K * a for a in atr])
+        if str(self.params.get("threshold_mode", "atr")) == "pct":
+            # DIRECT: a swing is a reversal of at least leg_pct percent of price.
+            #
+            # _leg_K exists only to solve K such that median(K*ATR/close) == leg_pct,
+            # so the ATR machinery is two layers of indirection around a statement
+            # about percent of price. Saying it directly removes both measured faults
+            # at once: there is no K, so no clip floor can override leg_pct above 30m
+            # (it was delivering 2.44/3.27/7.42% at 1h/2h/1d against a configured 2%),
+            # and there is no per-bar ATR, so the threshold stops breathing with local
+            # volatility (on 5m the effective leg ranged 1.43-2.99%, a 2.1x spread,
+            # which silently skipped real swings inside volatile stretches).
+            thr = [pct * x for x in c]
+        else:
+            K = _leg_K(atr, c, pct,
+                       float(self.params.get("k_floor", _DEFAULT_K_FLOOR)))
+            thr = [K * a for a in atr]
+        piv = _zigzag(h, l, thr)
         conf = [p for p in piv if p.confirm_idx is not None]
         highs = [p for p in conf if p.side == "H"]
         lows = [p for p in conf if p.side == "L"]
