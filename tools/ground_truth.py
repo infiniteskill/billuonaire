@@ -19,7 +19,7 @@ import pandas as pd
 
 ROOT = Path("/home/doom/Public/PROJECT/2026/trader")
 TB, DATA = sys.argv[1], sys.argv[2]
-TOL = float(sys.argv[3]) if len(sys.argv) > 3 else 3.0     # entry price tolerance %
+TOL = float(sys.argv[3]) if len(sys.argv) > 3 else 1.5     # entry+target tolerance %
 DAYS = int(sys.argv[4]) if len(sys.argv) > 4 else 3        # date tolerance
 
 marks = [m for m in json.loads((ROOT / "tools/ytrades.json").read_text())
@@ -39,7 +39,8 @@ for m in sorted(marks, key=lambda x: (x["month"], x["day"])):
         continue
     near = tb[(tb.sym == sym) & ((tb.ts - d).abs() <= pd.Timedelta(days=DAYS))]
     px = near[(near.entry - m["entry"]).abs() / m["entry"] * 100 <= TOL]
-    same = px[px["dir"] == want]
+    px = px[(px.target - m["target"]).abs() / m["entry"] * 100 <= TOL]   # SAME TRADE:
+    same = px[px["dir"] == want]                                        # entry AND target
     opp = px[px["dir"] != want]
     if len(same):
         b = same.loc[same.grade.idxmax()]

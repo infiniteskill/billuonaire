@@ -60,9 +60,27 @@ _RUNWAY_KINDS = {  # G4 (48-VISUAL): the taught target menu — opposing extreme
 
 def _runway(ctx: StockContext, d: Direction, entry: Decimal,
             menu: str = "ext") -> Decimal | None:
-    """Nearest FAR opposite draw in the trade direction = the target."""
-    kinds = _RUNWAY_KINDS.get(menu, _RUNWAY_KINDS["ext"])[d]
+    """The target draw. Modes:
+      ext      NEAREST opposite extreme (legacy; measured to give sub-1R targets
+               where the taught trade targets 6-14.5R -> costs eat the trade)
+      master   the OPPOSITE END OF THE DEALING RANGE (master EXT) — the taught
+               "target the far opposite liquidity" (2026-07-26 mark calibration)
+      far      farthest opposite extreme on the book
+      ext+eq   nearest, incl. EQ pools
+    """
     long = d is Direction.LONG
+    if menu in ("master", "far"):
+        kind = LevelKind.EXT_H if long else LevelKind.EXT_L
+        cands = [_mid(lv.zone) for lv in ctx.levels if lv.kind is kind
+                 and (lv.meta.get("master") if menu == "master" else True)
+                 and ((_mid(lv.zone) > entry) if long else (_mid(lv.zone) < entry))]
+        if not cands:                       # fall back to any opposite extreme
+            cands = [_mid(lv.zone) for lv in ctx.levels if lv.kind is kind
+                     and ((_mid(lv.zone) > entry) if long else (_mid(lv.zone) < entry))]
+        if not cands:
+            return None
+        return max(cands) if long else min(cands)     # the FAR end of the range
+    kinds = _RUNWAY_KINDS.get(menu, _RUNWAY_KINDS["ext"])[d]
     cands = [_mid(lv.zone) for lv in ctx.levels if lv.kind in kinds
              and ((_mid(lv.zone) > entry) if long else (_mid(lv.zone) < entry))]
     if not cands:
