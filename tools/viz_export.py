@@ -16,12 +16,10 @@ Two passes:
          Their output is recorded but never returned to the pipeline, so trading
          behaviour is unchanged. This answers "what would we see on 1h?".
 
-The store derives only M5/M15/H1/D1. 30m and 2h -- the two timeframes the user
-actually marks order blocks and FVGs on -- cannot be computed at all, so those
-grid columns stay empty. That is the finding, not a bug in this tool. (Feeding
-resampled 30m bars in as M1 does not work around it: the store audits each M5
-bucket for its full 5 M1 bars and treats a 1-bar bucket as a feed gap, so
-detectors never run.)
+The store now derives M5/M15/M30/H1/H2/D1. 30m and 2h -- the two timeframes the
+user actually marks order blocks and FVGs on -- were absent from the Timeframe enum
+entirely, so no detector could ever see them; they were added and verified bit-exact
+against an independent resample.
 
 Usage: python3 tools/viz_export.py <SYM> <data_dir> <out.json> [profile.json]
 """
@@ -49,7 +47,7 @@ TAUGHT = ["extremes", "swings", "liquidity", "sweep", "structure", "wyckoff",
 PER_TF = [d for d in TAUGHT if d not in ("liquidity", "htf_nest", "premium_discount")]
 TF_PARAM = {"extremes": "timeframes", "swings": "timeframes",
             "liquidity_swings": "timeframes"}                    # list-valued
-STORE_TFS = ["5m", "15m", "1h", "1d"]      # all the CandleStore can derive
+STORE_TFS = ["5m", "15m", "30m", "1h", "2h", "1d"]   # all the store derives
 SESSION_OPEN = (9, 15)
 DISPLAY = {"5m": 5, "15m": 15, "30m": 30, "1h": 60, "2h": 120, "1d": 0}   # 0 = session
 TF_MIN = {"5m": 5, "15m": 15, "30m": 30, "1h": 60, "2h": 120, "1d": 375}
@@ -84,7 +82,7 @@ def reason(det, meta):
               "live", "up", "crossed", "count", "vol"):
         if k in meta and meta[k] not in (None, False, ""):
             bits.append(k if meta[k] is True else f"{k}={meta[k]}")
-    for k in ("degree", "left", "right"):
+    for k in ("prom_pct", "prom", "degree", "sym", "left", "right"):
         if k in meta:
             bits.append(f"{k}={meta[k]}")
     for k in ("disp_atr", "depth_atr", "min_gap_atr", "rank_atr", "distance_atr"):

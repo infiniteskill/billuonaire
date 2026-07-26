@@ -110,6 +110,23 @@ for (const l of D.levels)
               why:`${l.kind} · state=${l.state} · touches=${l.touches}` +
                   (l.px!=null?` · tip ${l.px.toFixed(2)}`:''),
               dir:'', n:1, src:'level', state:l.state});
+// liquidity_swings emits one variant per method+band (deg5-9, leg14, fractal5...).
+// Give each its own row, built from the data, so they are checkable independently
+// instead of collapsing into "Other".
+const LSW = [...new Set(ITEMS.map(i=>i.det).filter(d=>d.startsWith('liquidity_swings/')))];
+const ORD = d => {
+  const v = d.split('/')[1];
+  const num = parseInt((v.match(/\d+/)||[0])[0], 10);
+  return (v.startsWith('deg') ? 0 : v.startsWith('leg') ? 1 : 2) * 1000 + num;
+};
+for (const d of LSW.sort((a,b)=>ORD(a)-ORD(b))) {
+  const v = d.split('/')[1];
+  GROUPS.push({
+    id: d, name: 'swing ' + v, shape: 'dot', match: x => x === d,
+    color: v.startsWith('deg') ? '#8b5cf6' : v.startsWith('leg') ? '#0ea5e9' : '#16a34a',
+  });
+}
+
 for (const it of ITEMS) {
   const g = GROUPS.find(g=>g.match(it.det));
   it.g = g ? g.id : 'other';

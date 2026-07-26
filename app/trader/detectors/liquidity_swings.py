@@ -82,10 +82,68 @@ class _Piv:
     left: int = 0
     right: int = 0
     tie: bool = False
+    prom: float = 0.0
 
     @property
     def degree(self) -> int:
+        """FORWARD dominance: how many bars this level held before being taken out.
+
+        min(left, right) -- the symmetric/fractal rank -- was the obvious choice and
+        it is wrong: it demotes a level that barely stood out on its left but then
+        held for twenty bars, which is exactly the level liquidity rests on. It also
+        loses pivots the SMC leg() finds, since leg only ever looks forward. Measured:
+        banding on `right` is a strict SUPERSET of both leg(n) and fractal(n) on every
+        timeframe and size tested, while min(left,right) is not."""
+        return self.right
+
+    @property
+    def sym(self) -> int:
+        """Symmetric rank. fractal(n) == sym >= n (exactly, modulo equal-high ties)."""
         return min(self.left, self.right)
+
+
+class _RMQ:
+    """Sparse table for range min/max -- O(n log n) build, O(1) query."""
+
+    def __init__(self, a, want_min):
+        self.pick = min if want_min else max
+        self.t = [list(a)]
+        k, n = 1, len(a)
+        while (1 << k) <= n:
+            prev, span, row = self.t[-1], 1 << (k - 1), []
+            for i in range(n - (1 << k) + 1):
+                row.append(self.pick(prev[i], prev[i + span]))
+            self.t.append(row)
+            k += 1
+
+    def q(self, lo, hi):                       # inclusive
+        if lo > hi:
+            return None
+        k = (hi - lo + 1).bit_length() - 1
+        return self.pick(self.t[k][lo], self.t[k][hi - (1 << k) + 1])
+
+
+def _prominence(pivs, vals, other, want_max):
+    """Height of each peak above the highest saddle joining it to a higher peak.
+
+    Forward dominance alone over-ranks a staircase: every bar walking down from a
+    top is "higher than everything after it" purely because price never came back,
+    so one peak masquerades as a dozen. Prominence is the standard topographic
+    answer -- the bar one tick below the true high has a saddle right next to it and
+    scores ~0, while the high itself scores the whole leg. It is in price units, so
+    it is directly comparable to zone height and to R."""
+    n = len(vals)
+    rmq = _RMQ(other, want_max)                # saddle = extreme of the OTHER series
+    for p in pivs:
+        lo_i, hi_i = p.idx - p.left - 1, p.idx + p.right + 1
+        a = rmq.q(max(0, lo_i + 1), p.idx) if lo_i >= 0 else None
+        b = rmq.q(p.idx, min(n - 1, hi_i - 1)) if hi_i < n else None
+        saddles = [x for x in (a, b) if x is not None]
+        if not saddles:                        # dominates the entire window
+            saddles = [rmq.q(0, n - 1)]
+        key = max(saddles) if want_max else min(saddles)
+        p.prom = float(abs(vals[p.idx] - key))
+    return pivs
 
 
 def _scan(vals, want_max):
@@ -151,7 +209,9 @@ class LiquiditySwingsDetector(Detector):
         ls = [b.low for b in bars]
         n = len(bars)
         out = []
-        for piv in _scan(hs, True) + _scan(ls, False):
+        pv = (_prominence(_scan(hs, True), hs, ls, True)
+              + _prominence(_scan(ls, False), ls, hs, False))
+        for piv in pv:
             if piv.degree < min_deg:
                 continue
             c = bars[piv.idx]
@@ -159,14 +219,21 @@ class LiquiditySwingsDetector(Detector):
             lo, hi = (btm, top) if btm <= top else (top, btm)
             end = piv.idx + piv.right                 # last bar it survived
             crossed = end < n - 1                     # something took it out
+            # never taken out yet: there is no right-hand saddle, so prominence is
+            # provisional and will only shrink. The still-forming extreme.
+            live = not crossed
             cnt = vol = 0
             for b in bars[piv.idx + 1:end + 1]:       # liquidity drawn into the zone
                 if b.low < top and b.high > btm:
                     cnt += 1
                     vol += int(b.volume)
-            d = piv.degree                     # bucketed so the UI has a few rows
-            band = ("1" if d < 2 else "2" if d < 3 else "3-4" if d < 5
-                    else "5-9" if d < 10 else "10+")
+            # Band by PROMINENCE as a percent of price, not by bars held. "How big
+            # a swing is this" is what a reader actually means, it is comparable
+            # across timeframes and across stocks, and it collapses the staircase
+            # that pure forward-dominance inflates into a dozen phantom peaks.
+            pp = 100 * piv.prom / float(px) if px else 0.0
+            band = ("0-0.2" if pp < 0.2 else "0.2-0.5" if pp < 0.5
+                    else "0.5-1" if pp < 1 else "1-2" if pp < 2 else "2+")
             out.append(Evidence(
                 detector=self.name,
                 direction=Direction.SHORT if piv.high else Direction.LONG,
@@ -174,7 +241,10 @@ class LiquiditySwingsDetector(Detector):
                 zone=(lo, hi), ts=ctx.now, ttl_candles=6,
                 meta={"tf": tf.value, "variant": f"deg{band}",
                       "method": "degree", "degree": piv.degree,
-                      "left": piv.left, "right": piv.right, "tie": piv.tie,
+                      "sym": piv.sym, "left": piv.left, "right": piv.right,
+                      "prom": round(piv.prom, 2),
+                      "prom_pct": round(100 * piv.prom / float(px), 3),
+                      "tie": piv.tie, "live": live,
                       "side": "H" if piv.high else "L", "px": float(px),
                       "born": c.ts.isoformat(), "count": cnt, "vol": vol,
                       "crossed": crossed,

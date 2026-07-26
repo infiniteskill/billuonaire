@@ -11,13 +11,19 @@ def tick(value) -> Decimal:
     return NSE.quantize(value)  # deprecated NSE-default wrapper; use MarketSpec.quantize
 
 class Timeframe(Enum):
-    M1 = "1m"; M5 = "5m"; M15 = "15m"; H1 = "1h"; D1 = "1d"
+    # M30/H2 are the timeframes the user actually marks order blocks and FVGs on;
+    # they were simply absent from the original set, so no detector could ever see
+    # them. NSE's 375-minute session does not divide evenly by 30 or 120, but
+    # _audit_bucket already truncates the final bucket at the close, so the short
+    # tail bucket is expected rather than flagged incomplete.
+    M1 = "1m"; M5 = "5m"; M15 = "15m"; M30 = "30m"; H1 = "1h"; H2 = "2h"; D1 = "1d"
 
     @property
     def minutes(self) -> int:
         if self is Timeframe.D1:
             raise ValueError("D1 duration is market-dependent; use MarketSpec.session_minutes")
-        return {"1m": 1, "5m": 5, "15m": 15, "1h": 60}[self.value]
+        return {"1m": 1, "5m": 5, "15m": 15, "30m": 30,
+                "1h": 60, "2h": 120}[self.value]
 
 @dataclass(frozen=True)
 class Candle:

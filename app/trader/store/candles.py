@@ -42,7 +42,8 @@ from trader.models.candle import Candle, Timeframe
 from trader.models.market import NSE, MarketSpec
 
 _TS = attrgetter("ts")
-_DERIVED = (Timeframe.M5, Timeframe.M15, Timeframe.H1, Timeframe.D1)
+_DERIVED = (Timeframe.M5, Timeframe.M15, Timeframe.M30,
+            Timeframe.H1, Timeframe.H2, Timeframe.D1)
 _PRICE_COLS = ("open", "high", "low", "close")
 
 
