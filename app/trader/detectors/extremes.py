@@ -42,6 +42,7 @@ from trader.models.level import TERMINAL, Level, LevelKind, LevelState
 _DEFAULT_LEG_PCT = 6.0            # TUNE frozen floor; 4.7 = taught fallback
 _DEFAULT_TIMEFRAMES = ("1h",)     # store derives M5/M15/H1/D1; no 30m exists
 _ATR_PERIOD = 14
+_DEFAULT_K_FLOOR = 3.0     # frozen research value; see _leg_K
 _ALL = 10 ** 9
 _KIND = {"H": LevelKind.EXT_H, "L": LevelKind.EXT_L}
 _EXT = frozenset(_KIND.values())
@@ -71,14 +72,30 @@ def _wilder_atr(h, l, c, n=_ATR_PERIOD):
     return atr
 
 
-def _leg_K(atr, c, pct):
-    """K = clip(pct / median(ATR/close), 3, 14) -- research sym_K verbatim."""
+def _leg_K(atr, c, pct, floor=_DEFAULT_K_FLOOR):
+    """K = clip(pct / median(ATR/close), floor, 14) -- research sym_K verbatim.
+
+    The floor is expressed in K, but the quantity that must stay invariant is the
+    leg as a fraction of PRICE, and ATR/close varies ~12x across timeframes
+    (0.21% on 5m, 2.52% on 1d). So the floor silently overrides leg_pct on the
+    high timeframes and only there. Measured on HAVELLS with leg_pct=2.0:
+
+        tf    K wanted  K used   actual leg
+        5m       9.49    9.49       2.08%     honoured
+        15m      5.13    5.13       2.16%     honoured
+        30m      3.53    3.53       2.05%     honoured
+        1h       2.46    3.00       2.55%     floored, 27% too coarse
+        2h       1.83    3.00       3.45%     floored, 73% too coarse
+        1d       0.81    3.00       7.48%     floored, 274% too coarse -> 4 pivots
+
+    Default 3.0 keeps the frozen behaviour bit-identical; set k_floor=0 to honour
+    leg_pct at every timeframe."""
     r = sorted(a / x for a, x in zip(atr, c) if x > 0)
     if not r:
         return 6.0
     m = len(r) // 2
     med = r[m] if len(r) % 2 else (r[m - 1] + r[m]) / 2
-    return min(max(pct / med, 3.0), 14.0) if med > 0 else 6.0
+    return min(max(pct / med, floor), 14.0) if med > 0 else 6.0
 
 
 def _zigzag(h, l, k):
@@ -215,7 +232,8 @@ class ExtremesDetector(Detector):
         o, h, l, c = ([float(getattr(cd, f)) for cd in candles]
                       for f in ("open", "high", "low", "close"))
         atr = _wilder_atr(h, l, c)
-        K = _leg_K(atr, c, pct)
+        K = _leg_K(atr, c, pct, float(self.params.get("k_floor",
+                                                      _DEFAULT_K_FLOOR)))
         piv = _zigzag(h, l, [K * a for a in atr])
         conf = [p for p in piv if p.confirm_idx is not None]
         highs = [p for p in conf if p.side == "H"]

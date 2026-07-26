@@ -5,10 +5,7 @@
     --bg:#fff; --panel:#f6f7f9; --line:#dfe3e8; --text:#1a1d21; --dim:#6b7280;
     --up:#0a9e6e; --dn:#d24040; --grid:#eef1f4; --cross:#9aa4b2;
   }
-  @media (prefers-color-scheme:dark){
-    :root{--bg:#12151a;--panel:#1a1e25;--line:#2b313a;--text:#e6e9ee;--dim:#8b95a3;
-          --grid:#1e232b;--cross:#5a6675;}
-  }
+  /* light by default; the theme button opts into dark explicitly */
   :root[data-theme=dark]{--bg:#12151a;--panel:#1a1e25;--line:#2b313a;--text:#e6e9ee;
           --dim:#8b95a3;--grid:#1e232b;--cross:#5a6675;}
   :root[data-theme=light]{--bg:#fff;--panel:#f6f7f9;--line:#dfe3e8;--text:#1a1d21;
@@ -84,8 +81,17 @@ const GROUPS = [
    match:d=>['ob_taught','orderblock','OB_BULL','OB_BEAR'].includes(d)},
   {id:'fvg',   name:'FVG',          color:'#e8871a', shape:'box',
    match:d=>['fvg_n','fvg','FVG_BULL','FVG_BEAR'].includes(d)},
-  {id:'swing', name:'Swings / extremes', color:'#8b5cf6', shape:'dot',
-   match:d=>['EXT_H','EXT_L','SWING_H','SWING_L'].includes(d)},
+  // extremes and swings behave completely differently and must not share a row:
+  // both are pruned at every session boundary, but extremes re-derives from the
+  // FULL closed history each tick so it regenerates, while swings only ever looks
+  // at the last 2*strength+1 bars -- so in a multi-day run swings shows the final
+  // session and nothing else.
+  {id:'ext',   name:'extremes (EXT)', color:'#8b5cf6', shape:'dot',
+   match:d=>['EXT_H','EXT_L'].includes(d)},
+  {id:'swing', name:'swings (session only)', color:'#a78bfa', shape:'dot',
+   match:d=>['SWING_H','SWING_L'].includes(d)},
+  {id:'extkf', name:'extremes k_floor=0', color:'#c026d3', shape:'dot',
+   match:d=>d==='extremes_kfloor0'},
   {id:'liq',   name:'Liquidity',    color:'#6b7280', shape:'line',
    match:d=>['liquidity','EQH','EQL','PDH','PDL','PWH','PWL','ROUND',
              'OPEN_RANGE_H','OPEN_RANGE_L'].includes(d)},
@@ -121,8 +127,13 @@ const ORD = d => {
 };
 for (const d of LSW.sort((a,b)=>ORD(a)-ORD(b))) {
   const v = d.split('/')[1];
+  // deg* bands are PROMINENCE as a percent of price -- how far the swing sticks out
+  // from its surroundings -- so label them as percentages, not as "deg".
+  const nm = v.startsWith('deg')
+    ? 'swing ' + v.slice(3).replace('+', '%+').replace(/^([\d.]+)-([\d.]+)$/, '$1-$2%')
+    : 'swing ' + v;
   GROUPS.push({
-    id: d, name: 'swing ' + v, shape: 'dot', match: x => x === d,
+    id: d, name: nm, shape: 'dot', match: x => x === d,
     color: v.startsWith('deg') ? '#8b5cf6' : v.startsWith('leg') ? '#0ea5e9' : '#16a34a',
   });
 }
@@ -150,7 +161,7 @@ const TFS_VIEW = Object.keys(D.candles);
 const COLS = ['1d','2h','1h','30m','15m','5m','—'];
 
 // ---- state -----------------------------------------------------------------
-const ON_BY_DEFAULT = new Set(['ob','fvg','swing']);
+const ON_BY_DEFAULT = new Set();   // start clean; tick what you want to see
 const S = {
   tf: TFS_VIEW.includes('30m') ? '30m' : TFS_VIEW[0],
   i0: 0, nbars: 160, autoTf: true, bands: false,
@@ -420,9 +431,8 @@ function hideTip(){ document.getElementById('tip').style.display='none'; }
 document.getElementById('fit').onclick=()=>{S.nbars=160;S.i0=Math.max(0,bars().length-160);draw()};
 document.getElementById('theme').onclick=()=>{
   const cur=document.documentElement.getAttribute('data-theme');
-  document.documentElement.setAttribute('data-theme',
-    cur==='dark'?'light':cur==='light'?'dark':
-    matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
+  document.documentElement.setAttribute('data-theme',   // light is the default
+    cur==='dark' ? 'light' : 'dark');
   draw();
 };
 addEventListener('resize',resize);

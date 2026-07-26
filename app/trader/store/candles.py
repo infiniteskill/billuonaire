@@ -153,9 +153,11 @@ class CandleStore:
     via ``spec.quantize`` (exact Decimal roundtrip); timestamps keep their tz.
     """
 
-    def __init__(self, root: Path, spec: MarketSpec = NSE):
+    def __init__(self, root: Path, spec: MarketSpec = NSE,
+                 missing_tolerance: int = 0):
         self.root = Path(root)
         self.spec = spec
+        self.missing_tolerance = int(missing_tolerance)
         self._data: dict[str, dict[Timeframe, list[Candle]]] = {}
         # derived buckets missing M1 members: kept in _data, hidden from views
         self._incomplete: set[tuple[str, Timeframe, datetime]] = set()
@@ -202,7 +204,15 @@ class CandleStore:
     def _audit_bucket(self, symbol: str, tf: Timeframe, start: datetime) -> None:
         """Mark the bucket incomplete iff it holds fewer M1 members than its
         span expects (span truncated at session close: the session's last
-        bucket legitimately expects fewer)."""
+        bucket legitimately expects fewer).
+
+        ``missing_tolerance`` (default 0 = frozen behaviour) allows that many absent
+        minutes before a bucket is called incomplete. Measured need: HAVELLS
+        2026-04-22 delivered 374 of 375 M1 bars -- one minute, most likely a print
+        with no trade -- and that alone discarded the ENTIRE daily candle, which
+        happened to hold the tape's high of 1410.7. Every higher-timeframe detector
+        was then blind to that day. One missing minute in 375 should not delete a
+        session; it is a rounding error on a D1 bar and a non-event on a 30m one."""
         end = start + timedelta(minutes=_tf_minutes(tf, self.spec))
         close = (self.spec.session_open_dt(start)
                  + timedelta(minutes=self.spec.session_minutes))
@@ -210,7 +220,7 @@ class CandleStore:
         m1 = self._data[symbol][Timeframe.M1]
         n = (bisect_left(m1, end, key=_TS) - bisect_left(m1, start, key=_TS))
         key = (symbol, tf, start)
-        if n < expected:
+        if n < expected - self.missing_tolerance:
             self._incomplete.add(key)
         else:
             self._incomplete.discard(key)

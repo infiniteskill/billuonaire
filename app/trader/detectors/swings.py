@@ -33,25 +33,52 @@ from trader.models.level import TERMINAL, Level, LevelKind, LevelState
 
 _DEFAULT_STRENGTH = 3
 _DEFAULT_TIMEFRAMES = ("5m", "15m")
+_ALL = 10 ** 9
 
 
 @register
 class SwingsDetector(Detector):
     name = "swings"
 
+    def __init__(self, params: dict):
+        super().__init__(params)
+        self._sig: dict = {}   # tf -> window signature, full_history rescan memo
+
     def detect(self, ctx: StockContext) -> list[Evidence]:
         strength = int(self.params.get("strength", _DEFAULT_STRENGTH))
         timeframes = self.params.get("timeframes", _DEFAULT_TIMEFRAMES)
         window_size = 2 * strength + 1
 
+        # SESSION AMNESIA (measured 2026-07-26). SWING_H/SWING_L are in neither
+        # pipeline._CARRY nor _ZONES, so _prune_levels() wipes them at every session
+        # boundary. extremes survives that because it re-derives from the FULL closed
+        # history each tick and re-appends anything missing; this detector only ever
+        # looked at the last 2*strength+1 bars, so a pruned swing could never come
+        # back. Over a 3-month 5m tape it emitted 12 levels -- all dated to the final
+        # session -- while appearing to work. full_history=True rescans everything so
+        # pruned swings regenerate. Default False keeps the frozen behaviour.
+        full = bool(self.params.get("full_history", False))
         for tf_value in timeframes:
             tf = Timeframe(tf_value)
-            window = ctx.candles.last(window_size, tf)
-            if len(window) < window_size:
-                continue  # not enough closed candles yet for this tf
-            mid = window[strength]
-            self._confirm(ctx, window, mid, strength, tf, kind=LevelKind.SWING_H)
-            self._confirm(ctx, window, mid, strength, tf, kind=LevelKind.SWING_L)
+            if not full:
+                window = ctx.candles.last(window_size, tf)
+                if len(window) < window_size:
+                    continue  # not enough closed candles yet for this tf
+                mid = window[strength]
+                self._confirm(ctx, window, mid, strength, tf, kind=LevelKind.SWING_H)
+                self._confirm(ctx, window, mid, strength, tf, kind=LevelKind.SWING_L)
+                continue
+            closed = ctx.candles.last(_ALL, tf)
+            if len(closed) < window_size:
+                continue
+            sig = (len(closed), closed[-1].ts, ctx.day.session_date if ctx.day else None)
+            if self._sig.get(tf) == sig:       # pure function of the window (perf)
+                continue
+            self._sig[tf] = sig
+            for i in range(strength, len(closed) - strength):
+                w = closed[i - strength:i + strength + 1]
+                self._confirm(ctx, w, w[strength], strength, tf, kind=LevelKind.SWING_H)
+                self._confirm(ctx, w, w[strength], strength, tf, kind=LevelKind.SWING_L)
 
         return []  # always -- infrastructure detector, no Evidence
 

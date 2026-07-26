@@ -41,12 +41,11 @@ SYM, DATA, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
 PROFILE = Path(sys.argv[4]) if len(sys.argv) > 4 else ROOT / "runs/validate/stage2_profile/config.json"
 TAUGHT = ["extremes", "swings", "liquidity", "sweep", "structure", "wyckoff",
           "orderblock", "fvg", "compression", "ob_taught", "fvg_n", "propulsion2",
-          "premium_discount", "htf_nest", "liquidity_swings"]
+          "premium_discount", "htf_nest"]
 # session-scoped detectors read today()/prev_day()/D1 directly and are meaningless
 # when the series is not really 1m, so the grid pass leaves them out
 PER_TF = [d for d in TAUGHT if d not in ("liquidity", "htf_nest", "premium_discount")]
-TF_PARAM = {"extremes": "timeframes", "swings": "timeframes",
-            "liquidity_swings": "timeframes"}                    # list-valued
+TF_PARAM = {"extremes": "timeframes", "swings": "timeframes"}  # list-valued
 STORE_TFS = ["5m", "15m", "30m", "1h", "2h", "1d"]   # all the store derives
 SESSION_OPEN = (9, 15)
 DISPLAY = {"5m": 5, "15m": 15, "30m": 30, "1h": 60, "2h": 120, "1d": 0}   # 0 = session
@@ -176,11 +175,7 @@ def build(enabled, params_patch, data_dir, jdir):
 # swings/extremes take a timeframe LIST, so widen them here; every other structural
 # detector takes a single `tf` and production only ever instantiates it once, on 5m.
 patch = {"extremes": {"live_master": True, "timeframes": STORE_TFS},
-         "swings": {"timeframes": STORE_TFS},
-         # both reference methods, internal + swing tier, so they can be compared
-         # the complete scan: every local extremum, bucketed by degree
-         "liquidity_swings": {"timeframes": STORE_TFS, "method": "degree",
-                              "min_degree": 1, "max_live": 4000}}
+         "swings": {"timeframes": STORE_TFS}}
 orch, pipe = build(TAUGHT, patch, DATA, ROOT / "runs/validate/viz_work")
 
 EXTRA = []
@@ -192,14 +187,6 @@ for name in PER_TF:
         continue
     base = dict(s_params.get(name, {}))
     EXTRA += [(t, type(inst)({**base, "tf": t})) for t in STORE_TFS if t != "5m"]
-
-# all three swing methods side by side so they can be judged against each other:
-# leg + fractal are ports of the user's own Pine indicators, degree is untested.
-_lsw = next((d for d in pipe.registry.detectors if d.name == "liquidity_swings"), None)
-if _lsw is not None:
-    for _m in ("leg", "fractal"):
-        EXTRA.append(("5m", type(_lsw)({"timeframes": STORE_TFS, "method": _m,
-                                        "sizes": [5, 14, 50], "max_live": 4000})))
 
 _orig = pipe.registry.run_all
 
@@ -221,27 +208,45 @@ take_levels(pipe)
 print(f"pass done: {len(seen)} zones, {len(levels)} levels, "
       f"{len(EXTRA)} extra detector instances")
 
-# A pivot's degree GROWS until something takes it out, so the same physical swing
-# is emitted first as deg1, later as deg5, later still as deg10+. That is right for
-# a live feed but wrong for a static chart -- collapse each one to its final degree.
-_DEG_RX = __import__("re").compile(r"degree=(\d+)")
+# extremes with the K floor released, as a comparison row. Computed offline rather
+# than as a second detector instance: extremes writes LEVELS keyed on
+# symbol-kind-tf-born, so a second instance would collide with production's own
+# level ids instead of sitting beside them.
+def _kf0_rows():
+    from trader.detectors.extremes import _wilder_atr, _leg_K, _zigzag
+    cnt = df.groupby(df.ts.dt.date).size()
+    good = set(cnt[cnt == 375].index)                 # what the store keeps
+    dd = df[df.ts.dt.date.isin(good)]
+    om = SESSION_OPEN[0] * 60 + SESSION_OPEN[1]
+    for tf, mins in DISPLAY.items():
+        t = dd.ts
+        mm = t.dt.hour * 60 + t.dt.minute - om
+        key = t.dt.normalize() if mins == 0 else \
+            t.dt.normalize() + pd.to_timedelta((mm // mins) * mins + om, unit="m")
+        g = dd.groupby(key)
+        h, lo_, c = list(g.high.max()), list(g.low.min()), list(g.close.last())
+        ts = list(g.high.max().index)
+        if len(c) < 30:
+            continue
+        atr = _wilder_atr(h, lo_, c)
+        K = _leg_K(atr, c, 0.02, 0.0)                 # floor released
+        for pv in _zigzag(h, lo_, [K * a for a in atr]):
+            if pv.confirm_idx is None:
+                continue
+            px = float(pv.price)
+            yield {"det": "extremes_kfloor0", "tf": tf,
+                   "lo": px, "hi": px, "px": px,
+                   "pts": int(ts[pv.idx].timestamp()),
+                   "born": int(ts[pv.idx].timestamp()), "end": None,
+                   "dir": "SHORT" if pv.side == "H" else "LONG", "n": 1,
+                   "why": f"extremes k_floor=0: {pv.side} leg={100*K*atr[-1]/c[-1]:.2f}% "
+                          f"(production floors K at 3.0 above 30m)"}
 
 
-def _deg(z):
-    m = _DEG_RX.search(z["why"])
-    return int(m.group(1)) if m else -1
-
-
-best = {}
-for z in seen.values():
-    if not z["det"].startswith("liquidity_swings/deg"):
-        continue
-    k = (z["tf"], round(z["lo"], 2), round(z["hi"], 2))
-    if k not in best or _deg(z) > _deg(best[k]):
-        best[k] = z
-keep_ids = {id(z) for z in best.values()}
-seen = {k: z for k, z in seen.items()
-        if not z["det"].startswith("liquidity_swings/deg") or id(z) in keep_ids}
+kf0 = list(_kf0_rows())
+for z in kf0:
+    seen[(z["det"], z["tf"], round(z["lo"], 2), round(z["hi"], 2))] = z
+print(f"comparison rows (extremes k_floor=0): {len(kf0)}")
 
 zones = sorted(seen.values(), key=lambda z: z["born"])
 for z in zones:
