@@ -79,8 +79,8 @@ const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const GROUPS = [
   {id:'ob',    name:'Order blocks', color:'#2f6df6', shape:'box',
    match:d=>['ob_taught','orderblock','OB_BULL','OB_BEAR'].includes(d)},
-  {id:'fvg',   name:'FVG',          color:'#e8871a', shape:'box',
-   match:d=>['fvg_n','fvg','FVG_BULL','FVG_BEAR'].includes(d)},
+  {id:'fvg',   name:'FVG (levels)', color:'#e8871a', shape:'box',
+   match:d=>['FVG_BULL','FVG_BEAR'].includes(d)},
   // extremes and swings behave completely differently and must not share a row:
   // both are pruned at every session boundary, but extremes re-derives from the
   // FULL closed history each tick so it regenerates, while swings only ever looks
@@ -118,6 +118,17 @@ for (const l of D.levels)
 // liquidity_swings emits one variant per method+band (deg5-9, leg14, fractal5...).
 // Give each its own row, built from the data, so they are checkable independently
 // instead of collapsing into "Other".
+// FVG detectors are tagged fvg_n/FVG vs fvg_n/iFVG (right vs left of the swing), so
+// give each its own row -- a static name list silently drops them into "Other" the
+// moment a detector's emitted name changes.
+const FV = [...new Set(ITEMS.map(i=>i.det)
+             .filter(d=>d.startsWith('fvg_n/')||d.startsWith('fvg/')))].sort();
+for (const d of FV) {
+  const inv = d.endsWith('iFVG');
+  GROUPS.push({id:d, name:d, shape:'box', match:x=>x===d,
+               color: inv ? '#a16207' : '#e8871a'});
+}
+
 // one row per extremes variant, built from the data so nothing lands in "Other"
 const ALT = [...new Set(ITEMS.map(i=>i.det).filter(d=>d.startsWith('extremes_')))].sort();
 const ALTC = {kfloor0:'#c026d3', pct2:'#0ea5e9', pct3:'#0891b2', pct4:'#0d9488'};

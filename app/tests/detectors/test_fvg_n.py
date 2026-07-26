@@ -90,7 +90,8 @@ def test_registered():
     d = FvgNDetector({})
     assert d.params == {"tf": "5m", "mmax": 6, "depth_atr": 0.5,
                         "sl_atr_floor": 0.15, "min_gap_atr": 0.0,
-                        "merge_chain": False, "merge_max_bars": 0}  # off = keep-first
+                        "merge_chain": False, "merge_max_bars": 0,
+                        "merge_max_h_atr": 3.0}   # off = keep-first
 
 
 def test_long_gap_retest_fires():

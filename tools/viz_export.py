@@ -215,7 +215,12 @@ for name in PER_TF:
     if inst is None:
         continue
     base = dict(s_params.get(name, {}))
-    EXTRA += [(t, type(inst)({**base, "tf": t})) for t in STORE_TFS if t != "5m"]
+    # every timeframe EXCEPT the one production already runs. Hardcoding "5m" here
+    # silently dropped a whole timeframe once a detector's configured tf moved off
+    # 5m: with fvg_n on 30m the 5m gaps were never computed at all, and the 22 Jul
+    # box the trader drew ON A 5m CHART had nothing to match against.
+    own = str(base.get("tf", "5m"))
+    EXTRA += [(t, type(inst)({**base, "tf": t})) for t in STORE_TFS if t != own]
 
 _orig = pipe.registry.run_all
 
