@@ -22,20 +22,28 @@ TB, DATA = sys.argv[1], sys.argv[2]
 TOL = float(sys.argv[3]) if len(sys.argv) > 3 else 1.5     # entry+target tolerance %
 DAYS = int(sys.argv[4]) if len(sys.argv) > 4 else 3        # date tolerance
 
-marks = [m for m in json.loads((ROOT / "tools/ytrades.json").read_text())
-         if m["month"] <= 7]                                # 2026 half
+DATED = ROOT / "tools/ytrades_dated.json"                   # real years, see mark_year.py
+if DATED.exists():
+    marks = json.loads(DATED.read_text())
+else:                                                       # legacy: assume 2026
+    marks = [dict(m, year=2026) for m in
+             json.loads((ROOT / "tools/ytrades.json").read_text()) if m["month"] <= 7]
 have = {p.stem for p in Path(DATA).glob("*.csv")}
 tb = pd.read_csv(TB)
 tb["ts"] = pd.to_datetime(tb["ts"]).dt.tz_localize(None)
 tb = tb[tb["mode"] == "eod"]
+SPAN = (tb.ts.min(), tb.ts.max())                           # what this tape can judge
 
 DM = {"short": "SHORT", "long": "LONG"}
 rows = []
-for m in sorted(marks, key=lambda x: (x["month"], x["day"])):
+for m in sorted(marks, key=lambda x: (x["year"], x["month"], x["day"])):
     sym, want = m["stock"], DM[m["dir"]]
-    d = pd.Timestamp(f'2026-{m["month"]:02d}-{m["day"]:02d}')
+    d = pd.Timestamp(f'{m["year"]}-{m["month"]:02d}-{m["day"]:02d}')
     if sym not in have:
         rows.append((m["id"], sym, want, str(d.date()), "NO_DATA", "", "", ""))
+        continue
+    if not (SPAN[0] - pd.Timedelta(days=DAYS) <= d <= SPAN[1] + pd.Timedelta(days=DAYS)):
+        rows.append((m["id"], sym, want, str(d.date()), "OUT_OF_TAPE", "", "", ""))
         continue
     near = tb[(tb.sym == sym) & ((tb.ts - d).abs() <= pd.Timedelta(days=DAYS))]
     px = near[(near.entry - m["entry"]).abs() / m["entry"] * 100 <= TOL]
@@ -59,9 +67,12 @@ for m in sorted(marks, key=lambda x: (x["month"], x["day"])):
 r = pd.DataFrame(rows, columns=["mark", "sym", "want", "date", "verdict",
                                 "found", "entry", "at"])
 print(r.to_string(index=False))
-tested = r[r.verdict != "NO_DATA"]
+tested = r[~r.verdict.isin(["NO_DATA", "OUT_OF_TAPE"])]
 n = len(tested)
-print(f"\nTESTABLE {n} of {len(marks)} 2026 marks (rest: symbol not in {Path(DATA).name})")
+print(f"\nMARKS {len(marks)} | no symbol data {int((r.verdict=='NO_DATA').sum())}"
+      f" | outside this tape's {str(SPAN[0])[:10]}..{str(SPAN[1])[:10]}"
+      f" {int((r.verdict=='OUT_OF_TAPE').sum())}")
+print(f"TESTABLE {n}")
 for v in ["MATCH", "WRONG_DIR", "WRONG_PRICE", "NO_SIGNAL"]:
     c = int((tested.verdict == v).sum())
     print(f"  {v:12} {c:3}  ({100*c/max(n,1):.0f}%)")
