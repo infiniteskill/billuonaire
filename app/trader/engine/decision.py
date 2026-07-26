@@ -34,6 +34,10 @@ def _mid(zone: tuple[Decimal, Decimal]) -> Decimal:
     return (zone[0] + zone[1]) / 2
 
 
+def _overlap(a, b) -> bool:
+    return min(a[1], b[1]) >= max(a[0], b[0]) if a and b else False
+
+
 @dataclass
 class Decision:
     take: bool
@@ -91,6 +95,7 @@ def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2,
         z = cands[0] if cands else None
     if z is None:
         return Decision(False, d, None, None, None, 0, reasons + ["no decisional zone"])
+    zone_used = z.zone
     lo_z, hi_z = min(z.zone), max(z.zone)
     dep = Decimal(str(entry_depth))
     entry = (lo_z + dep * (hi_z - lo_z) if d is Direction.LONG      # 0.5 = mid (frozen)
@@ -113,8 +118,14 @@ def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2,
     # node 3 -- htf_nest refines the entry (CE of innermost tier, tighter SL)
     nests = [e for e in evidence if e.detector == "htf_nest" and e.direction is d]
     if nests:
-        n = max(nests, key=lambda e: e.meta.get("nest_depth", 0))
+        # BUG-FIX (2026-07-26 calibration): prefer the nest OF THE CHOSEN ZONE. Picking
+        # the globally-deepest nest let entry/SL come from a DIFFERENT box than the
+        # reported zone (measured 27-43 rupee splits) -> every zone-relative stat and
+        # any mid-of-zone entry rule was computed on the wrong box.
+        own = [e for e in nests if _overlap(e.zone, z.zone)]
+        n = max(own or nests, key=lambda e: e.meta.get("nest_depth", 0))
         entry, sl = Decimal(n.meta["ce"]), Decimal(n.meta["sl"])
+        zone_used = n.zone                      # the box the entry actually belongs to
         grade += 1 + int(n.meta.get("nest_depth", 0))
         reasons.append(f"nest:{n.meta['nest_depth']}")
 
@@ -139,4 +150,4 @@ def decide(ctx: StockContext, evidence: list[Evidence], min_grade: int = 2,
     take = grade >= min_grade
     reasons.append("take" if take else f"grade {grade}<{min_grade}")
     members = [(z.detector, z.meta.get("event", ""), float(z.strength))]
-    return Decision(take, d, entry, sl, target, grade, reasons, zone=z.zone, members=members)
+    return Decision(take, d, entry, sl, target, grade, reasons, zone=zone_used, members=members)
