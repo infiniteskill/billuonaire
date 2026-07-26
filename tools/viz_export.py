@@ -71,8 +71,9 @@ def resample(df, minutes):
 
 
 def rows(d):
-    return [[int(r.ts.timestamp()), float(r.open), float(r.high), float(r.low),
-             float(r.close), int(r.volume)] for r in d.itertuples()]
+    e = epoch(d.ts)
+    return [[int(t), float(r.open), float(r.high), float(r.low),
+             float(r.close), int(r.volume)] for t, r in zip(e, d.itertuples())]
 
 
 def reason(det, meta):
@@ -100,6 +101,22 @@ m1 = df.set_index("ts").sort_index()
 seen, levels = {}, []
 
 
+def epoch(series):
+    """TRUE epoch seconds.
+
+    df.ts is tz-naive IST, and BOTH numpy's astype(datetime64) and pandas'
+    Timestamp.timestamp() read a naive value as UTC. Writing those numbers out makes
+    the browser -- which renders an epoch in the viewer's local zone -- show every
+    candle, pivot and zone 5:30 LATE, which is why the chart read "08 Jul 19:15" for
+    a market that closes at 15:30. Localise to the source zone first."""
+    v = series.dt.tz_localize(TZ) if TZ is not None else series
+    return v.apply(lambda t: int(t.timestamp())).to_numpy()
+
+
+# per-timeframe bar timestamps, so a zone's left edge can step back in BARS
+TF_TS = {name: epoch(resample(df, mins).ts) for name, mins in DISPLAY.items()}
+
+
 def record(evs, tf_tag):
     for e in evs:
         if not e.zone:
@@ -115,13 +132,20 @@ def record(evs, tf_tag):
         # ctx.now, which is merely when the evidence was last re-emitted
         born = e.meta.get("born")
         born = int(pd.Timestamp(born).timestamp()) if born else int(e.ts.timestamp())
-        # a gap is drawn from the FIRST of its candles, so step back over its span
+        # a gap is drawn from the FIRST of its candles. Step back in BARS, never in
+        # wall-clock: sessions are not continuous, so subtracting span*tf minutes
+        # lands before the open (a 30m gap at 09:45 became 08:45) or in the previous
+        # night. TF_TS holds each timeframe's own bar timestamps.
         span = int(e.meta.get("span") or 1)
-        if span > 1:
-            born -= (span - 1) * 60 * TF_MIN.get(tf, 5)
+        formed = born                       # last candle of the gap
+        arr = TF_TS.get(tf)
+        if span > 1 and arr is not None and len(arr):
+            i = int(np.searchsorted(arr, born, side="right")) - 1
+            born = int(arr[max(0, i - (span - 1))])
         rec = {"det": det, "tf": tf, "lo": lo, "hi": hi,
                "dir": e.direction.name, "strength": float(e.strength),
-               "born": born, "n": 1, "why": reason(e.detector, e.meta)}
+               "born": born, "formed": formed, "n": 1,
+               "why": reason(e.detector, e.meta)}
         if e.meta.get("px") is not None:
             rec["px"], rec["pts"] = float(e.meta["px"]), born
         seen[k] = rec
@@ -278,6 +302,38 @@ for z in alt:
 import collections as _co
 print("comparison rows:", dict(_co.Counter(z["det"] for z in alt)))
 
+# LEFT of the swing = iFVG, RIGHT of the swing = FVG (user's rule). This is a
+# RELATION between a gap and an extreme, not a property of the gap, so it is applied
+# here rather than inside the detector. Verified against five hand-drawn boxes: the
+# 29 Jun box scored a 9-point MISS when the nearest gap was chosen across both sides
+# (it picked the left/iFVG at 1157.0-1160.8) and is exact to 0.4 once restricted to
+# the right side.
+# Geometrically: price rallies INTO a swing high (bullish gaps on the way up = the
+# LEFT side), then falls AWAY from it (bearish gaps = the RIGHT side). So the test is
+# whether the gap's direction points AWAY from the most recent extreme. After an
+# EXT_H the leg is down, so SHORT gaps are the live FVGs and LONG gaps are the
+# inverted ones; after an EXT_L it mirrors.
+_EXT = sorted(((l["born"], l["kind"]) for l in levels
+               if l["kind"].startswith("EXT")), key=lambda x: x[0])
+_EXT_TS = [t for t, _ in _EXT]
+
+
+def _side_of_swing(z):
+    if not _EXT_TS:
+        return None
+    i = int(np.searchsorted(_EXT_TS, z.get("formed", z["born"]), side="right")) - 1
+    if i < 0:
+        return None
+    away = "SHORT" if _EXT[i][1] == "EXT_H" else "LONG"
+    return "right" if z["dir"] == away else "left"
+
+
+for z in seen.values():
+    if z["det"] in ("fvg_n", "fvg"):
+        z["side"] = _side_of_swing(z)
+        if z["side"]:
+            z["det"] = f'{z["det"]}/{"FVG" if z["side"] == "right" else "iFVG"}'
+
 zones = sorted(seen.values(), key=lambda z: z["born"])
 
 # WHEN DOES PRICE COME BACK? A zone is drawn extended into the future only until
@@ -285,14 +341,15 @@ zones = sorted(seen.values(), key=lambda z: z["born"])
 # unvisited/visited filter that decides whether a setup is still live. Evidence
 # zones carry no lifecycle of their own (they are re-emitted per tick and never
 # tracked), so resolve it here from the 1m tape.
-_ts = df.ts.values.astype("datetime64[s]").astype("int64")
+_ts = epoch(df.ts)
 _hi = df.high.values.astype(float)
 _lo = df.low.values.astype(float)
 _SEARCH = 30 * 375                                   # ~30 sessions is plenty
 
 
-def _first_touch(born, lo, hi):
-    i = int(np.searchsorted(_ts, born, side="right"))
+def _first_touch(formed, lo, hi, tf="5m"):
+    """First bar AFTER the gap completes whose range re-enters it."""
+    i = int(np.searchsorted(_ts, formed + 60 * TF_MIN.get(tf, 5), side="left"))
     j = min(len(_ts), i + _SEARCH)
     if i >= j:
         return None
@@ -302,7 +359,11 @@ def _first_touch(born, lo, hi):
 
 
 for z in zones:
-    z["end"] = _first_touch(z["born"], z["lo"], z["hi"])
+    # Search from AFTER the gap completes, never from its first candle: the middle
+    # candle of a 3-bar gap lies inside the gap by construction, so searching from
+    # the left edge finds the gap touching itself and every box collapses to a
+    # sliver instead of extending to where price actually came back.
+    z["end"] = _first_touch(z.get("formed", z["born"]), z["lo"], z["hi"], z["tf"])
     z["filled"] = z["end"] is not None
 n_open = sum(1 for z in zones if not z["filled"])
 print(f"zones: {len(zones)} | still UNVISITED (price never returned): {n_open}")

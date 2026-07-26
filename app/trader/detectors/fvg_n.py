@@ -40,6 +40,8 @@ from trader.models.candle import Timeframe
 from trader.models.evidence import Direction, Evidence
 
 _DEFAULTS = {"tf": "5m", "mmax": 6, "depth_atr": 0.5, "sl_atr_floor": 0.15,
+             "merge_chain": False,   # union adjacent same-dir gaps into one region
+             "merge_max_bars": 0,    # 0 = 2*mmax; cap on the merged displacement run
              "min_gap_atr": 0.0}   # birth needs gap >= min_gap_atr*ATR (0 = off)
 _EVENT = {"FVG": "FVG_N_RETEST", "IFVG": "IFVG_RETEST"}
 _ALL = 10 ** 9
@@ -54,6 +56,8 @@ class FvgZones:
         self.tape = Tape()
         self.zones: list[Zone] = []
         self._bars: deque = deque(maxlen=mmax + 2)   # (h, l, c)
+        self.merge_chain = False                     # set by the detector from params
+        self.merge_max_bars = 2 * mmax               # cap on a merged run
 
     def step(self, ts, o, h, l, c) -> list[tuple[str, Zone]]:
         i = self.tape.step(h, l, c)
@@ -80,12 +84,30 @@ class FvgZones:
     def _keep(self, d, lo, hi, a, b, ts) -> None:
         if self.min_gap and self.tape.atr and (hi - lo) < self.min_gap * self.tape.atr:
             return                                       # sub-size gap -> not a taught FVG
-        # dedup (ts2_lib.fvg_n_extra): drop a fragment overlapping an existing
-        # live same-dir FVG in window AND band; keep-first, box never grows.
-        if any(z.alive and z.kind == "FVG" and z.dir == d
-               and a <= z.b and z.a <= b               # window overlap
-               and min(hi, z.hi) > max(lo, z.lo)       # band overlap
-               for z in self.zones):
+        # dedup (ts2_lib.fvg_n_extra): a fragment overlapping an existing live
+        # same-dir FVG in window AND band.
+        for z in self.zones:
+            if not (z.alive and z.kind == "FVG" and z.dir == d
+                    and a <= z.b and z.a <= b           # window overlap
+                    and min(hi, z.hi) > max(lo, z.lo)):  # band overlap
+                continue
+            if not self.merge_chain:
+                return                                   # keep-first, box never grows
+            # MERGE: the trader draws one region where consecutive displacement
+            # candles each leave a gap -- "these gaps can be 3 candle or multiples
+            # means broder gap region". Keep-first splits that into adjacent
+            # fragments, which is why hand-drawn boxes matched on one edge and fell
+            # ~5 pts short on the other (23 Jun bottom exact/top short, 07 May top
+            # exact/bottom short). Grow the existing box to the union instead.
+            # BOUNDED: each union pushes z.b forward, so an uncapped chain keeps
+            # "overlapping in window" and runs away across a whole session -- the
+            # 29 Jun box went from an exact 1148.0-1152.6 to a 19-point 1160.7-1180.0
+            # region that way. A gap region is a consecutive displacement RUN, so cap
+            # the merged span; beyond that it is a different move.
+            if max(b, z.b) - min(a, z.a) > self.merge_max_bars:
+                return                                   # too far apart: keep-first
+            z.lo, z.hi = min(z.lo, lo), max(z.hi, hi)
+            z.a, z.b = min(z.a, a), max(z.b, b)
             return
         self.zones.append(Zone("FVG", d, lo, hi, ts, a, b))
 
@@ -99,6 +121,9 @@ class FvgNDetector(Detector):
         self._z = FvgZones(int(self.params["mmax"]),
                            Decimal(str(self.params["depth_atr"])),
                            Decimal(str(self.params["min_gap_atr"])))
+        self._z.merge_chain = bool(self.params["merge_chain"])
+        if int(self.params["merge_max_bars"]):
+            self._z.merge_max_bars = int(self.params["merge_max_bars"])
         self._n = 0
 
     def on_session_end(self) -> None:

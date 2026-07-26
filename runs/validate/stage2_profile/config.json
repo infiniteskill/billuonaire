@@ -136,7 +136,8 @@
       },
       "fvg_n": {
         "min_gap_atr": 0.7,
-        "tf": "30m"
+        "tf": "30m",
+        "merge_chain": true
       },
       "liquidity": {
         "emit_only": [
