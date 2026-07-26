@@ -95,21 +95,21 @@ def run_trade(sym, ts, long, zlo, zhi, tgt):
     best = entry
     limit = min(n, fill + 1 + max(HOLD, 1) * SESSION)
     if (lo[fill] <= stop) if long else (hi[fill] >= stop):
-        return tsv[fill], tsv[fill], -1.0 - cps / risk
+        return tsv[fill], tsv[fill], -1.0 - cps / risk, qty * risk
     for x in range(fill + 1, limit):
         if HOLD == 0 and mins[x] >= 15 * 60 + 10:
-            return tsv[fill], tsv[x], (cl[x] - entry) / risk * (1 if long else -1) - cps / risk
+            return tsv[fill], tsv[x], (cl[x] - entry) / risk * (1 if long else -1) - cps / risk, qty * risk
         if (lo[x] <= stop) if long else (hi[x] >= stop):
-            return tsv[fill], tsv[x], (stop - entry) / risk * (1 if long else -1) - cps / risk
+            return tsv[fill], tsv[x], (stop - entry) / risk * (1 if long else -1) - cps / risk, qty * risk
         if (hi[x] >= tgt) if long else (lo[x] <= tgt):
-            return tsv[fill], tsv[x], abs(tgt - entry) / risk - cps / risk
+            return tsv[fill], tsv[x], abs(tgt - entry) / risk - cps / risk, qty * risk
         fav = (hi[x] - entry) if long else (entry - lo[x])
         best = max(best, hi[x]) if long else min(best, lo[x])
         if fav >= BE_MULT * cps:
             stop = max(stop, be_px) if long else min(stop, be_px)
             t_ = best - tdist if long else best + tdist
             stop = max(stop, t_) if long else min(stop, t_)
-    return tsv[fill], tsv[limit - 1], (cl[limit - 1] - entry) / risk * (1 if long else -1) - cps / risk
+    return tsv[fill], tsv[limit - 1], (cl[limit - 1] - entry) / risk * (1 if long else -1) - cps / risk, qty * risk
 
 
 s["score"] = (s.grade + s.rr.clip(upper=20) / 20 if RANK == "grade_rr"
@@ -127,23 +127,26 @@ for t in s.itertuples():
                   float(max(t.zone_lo, t.zone_hi)), float(t.target))
     if r is None:
         continue
-    fill_ts, exit_ts, R = r
+    fill_ts, exit_ts, R, rupee_risk = r
     open_pos.append((exit_ts, t.sym))
     st["n"] += 1; st["R"] += R
     taken.append({"ts": t.ts, "sym": t.sym, "dir": t.dir, "grade": t.grade,
-                  "rr": round(t.rr, 1), "R": round(R, 2)})
+                  "rr": round(t.rr, 1), "R": round(R, 2),
+                  "rupee": round(R * rupee_risk, 0), "risk_rs": round(rupee_risk, 0)})
 
 a = pd.DataFrame(taken)
 if not len(a):
     print("no trades taken"); sys.exit()
 R = a.R.values
-rupee = R * (CAP * RISK_PCT / 100)
+rupee = a.rupee.values          # actual rupees (qty x risk/share), not the nominal budget
 eq = CAP + np.cumsum(rupee)
 dd = (np.maximum.accumulate(eq) - eq).max()
 days = (a.ts.max() - a.ts.min()).days or 1
 print(f"\nTAKEN {len(a)} trades over {days}d  ({len(a)/(days/30.4):.1f}/month)")
 print(f"  win={100*(R>0.02).mean():.1f}%  scratch={100*(np.abs(R)<=0.02).mean():.1f}%  "
       f"meanR={R.mean():+.2f}  medR={np.median(R):+.2f}  totR={R.sum():+.0f}")
+print(f"  median rupee-risk/trade Rs{a.risk_rs.median():,.0f} of Rs{CAP*RISK_PCT/100:,.0f} budget"
+      f"  (notional cap binds when the zone is thin)")
 print(f"  Rs: start {CAP:,.0f} -> end {eq[-1]:,.0f}  ({100*(eq[-1]/CAP-1):+.1f}%)  "
       f"maxDD Rs{dd:,.0f} ({100*dd/CAP:.1f}%)")
 print(f"  per month: {100*((eq[-1]/CAP)**(30.4/days)-1):+.1f}%")
