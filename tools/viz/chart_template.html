@@ -136,7 +136,7 @@ const COLS = ['1d','2h','1h','30m','15m','5m','—'];
 const ON_BY_DEFAULT = new Set(['ob','fvg','swing']);
 const S = {
   tf: TFS_VIEW.includes('30m') ? '30m' : TFS_VIEW[0],
-  i0: 0, nbars: 160, autoTf: true,
+  i0: 0, nbars: 160, autoTf: true, bands: false,
   cell: {},                        // "<group>|<tf>" -> checked
   mx:-1, my:-1,
 };
@@ -171,6 +171,12 @@ function sidebar(){
   h += `</table>
    <div style="margin-top:10px;display:flex;gap:6px">
      <button class=mini id=all>all</button><button class=mini id=none>none</button></div>
+   <h3>Swing display</h3>
+   <label><input type=checkbox id=bands ${S.bands?'checked':''}>
+     show the band behind each pivot</label>
+   <div style="color:var(--dim);font-size:11px;margin:2px 0 0 18px">
+     A swing is a point, but extremes._band() stores a body-to-wick BAND as the
+     level's zone -- that rectangle is what the system reasons over, not the tip.</div>
    <h3>Timeframe rule</h3>
    <label><input type=checkbox id=auto ${S.autoTf?'checked':''}> match view timeframe</label>
    <div style="color:var(--dim);font-size:11px;margin:2px 0 0 18px">
@@ -195,6 +201,7 @@ function sidebar(){
   document.getElementById('all').onclick=()=>{for(const k in S.cell)S.cell[k]=true;sidebar();draw()};
   document.getElementById('none').onclick=()=>{for(const k in S.cell)S.cell[k]=false;sidebar();draw()};
   document.getElementById('auto').onchange=e=>{S.autoTf=e.target.checked;sidebar();draw()};
+  document.getElementById('bands').onchange=e=>{S.bands=e.target.checked;draw()};
 }
 function tfbar(){
   document.getElementById('tfs').innerHTML =
@@ -292,9 +299,11 @@ function draw(){
       const y=Math.round((yh+yl)/2)+.5;
       ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke();
       ctx.setLineDash([]);
-    } else {                                   // pivot: circle the actual wick tip,
-      ctx.globalAlpha=.16; ctx.fillStyle=it.color;      // and show the band it
-      ctx.fillRect(x0,yh,Math.max(2,x1-x0),Math.max(1.5,yl-yh));   // reasons over
+    } else {                                   // pivot: circle the actual wick tip
+      if (S.bands) {                           // the band is what the system uses
+        ctx.globalAlpha=.16; ctx.fillStyle=it.color;
+        ctx.fillRect(x0,yh,Math.max(2,x1-x0),Math.max(1.5,yl-yh));
+      }
       ctx.globalAlpha=.9; ctx.strokeStyle=it.color;
       const px = it.px ?? (it.hi+it.lo)/2;
       const cx = it.pts!=null ? X(idxAt(it.pts)) + w/2 : x0;
