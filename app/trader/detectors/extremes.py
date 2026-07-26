@@ -252,6 +252,42 @@ class ExtremesDetector(Detector):
             else:
                 ctx.levels.append(Level(id=lid, symbol=ctx.symbol, kind=kind,
                                         zone=zone, born=born, tf=tf, meta=meta))
+        if self.params.get("live_master"):
+            # B1-SURGICAL: the running window extreme BEYOND every confirmed pivot is
+            # the taught "fresh extreme still forming" (the 1234 case) — emit ONE
+            # stable live level per side (no per-bar flood; the broad emit_live
+            # variant was measured and REJECTED). Master=True: p/d, liquidity and
+            # htf_nest treat it as the range edge. Superseded/retired when a
+            # confirmed pivot reaches it.
+            confirmed_hi = max((p.price for p in piv if p.confirm_idx is not None
+                                and p.side == "H"), default=None)
+            confirmed_lo = min((p.price for p in piv if p.confirm_idx is not None
+                                and p.side == "L"), default=None)
+            for side, arr, conf, kind in (
+                    ("H", h, confirmed_hi, LevelKind.EXT_H),
+                    ("L", l, confirmed_lo, LevelKind.EXT_L)):
+                idx = max(range(len(arr)), key=arr.__getitem__) if side == "H"                     else min(range(len(arr)), key=arr.__getitem__)
+                ext = arr[idx]
+                beyond = conf is None or (ext > conf if side == "H" else ext < conf)
+                lid = f"{ctx.symbol}-{kind.name}-{tf.value}-live"
+                lv = by_id.get(lid) or next(
+                    (x for x in ctx.levels if x.id == lid), None)
+                if beyond:
+                    body = (max(o[idx], c[idx]) if side == "H"
+                            else min(o[idx], c[idx]))
+                    zone = (ctx.spec.quantize(min(body, ext)),
+                            ctx.spec.quantize(max(body, ext)))
+                    seen.add(lid)
+                    if lv is not None and lv.state not in TERMINAL:
+                        lv.zone = zone
+                        lv.meta.update(master=True, live=True)
+                    elif lv is None:
+                        ctx.levels.append(Level(
+                            id=lid, symbol=ctx.symbol, kind=kind, zone=zone,
+                            born=candles[idx].ts, tf=tf,
+                            meta={"master": True, "live": True}))
+                elif lv is not None and lv.state not in TERMINAL:
+                    lv.record_state(ctx.now, LevelState.DEAD)  # confirmed pivot took over
         for lv in ctx.levels:             # replaced pivot: id vanished -> retract
             if (lv.kind in _EXT and lv.tf is tf and lv.id not in seen
                     and lv.state not in TERMINAL and lv.born >= candles[0].ts):
