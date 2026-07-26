@@ -1,0 +1,406 @@
+<meta charset="utf-8">
+<title>__SYMBOL__ - detector inspector</title>
+<style>
+  :root{
+    --bg:#fff; --panel:#f6f7f9; --line:#dfe3e8; --text:#1a1d21; --dim:#6b7280;
+    --up:#0a9e6e; --dn:#d24040; --grid:#eef1f4; --cross:#9aa4b2;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#12151a;--panel:#1a1e25;--line:#2b313a;--text:#e6e9ee;--dim:#8b95a3;
+          --grid:#1e232b;--cross:#5a6675;}
+  }
+  :root[data-theme=dark]{--bg:#12151a;--panel:#1a1e25;--line:#2b313a;--text:#e6e9ee;
+          --dim:#8b95a3;--grid:#1e232b;--cross:#5a6675;}
+  :root[data-theme=light]{--bg:#fff;--panel:#f6f7f9;--line:#dfe3e8;--text:#1a1d21;
+          --dim:#6b7280;--grid:#eef1f4;--cross:#9aa4b2;}
+  *{box-sizing:border-box}
+  body{margin:0;font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+       background:var(--bg);color:var(--text);overflow:hidden}
+  #wrap{display:flex;height:100vh;width:100vw}
+  #side{width:330px;flex:0 0 330px;background:var(--panel);border-right:1px solid var(--line);
+        overflow-y:auto;padding:12px}
+  table.grid{border-collapse:collapse;width:100%;font-size:11px}
+  .grid th{font-weight:600;color:var(--dim);padding:3px 1px;text-align:center;cursor:pointer;
+           font-size:10.5px}
+  .grid th:hover{color:#2f6df6}
+  .grid td{padding:2px 1px;text-align:center}
+  .grid td.lab{text-align:left;white-space:nowrap;padding-right:5px;cursor:pointer;font-size:12px}
+  .grid td.lab:hover{color:#2f6df6}
+  .grid tr:hover{background:rgba(127,127,127,.07)}
+  .grid input{margin:0;cursor:pointer;vertical-align:middle}
+  .grid .z{color:var(--line)}
+  .grid .n{font-size:9px;color:var(--dim);display:block;line-height:1;margin-top:1px;
+           font-variant-numeric:tabular-nums}
+  .off{opacity:.35}
+  #main{flex:1;display:flex;flex-direction:column;min-width:0}
+  #bar{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);
+       flex-wrap:wrap}
+  #cv{flex:1;display:block;width:100%;cursor:crosshair}
+  .tf{padding:5px 11px;border:1px solid var(--line);background:var(--bg);color:var(--text);
+      border-radius:5px;cursor:pointer;font-weight:600;font-size:12px}
+  .tf.on{background:#2f6df6;border-color:#2f6df6;color:#fff}
+  h3{margin:14px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+  h3:first-child{margin-top:0}
+  label{display:flex;align-items:center;gap:7px;padding:3px 0;cursor:pointer;font-size:12.5px}
+  label:hover{color:#2f6df6}
+  .sw{width:11px;height:11px;border-radius:2px;flex:0 0 11px}
+  .ct{margin-left:auto;color:var(--dim);font-size:11px;font-variant-numeric:tabular-nums}
+  .mini{padding:3px 8px;font-size:11px;border:1px solid var(--line);background:var(--bg);
+        color:var(--text);border-radius:4px;cursor:pointer}
+  #ohlc{color:var(--dim);font-size:12px;font-variant-numeric:tabular-nums;margin-left:4px}
+  #tip{position:fixed;pointer-events:none;display:none;max-width:340px;background:var(--panel);
+       border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:12px;
+       box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:9;line-height:1.5}
+  #tip b{color:#2f6df6}
+  #stat{padding:5px 12px;border-top:1px solid var(--line);color:var(--dim);font-size:11.5px}
+</style>
+
+<div id=wrap>
+  <div id=side></div>
+  <div id=main>
+    <div id=bar>
+      <span style="font-weight:700;margin-right:6px">__SYMBOL__</span>
+      <span id=tfs></span>
+      <button class=mini id=fit>fit</button>
+      <button class=mini id=theme>theme</button>
+      <span id=ohlc></span>
+    </div>
+    <canvas id=cv></canvas>
+    <div id=stat></div>
+  </div>
+</div>
+<div id=tip></div>
+
+<script id=payload type="application/json">__DATA__</script>
+<script>
+const D = JSON.parse(document.getElementById('payload').textContent);
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+
+// ---- layer definitions -----------------------------------------------------
+// Zones are stored in absolute time+price, so a box found on 1h renders on the 5m
+// series at exactly the same place -- the whole point of the tool.
+const GROUPS = [
+  {id:'ob',    name:'Order blocks', color:'#2f6df6', shape:'box',
+   match:d=>['ob_taught','orderblock','OB_BULL','OB_BEAR'].includes(d)},
+  {id:'fvg',   name:'FVG',          color:'#e8871a', shape:'box',
+   match:d=>['fvg_n','fvg','FVG_BULL','FVG_BEAR'].includes(d)},
+  {id:'swing', name:'Swings / extremes', color:'#8b5cf6', shape:'dot',
+   match:d=>['EXT_H','EXT_L','SWING_H','SWING_L'].includes(d)},
+  {id:'liq',   name:'Liquidity',    color:'#6b7280', shape:'line',
+   match:d=>['liquidity','EQH','EQL','PDH','PDL','PWH','PWL','ROUND',
+             'OPEN_RANGE_H','OPEN_RANGE_L'].includes(d)},
+  {id:'sweep', name:'Sweep',        color:'#dc2626', shape:'box', match:d=>d==='sweep'},
+  {id:'wyck',  name:'Wyckoff',      color:'#0891b2', shape:'box', match:d=>d==='wyckoff'},
+  {id:'struct',name:'Structure / BOS',color:'#16a34a',shape:'box', match:d=>d==='structure'},
+  {id:'comp',  name:'Compression',  color:'#a16207', shape:'box', match:d=>d==='compression'},
+  {id:'nest',  name:'HTF nest',     color:'#db2777', shape:'box', match:d=>d==='htf_nest'},
+  {id:'prop',  name:'Propulsion',   color:'#7c3aed', shape:'box', match:d=>d==='propulsion2'},
+  {id:'pd',    name:'Premium / discount',color:'#0d9488',shape:'box',
+   match:d=>d==='premium_discount'},
+];
+
+// unify evidence zones and levels into one drawable list
+const ITEMS = [];
+for (const z of D.zones)
+  ITEMS.push({det:z.det, tf:z.tf, lo:z.lo, hi:z.hi, born:z.born, end:z.end,
+              why:z.why, dir:z.dir, n:z.n, src:'evidence'});
+for (const l of D.levels)
+  ITEMS.push({det:l.kind, tf:l.tf||'—', lo:l.lo, hi:l.hi, born:l.born, end:l.end,
+              px:l.px, pts:l.pts,          // exact wick tip + the moment it printed
+              why:`${l.kind} · state=${l.state} · touches=${l.touches}` +
+                  (l.px!=null?` · tip ${l.px.toFixed(2)}`:''),
+              dir:'', n:1, src:'level', state:l.state});
+for (const it of ITEMS) {
+  const g = GROUPS.find(g=>g.match(it.det));
+  it.g = g ? g.id : 'other';
+  it.color = g ? g.color : '#94a3b8';
+  it.shape = g ? g.shape : 'box';
+}
+if (ITEMS.some(i=>i.g==='other'))
+  GROUPS.push({id:'other',name:'Other',color:'#94a3b8',shape:'box',match:()=>false});
+
+// Timeframe ordering. A box found on a HIGHER timeframe is still real on a lower
+// one (a 1h order block exists while you watch 5m), but a 5m box is NOT part of the
+// 1h picture -- so by default we hide anything finer than the timeframe on screen,
+// exactly the way it looks on a real chart. Levels with no timeframe (PDH, EQH,
+// round numbers, opening range) are session-scale and always show.
+const RANK = {'5m':1,'15m':2,'30m':3,'1h':4,'2h':5,'1d':6};
+const rank = t => RANK[t] ?? 0;
+
+const TFS_VIEW = Object.keys(D.candles);
+// Every timeframe gets a column, including ones nothing was ever found on -- an
+// empty 30m/2h column is the finding, not a gap in the UI.
+const COLS = ['1d','2h','1h','30m','15m','5m','—'];
+
+// ---- state -----------------------------------------------------------------
+const ON_BY_DEFAULT = new Set(['ob','fvg','swing']);
+const S = {
+  tf: TFS_VIEW.includes('30m') ? '30m' : TFS_VIEW[0],
+  i0: 0, nbars: 160, autoTf: true,
+  cell: {},                        // "<group>|<tf>" -> checked
+  mx:-1, my:-1,
+};
+const key = (g,t)=>g+'|'+t;
+for (const g of GROUPS) for (const t of COLS) S.cell[key(g.id,t)] = ON_BY_DEFAULT.has(g.id);
+// auto rule: a 5m box is not part of the 1h picture, but a 1h box is real on 5m
+const muted = t => S.autoTf && rank(t) > 0 && rank(t) < rank(S.tf);
+const bars = ()=>D.candles[S.tf];
+
+// ---- sidebar ---------------------------------------------------------------
+const CNT = {};
+for (const i of ITEMS) CNT[key(i.g,i.tf)] = (CNT[key(i.g,i.tf)]||0) + 1;
+
+function sidebar(){
+  const el = document.getElementById('side');
+  let h = `<h3>Feature x timeframe</h3><table class=grid><tr><th></th>` +
+    COLS.map(t=>`<th data-col="${t}" class="${muted(t)?'off':''}">${t==='—'?'ses':t}</th>`).join('') +
+    `</tr>`;
+  for (const g of GROUPS){
+    if (!COLS.some(t=>CNT[key(g.id,t)])) continue;
+    h += `<tr><td class=lab data-row="${g.id}">
+      <span class=sw style="background:${g.color};display:inline-block"></span> ${g.name}</td>`;
+    for (const t of COLS){
+      const c = CNT[key(g.id,t)] || 0;
+      h += c
+        ? `<td class="${muted(t)?'off':''}"><input type=checkbox data-c="${key(g.id,t)}"
+             ${S.cell[key(g.id,t)]?'checked':''}><span class=n>${c}</span></td>`
+        : `<td class=z>-</td>`;
+    }
+    h += `</tr>`;
+  }
+  h += `</table>
+   <div style="margin-top:10px;display:flex;gap:6px">
+     <button class=mini id=all>all</button><button class=mini id=none>none</button></div>
+   <h3>Timeframe rule</h3>
+   <label><input type=checkbox id=auto ${S.autoTf?'checked':''}> match view timeframe</label>
+   <div style="color:var(--dim);font-size:11px;margin:2px 0 0 18px">
+     on ${S.tf}: hides anything found finer than ${S.tf}. A higher-timeframe box is
+     still real on a lower one, so those stay.</div>
+   <h3>Note</h3><div style="color:var(--dim);font-size:11.5px">
+     Boxes are stored in absolute time+price, so a box found on 1h lands in the same
+     place on 5m, extended right until price answers it - like a hand-drawn box.
+     Circles sit on the true wick tip; the faint band behind is what the system
+     actually reasons over.</div>`;
+  el.innerHTML = h;
+  el.querySelectorAll('[data-c]').forEach(b=>b.onchange=e=>{
+    S.cell[e.target.dataset.c]=e.target.checked; draw();});
+  el.querySelectorAll('[data-row]').forEach(b=>b.onclick=e=>{
+    const g=e.currentTarget.dataset.row;
+    const v=!COLS.every(t=>!CNT[key(g,t)]||S.cell[key(g,t)]);
+    COLS.forEach(t=>{ if(CNT[key(g,t)]) S.cell[key(g,t)]=v; }); sidebar(); draw();});
+  el.querySelectorAll('[data-col]').forEach(b=>b.onclick=e=>{
+    const t=e.currentTarget.dataset.col;
+    const v=!GROUPS.every(g=>!CNT[key(g.id,t)]||S.cell[key(g.id,t)]);
+    GROUPS.forEach(g=>{ if(CNT[key(g.id,t)]) S.cell[key(g.id,t)]=v; }); sidebar(); draw();});
+  document.getElementById('all').onclick=()=>{for(const k in S.cell)S.cell[k]=true;sidebar();draw()};
+  document.getElementById('none').onclick=()=>{for(const k in S.cell)S.cell[k]=false;sidebar();draw()};
+  document.getElementById('auto').onchange=e=>{S.autoTf=e.target.checked;sidebar();draw()};
+}
+function tfbar(){
+  document.getElementById('tfs').innerHTML =
+    TFS_VIEW.map(t=>`<button class="tf ${t===S.tf?'on':''}" data-v="${t}">${t}</button>`).join('');
+  document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{
+    const mid = S.i0 + S.nbars/2, oldT = bars()[Math.min(bars().length-1,Math.max(0,Math.round(mid)))][0];
+    S.tf = b.dataset.v;
+    const j = idxAt(oldT);                       // keep the same MOMENT centred
+    S.i0 = Math.max(0, Math.round(j - S.nbars/2));
+    tfbar(); sidebar(); draw();
+  });
+}
+
+// ---- time <-> x ------------------------------------------------------------
+function idxAt(t){                 // fractional bar index for an absolute time
+  const b = bars(); let lo=0, hi=b.length-1;
+  if (t <= b[0][0]) return 0;
+  if (t >= b[hi][0]) return hi + (b.length>1 ? (t-b[hi][0])/(b[hi][0]-b[hi-1][0]) : 0);
+  while (hi-lo>1){ const m=(lo+hi)>>1; if (b[m][0]<=t) lo=m; else hi=m; }
+  return lo + (t-b[lo][0])/(b[hi][0]-b[lo][0]);
+}
+
+let W=0,H=0,PADL=8,PADR=68,PADT=8,PADB=26;
+function resize(){
+  const r = cv.getBoundingClientRect(), dpr = devicePixelRatio||1;
+  cv.width = r.width*dpr; cv.height = r.height*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0); W=r.width; H=r.height; draw();
+}
+const plotW = ()=>W-PADL-PADR, plotH = ()=>H-PADT-PADB;
+const bw = ()=>plotW()/S.nbars;
+const X = i=>PADL+(i-S.i0)*bw();
+
+function visible(){
+  const b=bars(), a=Math.max(0,Math.floor(S.i0)), z=Math.min(b.length,Math.ceil(S.i0+S.nbars));
+  return {a,z,sl:b.slice(a,z)};
+}
+function scaleY(){
+  const {sl}=visible();
+  if(!sl.length) return {lo:0,hi:1,Y:()=>0};
+  let lo=Infinity,hi=-Infinity;
+  for(const c of sl){ if(c[3]<lo)lo=c[3]; if(c[2]>hi)hi=c[2]; }
+  const pad=(hi-lo)*0.08||1; lo-=pad; hi+=pad;
+  return {lo,hi,Y:p=>PADT+(hi-p)/(hi-lo)*plotH()};
+}
+
+// ---- draw ------------------------------------------------------------------
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function shown(){
+  return ITEMS.filter(i=>S.cell[key(i.g,i.tf)] && !muted(i.tf));
+}
+function draw(){
+  const b=bars(); if(!b.length) return;
+  const {a,z,sl}=visible(), {lo,hi,Y}=scaleY(), w=bw();
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=css('--bg'); ctx.fillRect(0,0,W,H);
+
+  // grid + price axis
+  ctx.strokeStyle=css('--grid'); ctx.fillStyle=css('--dim');
+  ctx.font='11px ui-monospace,monospace'; ctx.textAlign='left'; ctx.lineWidth=1;
+  const step=niceStep(hi-lo);
+  for(let p=Math.ceil(lo/step)*step;p<hi;p+=step){
+    const y=Math.round(Y(p))+.5;
+    ctx.beginPath();ctx.moveTo(PADL,y);ctx.lineTo(W-PADR,y);ctx.stroke();
+    ctx.fillText(p.toFixed(step<1?2:1), W-PADR+6, y+3.5);
+  }
+  // day separators + date labels
+  ctx.textAlign='center';
+  let prevDay=null;
+  for(let i=a;i<z;i++){
+    const d=new Date(b[i][0]*1000), day=d.toDateString();
+    if(prevDay && day!==prevDay){
+      const x=Math.round(X(i))+.5;
+      ctx.strokeStyle=css('--line');ctx.beginPath();ctx.moveTo(x,PADT);ctx.lineTo(x,H-PADB);ctx.stroke();
+      if(w>2) ctx.fillText(`${d.getDate()}/${d.getMonth()+1}`, x, H-PADB+15);
+    }
+    prevDay=day;
+  }
+
+  // zones under candles
+  const vis=shown(), t0=b[a][0], t1=b[Math.min(b.length-1,z-1)][0]+86400;
+  let drawn=0;
+  for(const it of vis){
+    if(it.born>t1) continue;
+    const endT = it.end ?? b[b.length-1][0];
+    if(endT<t0 && it.shape!=='line') continue;
+    const x0=X(idxAt(it.born));
+    const x1=it.shape==='line' ? W-PADR : Math.max(x0+2, X(idxAt(endT)) + (it.end?0:w));
+    const yh=Y(it.hi), yl=Y(it.lo);
+    ctx.globalAlpha=.13; ctx.fillStyle=it.color;
+    if(it.shape==='box'){ ctx.fillRect(x0,yh,x1-x0,Math.max(1.5,yl-yh)); }
+    ctx.globalAlpha=.85; ctx.strokeStyle=it.color; ctx.lineWidth=1;
+    if(it.shape==='box'){
+      ctx.strokeRect(Math.round(x0)+.5,Math.round(yh)+.5,Math.round(x1-x0),Math.max(1,Math.round(yl-yh)));
+    } else if(it.shape==='line'){
+      const y=Math.round((yh+yl)/2)+.5;
+      ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke();
+      ctx.setLineDash([]);
+    } else {                                   // pivot: circle the actual wick tip,
+      ctx.globalAlpha=.16; ctx.fillStyle=it.color;      // and show the band it
+      ctx.fillRect(x0,yh,Math.max(2,x1-x0),Math.max(1.5,yl-yh));   // reasons over
+      ctx.globalAlpha=.9; ctx.strokeStyle=it.color;
+      const px = it.px ?? (it.hi+it.lo)/2;
+      const cx = it.pts!=null ? X(idxAt(it.pts)) + w/2 : x0;
+      ctx.beginPath();ctx.arc(cx,Y(px),5,0,7);ctx.stroke();
+      ctx.globalAlpha=.30;ctx.fillStyle=it.color;ctx.fill();
+    }
+    ctx.globalAlpha=1; drawn++;
+  }
+
+  // candles
+  const cw=Math.max(1,Math.min(w*0.7,18));
+  for(let i=a;i<z;i++){
+    const c=b[i], x=X(i)+w/2, up=c[4]>=c[1];
+    ctx.strokeStyle=ctx.fillStyle=up?css('--up'):css('--dn');
+    ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(Math.round(x)+.5,Y(c[2]));ctx.lineTo(Math.round(x)+.5,Y(c[3]));ctx.stroke();
+    const yo=Y(c[1]),yc=Y(c[4]);
+    ctx.fillRect(Math.round(x-cw/2), Math.round(Math.min(yo,yc)),
+                 Math.max(1,Math.round(cw)), Math.max(1,Math.round(Math.abs(yc-yo))));
+  }
+
+  // crosshair
+  if(S.mx>PADL&&S.mx<W-PADR&&S.my>PADT&&S.my<H-PADB){
+    ctx.strokeStyle=css('--cross');ctx.setLineDash([3,3]);ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(S.mx,PADT);ctx.lineTo(S.mx,H-PADB);
+    ctx.moveTo(PADL,S.my);ctx.lineTo(W-PADR,S.my);ctx.stroke();ctx.setLineDash([]);
+    const p=hi-(S.my-PADT)/plotH()*(hi-lo);
+    ctx.fillStyle=css('--cross');ctx.fillRect(W-PADR,S.my-8,PADR,16);
+    ctx.fillStyle=css('--bg');ctx.textAlign='left';ctx.font='11px ui-monospace,monospace';
+    ctx.fillText(p.toFixed(2),W-PADR+6,S.my+3.5);
+  }
+  document.getElementById('stat').textContent =
+    `${S.tf} · ${b.length} bars · showing ${drawn} of ${ITEMS.length} drawings ` +
+    `(${vis.length} pass filters) · drag to pan, wheel to zoom`;
+}
+function niceStep(range){
+  const raw=range/6, p=Math.pow(10,Math.floor(Math.log10(raw))), n=raw/p;
+  return (n<1.5?1:n<3?2:n<7?5:10)*p;
+}
+
+// ---- interaction -----------------------------------------------------------
+let drag=null;
+cv.onmousedown=e=>drag={x:e.clientX,i0:S.i0};
+addEventListener('mouseup',()=>drag=null);
+cv.onmousemove=e=>{
+  const r=cv.getBoundingClientRect(); S.mx=e.clientX-r.left; S.my=e.clientY-r.top;
+  if(drag){
+    S.i0=Math.max(-S.nbars*0.3,Math.min(bars().length-S.nbars*0.7,
+         drag.i0-(e.clientX-drag.x)/bw()));
+    hideTip(); draw(); return;
+  }
+  const b=bars(), i=Math.floor(S.i0+(S.mx-PADL)/bw());
+  if(b[i]){
+    const c=b[i], d=new Date(c[0]*1000);
+    document.getElementById('ohlc').textContent =
+      `${d.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}  ` +
+      `O ${c[1].toFixed(2)}  H ${c[2].toFixed(2)}  L ${c[3].toFixed(2)}  C ${c[4].toFixed(2)}`;
+  }
+  hit(e); draw();
+};
+cv.onmouseleave=()=>{S.mx=S.my=-1;hideTip();draw()};
+cv.onwheel=e=>{
+  e.preventDefault();
+  const at=S.i0+(S.mx-PADL)/bw(), f=e.deltaY>0?1.15:1/1.15;
+  S.nbars=Math.max(20,Math.min(3000,S.nbars*f));
+  S.i0=at-(S.mx-PADL)/bw();
+  hideTip(); draw();
+};
+function hit(e){
+  const {lo,hi,Y}=scaleY(), b=bars();
+  const p = hi-(S.my-PADT)/plotH()*(hi-lo);
+  const found=[];
+  for(const it of shown()){
+    const endT = it.end ?? b[b.length-1][0];
+    const x0=X(idxAt(it.born));
+    const x1=it.shape==='line'? W-PADR : Math.max(x0+2,X(idxAt(endT))+bw());
+    if(S.mx<x0-4||S.mx>x1+4) continue;
+    const pad=(hi-lo)*0.004;
+    if(p>=it.lo-pad && p<=it.hi+pad) found.push(it);
+  }
+  if(!found.length) return hideTip();
+  const t=document.getElementById('tip');
+  t.innerHTML = found.slice(0,6).map(f=>{
+    const d=new Date(f.born*1000).toLocaleString('en-GB',
+      {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `<div><b>${f.det}</b> <span style="color:var(--dim)">@${f.tf}</span><br>` +
+      `${f.lo.toFixed(2)} – ${f.hi.toFixed(2)}  ·  born ${d}` +
+      (f.n>1?`  ·  re-fired ${f.n}x`:'') + `<br>` +
+      `<span style="color:var(--dim)">${f.why}</span></div>`;
+  }).join('<hr style="border:0;border-top:1px solid var(--line);margin:6px 0">') +
+    (found.length>6?`<div style="color:var(--dim);margin-top:5px">+${found.length-6} more here</div>`:'');
+  t.style.display='block';
+  t.style.left=Math.min(innerWidth-360,e.clientX+16)+'px';
+  t.style.top=Math.min(innerHeight-160,e.clientY+16)+'px';
+}
+function hideTip(){ document.getElementById('tip').style.display='none'; }
+document.getElementById('fit').onclick=()=>{S.nbars=160;S.i0=Math.max(0,bars().length-160);draw()};
+document.getElementById('theme').onclick=()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme',
+    cur==='dark'?'light':cur==='light'?'dark':
+    matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
+  draw();
+};
+addEventListener('resize',resize);
+sidebar(); tfbar();
+S.i0=Math.max(0,bars().length-S.nbars);
+resize();
+</script>
