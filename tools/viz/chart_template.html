@@ -90,8 +90,7 @@ const GROUPS = [
    match:d=>['EXT_H','EXT_L'].includes(d)},
   {id:'swing', name:'swings (session only)', color:'#a78bfa', shape:'dot',
    match:d=>['SWING_H','SWING_L'].includes(d)},
-  {id:'extkf', name:'extremes k_floor=0', color:'#c026d3', shape:'dot',
-   match:d=>d==='extremes_kfloor0'},
+
   {id:'liq',   name:'Liquidity',    color:'#6b7280', shape:'line',
    match:d=>['liquidity','EQH','EQL','PDH','PDL','PWH','PWL','ROUND',
              'OPEN_RANGE_H','OPEN_RANGE_L'].includes(d)},
@@ -119,6 +118,15 @@ for (const l of D.levels)
 // liquidity_swings emits one variant per method+band (deg5-9, leg14, fractal5...).
 // Give each its own row, built from the data, so they are checkable independently
 // instead of collapsing into "Other".
+// one row per extremes variant, built from the data so nothing lands in "Other"
+const ALT = [...new Set(ITEMS.map(i=>i.det).filter(d=>d.startsWith('extremes_')))].sort();
+const ALTC = {kfloor0:'#c026d3', pct2:'#0ea5e9', pct3:'#0891b2', pct4:'#0d9488'};
+for (const d of ALT) {
+  const v = d.slice('extremes_'.length);
+  GROUPS.push({id:d, name:'extremes ' + (v.startsWith('pct') ? v.slice(3)+'% legs' : v),
+               color: ALTC[v] || '#64748b', shape:'dot', match:x=>x===d});
+}
+
 const LSW = [...new Set(ITEMS.map(i=>i.det).filter(d=>d.startsWith('liquidity_swings/')))];
 const ORD = d => {
   const v = d.split('/')[1];

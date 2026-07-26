@@ -213,7 +213,17 @@ class ExtremesDetector(Detector):
         self._sig: dict = {}   # tf -> (n_closed, last_ts) window signature (perf memo)
 
     def detect(self, ctx: StockContext) -> list[Evidence]:
-        pct = float(self.params.get("leg_pct", _DEFAULT_LEG_PCT)) / 100.0
+        # leg_pct may be a LIST: the method needs two scales at once, because they
+        # are different objects. ~3-4% legs give the SWING structure (which extreme
+        # am I trading, and which way); ~2% legs give the INTERNAL structure -- the
+        # pullback highs and lows inside each major leg, which is where the order
+        # blocks sit. Measured on the 1h tape: of the 24 pivots 2% adds over 3%, 21
+        # sit BETWEEN two 3% pivots, and their own reversals run 2.07-5.27% (median
+        # 2.77%) -- so they are not sub-threshold wiggles, they are real swings the
+        # coarser walk absorbs via alternation-with-replacement.
+        raw = self.params.get("leg_pct", _DEFAULT_LEG_PCT)
+        pcts = [float(x) / 100.0 for x in (raw if isinstance(raw, (list, tuple))
+                                           else [raw])]
         for tf_value in self.params.get("timeframes", _DEFAULT_TIMEFRAMES):
             tf = Timeframe(tf_value)
             candles = ctx.candles.last(_ALL, tf)
@@ -224,11 +234,14 @@ class ExtremesDetector(Detector):
                 sig = (len(candles), candles[-1].ts, ctx.day.session_date)  # session in sig: carry prunes EXT levels at the boundary -> must re-emit
                 if self._sig.get(tf) == sig:
                     continue
-                self._sync(ctx, tf, candles, pct)
+                seen: set = set()          # union across scales, so a level kept by
+                for pct in pcts:           # one scale is not retracted by the next
+                    self._sync(ctx, tf, candles, pct, seen)
+                self._retract(ctx, tf, candles, seen)
                 self._sig[tf] = sig
         return []  # always -- infrastructure detector, no Evidence
 
-    def _sync(self, ctx: StockContext, tf: Timeframe, candles, pct) -> None:
+    def _sync(self, ctx, tf: Timeframe, candles, pct, seen: set) -> None:
         o, h, l, c = ([float(getattr(cd, f)) for cd in candles]
                       for f in ("open", "high", "low", "close"))
         atr = _wilder_atr(h, l, c)
@@ -255,7 +268,6 @@ class ExtremesDetector(Detector):
         masters = {id(max(highs, key=lambda p: p.price)) if highs else None,
                    id(min(lows, key=lambda p: p.price)) if lows else None}
         n = len(c)
-        seen = set()
         by_id = {lv.id: lv for lv in ctx.levels}
         for j, p in enumerate(piv):
             if p.confirm_idx is None:
@@ -320,7 +332,13 @@ class ExtremesDetector(Detector):
                             meta={"master": True, "live": True}))
                 elif lv is not None and lv.state not in TERMINAL:
                     lv.record_state(ctx.now, LevelState.DEAD)  # confirmed pivot took over
-        for lv in ctx.levels:             # replaced pivot: id vanished -> retract
+
+    def _retract(self, ctx, tf: Timeframe, candles, seen: set) -> None:
+        """Replaced pivot: its id vanished from this pass -> retract.
+
+        Runs ONCE after every scale has contributed to `seen`; otherwise the
+        coarse scale would retract the fine scale's internal pivots and vice versa."""
+        for lv in ctx.levels:
             if (lv.kind in _EXT and lv.tf is tf and lv.id not in seen
                     and lv.state not in TERMINAL and lv.born >= candles[0].ts):
                 lv.record_state(ctx.now, LevelState.DEAD)

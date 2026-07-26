@@ -29,6 +29,7 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 ROOT = Path("/home/doom/Public/PROJECT/2026/trader")
@@ -212,7 +213,12 @@ print(f"pass done: {len(seen)} zones, {len(levels)} levels, "
 # than as a second detector instance: extremes writes LEVELS keyed on
 # symbol-kind-tf-born, so a second instance would collide with production's own
 # level ids instead of sitting beside them.
-def _kf0_rows():
+def _alt_rows():
+    """extremes under alternative thresholds, as comparison rows.
+
+    Computed offline rather than as extra detector instances: extremes writes LEVELS
+    keyed symbol-kind-tf-born, so a second instance would collide with production's
+    own level ids instead of sitting beside them."""
     from trader.detectors.extremes import _wilder_atr, _leg_K, _zigzag
     cnt = df.groupby(df.ts.dt.date).size()
     good = set(cnt[cnt == 375].index)                 # what the store keeps
@@ -229,28 +235,73 @@ def _kf0_rows():
         if len(c) < 30:
             continue
         atr = _wilder_atr(h, lo_, c)
-        K = _leg_K(atr, c, 0.02, 0.0)                 # floor released
-        for pv in _zigzag(h, lo_, [K * a for a in atr]):
-            if pv.confirm_idx is None:
-                continue
-            px = float(pv.price)
-            yield {"det": "extremes_kfloor0", "tf": tf,
-                   "lo": px, "hi": px, "px": px,
-                   "pts": int(ts[pv.idx].timestamp()),
-                   "born": int(ts[pv.idx].timestamp()), "end": None,
-                   "dir": "SHORT" if pv.side == "H" else "LONG", "n": 1,
-                   "why": f"extremes k_floor=0: {pv.side} leg={100*K*atr[-1]/c[-1]:.2f}% "
-                          f"(production floors K at 3.0 above 30m)"}
+        variants = [("kfloor0", [_leg_K(atr, c, 0.02, 0.0) * a for a in atr],
+                     "k_floor=0 (ATR mode, floor released)")]
+        for pc in (2.0, 3.0, 4.0):                    # threshold_mode=pct
+            variants.append((f"pct{pc:g}", [pc / 100 * x for x in c],
+                             f"threshold_mode=pct, leg_pct={pc:g}"))
+        # the chosen config: SWING structure (3%) plus INTERNAL structure (2%).
+        # Emitted as one row because that is how it will run -- leg_pct is a list
+        # and both scales contribute to the same level set.
+        variants.append(("swing3int2", None, "leg_pct=[3,2]: swing + internal"))
+        for tag, thr, why in variants:
+            if thr is None:                           # union of both scales
+                pv_all, seen_k = [], set()
+                for pc in (3.0, 2.0):
+                    for q in _zigzag(h, lo_, [pc / 100 * x for x in c]):
+                        if q.confirm_idx is None:
+                            continue
+                        k = (q.side, q.idx)
+                        if k not in seen_k:
+                            seen_k.add(k); pv_all.append(q)
+                iterable = pv_all
+            else:
+                iterable = _zigzag(h, lo_, thr)
+            for pv in iterable:
+                if pv.confirm_idx is None:
+                    continue
+                px = float(pv.price)
+                yield {"det": f"extremes_{tag}", "tf": tf, "lo": px, "hi": px,
+                       "px": px, "pts": int(ts[pv.idx].timestamp()),
+                       "born": int(ts[pv.idx].timestamp()), "end": None,
+                       "dir": "SHORT" if pv.side == "H" else "LONG", "n": 1,
+                       "why": f"{pv.side} · {why}"}
 
 
-kf0 = list(_kf0_rows())
-for z in kf0:
+alt = list(_alt_rows())
+for z in alt:
     seen[(z["det"], z["tf"], round(z["lo"], 2), round(z["hi"], 2))] = z
-print(f"comparison rows (extremes k_floor=0): {len(kf0)}")
+import collections as _co
+print("comparison rows:", dict(_co.Counter(z["det"] for z in alt)))
 
 zones = sorted(seen.values(), key=lambda z: z["born"])
+
+# WHEN DOES PRICE COME BACK? A zone is drawn extended into the future only until
+# price returns to it -- that first touch is the mitigation, and it is the same
+# unvisited/visited filter that decides whether a setup is still live. Evidence
+# zones carry no lifecycle of their own (they are re-emitted per tick and never
+# tracked), so resolve it here from the 1m tape.
+_ts = df.ts.values.astype("datetime64[s]").astype("int64")
+_hi = df.high.values.astype(float)
+_lo = df.low.values.astype(float)
+_SEARCH = 30 * 375                                   # ~30 sessions is plenty
+
+
+def _first_touch(born, lo, hi):
+    i = int(np.searchsorted(_ts, born, side="right"))
+    j = min(len(_ts), i + _SEARCH)
+    if i >= j:
+        return None
+    inside = (_lo[i:j] <= hi) & (_hi[i:j] >= lo)
+    k = int(inside.argmax())
+    return int(_ts[i + k]) if inside[k] else None
+
+
 for z in zones:
-    z["end"] = None                                  # evidence zones extend to now
+    z["end"] = _first_touch(z["born"], z["lo"], z["hi"])
+    z["filled"] = z["end"] is not None
+n_open = sum(1 for z in zones if not z["filled"])
+print(f"zones: {len(zones)} | still UNVISITED (price never returned): {n_open}")
 
 out = {"symbol": SYM, "last_ts": int(df.ts.max().timestamp()),
        "candles": {name: rows(resample(df, m)) for name, m in DISPLAY.items()},
