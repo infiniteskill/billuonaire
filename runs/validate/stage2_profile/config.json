@@ -118,10 +118,7 @@
           "2h",
           "1d"
         ],
-        "leg_pct": [
-          3.0,
-          2.0
-        ],
+        "leg_pct": 3.0,
         "threshold_mode": "pct"
       },
       "premium_discount": {
