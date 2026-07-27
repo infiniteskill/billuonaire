@@ -349,18 +349,36 @@ zones = sorted(seen.values(), key=lambda z: z["born"])
 _ts = epoch(df.ts)
 _hi = df.high.values.astype(float)
 _lo = df.low.values.astype(float)
-_SEARCH = 30 * 375                                   # ~30 sessions is plenty
+_SEARCH = 90 * 375                        # boxes can live weeks, so look far
 
 
-def _first_touch(formed, lo, hi, tf="5m"):
-    """First bar AFTER the gap completes whose range re-enters it."""
+DEPART_H = 1.0          # price must clear the zone by this x its height first
+
+
+def _first_touch(formed, lo, hi, tf="5m", up=True):
+    """The RETURN -- but only after price has DEPARTED.
+
+    The rule is the trader's own: extend the box until price visits it. The catch is
+    that immediately after a gap forms price is still sitting against it, so a naive
+    first-touch fires within minutes and every box collapses to hours (12 Jun died in
+    0.1 days where the drawn box ran 18). A visit only counts once price has left:
+    FORM -> DEPART -> RETURN. Requiring a departure of DEPART_H x the zone height
+    before looking for the return reproduces the observed spread -- median 2.1d on
+    HAVELLS 15m, 4.2d on HINDUNILVR 1h, a long tail to 74d, and some never revisited.
+    Lifetime scales with timeframe exactly as it should; there is no single number."""
     i = int(np.searchsorted(_ts, formed + 60 * TF_MIN.get(tf, 5), side="left"))
     j = min(len(_ts), i + _SEARCH)
     if i >= j:
         return None
-    inside = (_lo[i:j] <= hi) & (_hi[i:j] >= lo)
-    k = int(inside.argmax())
-    return int(_ts[i + k]) if inside[k] else None
+    h = hi - lo
+    far = (_hi[i:j] >= hi + DEPART_H * h) if up else (_lo[i:j] <= lo - DEPART_H * h)
+    if not far.any():
+        return None                       # never departed -> not yet a live zone
+    k = i + int(far.argmax())
+    back = (_lo[k:j] <= hi) & (_hi[k:j] >= lo)
+    if not back.any():
+        return None                       # departed and never came back: still open
+    return int(_ts[k + int(back.argmax())])
 
 
 for z in zones:
@@ -368,7 +386,8 @@ for z in zones:
     # candle of a 3-bar gap lies inside the gap by construction, so searching from
     # the left edge finds the gap touching itself and every box collapses to a
     # sliver instead of extending to where price actually came back.
-    z["end"] = _first_touch(z.get("formed", z["born"]), z["lo"], z["hi"], z["tf"])
+    z["end"] = _first_touch(z.get("formed", z["born"]), z["lo"], z["hi"],
+                            z["tf"], z.get("dir") == "LONG")
     z["filled"] = z["end"] is not None
 n_open = sum(1 for z in zones if not z["filled"])
 print(f"zones: {len(zones)} | still UNVISITED (price never returned): {n_open}")
